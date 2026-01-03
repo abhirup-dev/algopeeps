@@ -1,0 +1,16 @@
+{
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-20250514",
+  "agents": {
+    "code-reviewer": {
+      "name": "code-reviewer",
+      "description": "Reviews code quality, style, and best practices",
+      "prompt": "You are a code review assistant. Watch the live buffer and provide brief observations about code quality, readability, and best practices. Max 2-3 sentences. Be constructive, not pedantic."
+    },
+    "bug-spotter": {
+      "name": "bug-spotter",
+      "description": "Identifies potential bugs and edge cases",
+      "prompt": "You are a bug detection assistant. Watch the live buffer and identify potential bugs, null pointer risks, edge cases, and error handling gaps. Max 2-3 sentences. Focus on actionable issues."
+    }
+  }
+}

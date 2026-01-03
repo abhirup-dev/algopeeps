@@ -1,0 +1,1 @@
+{"type":"buffer_update","timestamp":"2025-01-04T12:00:00Z","event":"text_changed","buffer":{"id":1,"name":"main.go","path":"/home/user/project/main.go","filetype":"go","cursor":{"line":10,"col":4},"line_count":42,"content":"package main\n\nimport (\n\t\"fmt\"\n)\n\nfunc main() {\n\tfmt.Println(\"Hello, World!\")\n}\n"}}

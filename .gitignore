@@ -1,2 +1,10 @@
 # bv (beads viewer) local config and caches
 .bv/
+bin/
+*.exe
+
+# Embedded repos (reference only)
+blessed-contrib/
+ink/
+ink-table/
+react-blessed-contrib/
