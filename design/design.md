@@ -18,7 +18,7 @@ colors:
   # Text — bone above ink, descending toward faint
   bone:         "#ECE8DE"   # primary text
   ash:          "#A09B90"   # secondary text, labels
-  dim:          "#7A766C"   # tertiary, hints, idle
+  dim:          "#7A766C"   # tertiary, hints, idle. INTENTIONAL: contrast vs bg lands at 4.26:1 (just below WCAG AA 4.5:1) — used only on the supplementary status bar; bumping it lighter would eat hierarchy elsewhere. Do not "fix".
   faint:        "#52504A"   # separator dots, disabled
 
   # Hairlines — 1px structural lines, two weights
@@ -37,7 +37,7 @@ colors:
   successDim:   "#5D6F4A"
   warn:         "#D8B256"   # amber — stale, deferred
   warnDim:      "#7D6730"
-  danger:       "#C75C4D"   # carmine — failed tests, destructive, negative deltas
+  danger:       "#B14A3C"   # carmine — nudged darker/browner from #C75C4D so it doesn't visually merge with accent #C8553D when adjacent. Failed tests, destructive, negative deltas.
   dangerDim:    "#6B3128"
 
 typography:
@@ -224,10 +224,9 @@ components:
     textColor:       "{colors.warn}"
     typography:      "{typography.monoMicro}"
 
-  # The single ambient animation. textColor is irrelevant — the throb
-  # never carries text — but it must be declared. Set to bg so the
-  # linter sees a non-trivial pair (still flags as low contrast,
-  # which is fine: the throb is not a text container).
+  # The single ambient animation. INTENTIONAL: textColor is declared
+  # only to satisfy the schema — the throb never renders text, so
+  # contrast pair is meaningless. Linter will flag at ~4.43; ignore.
   throb:
     backgroundColor: "{colors.accent}"
     textColor:       "{colors.bg}"
@@ -264,6 +263,98 @@ components:
     backgroundColor: "transparent"
     textColor:       "{colors.dangerDim}"
     typography:      "{typography.monoMicro}"
+
+  # `Active · ? problem peek` tests panel — sentiment-prefixed test rows.
+  # Glyph + label sit on a transparent row; status is read off the text color.
+  testRow:
+    backgroundColor: "transparent"
+    textColor:       "{colors.bone}"
+    typography:      "{typography.body}"
+    padding:         "6px 0"
+    height:          "28px"
+
+  testRowPassed:
+    backgroundColor: "transparent"
+    textColor:       "{colors.success}"
+    typography:      "{typography.body}"
+    padding:         "6px 0"
+    height:          "28px"
+
+  testRowFailed:
+    backgroundColor: "transparent"
+    textColor:       "{colors.danger}"
+    typography:      "{typography.body}"
+    padding:         "6px 0"
+    height:          "28px"
+
+  # Per-turn quality marks in `Post-Mortem · vertical timeline`.
+  # Sentiment-tinted small rectangles laid out as a horizontal score bar.
+  # INTENTIONAL: textColor is schema-required but unused — these are
+  # visual marks, never text containers. Linter contrast warnings here
+  # are categorically meaningless (same as throb).
+  scoreBarPositive:
+    backgroundColor: "{colors.success}"
+    textColor:       "{colors.bone}"
+    rounded:         "{rounded.none}"
+    width:           "8px"
+    height:          "14px"
+
+  scoreBarNeutral:
+    backgroundColor: "{colors.dim}"
+    textColor:       "{colors.bone}"
+    rounded:         "{rounded.none}"
+    width:           "8px"
+    height:          "14px"
+
+  scoreBarNegative:
+    backgroundColor: "{colors.danger}"
+    textColor:       "{colors.bone}"
+    rounded:         "{rounded.none}"
+    width:           "8px"
+    height:          "14px"
+
+  # `Profile · cross-session` 90-day activity heatmap.
+  # NEUTRAL graphite ramp — never red, never sentiment-colored. Consistency
+  # signal, not value signal. Cell sized for a 90-cell strip at page width.
+  # INTENTIONAL: textColor is schema-required but unused — cells render
+  # no text. Contrast warnings here are categorically meaningless.
+  heatmapCellEmpty:
+    backgroundColor: "{colors.panel2}"
+    textColor:       "{colors.bone}"
+    rounded:         "{rounded.none}"
+    width:           "11px"
+    height:          "11px"
+
+  heatmapCellLow:
+    backgroundColor: "{colors.faint}"
+    textColor:       "{colors.bone}"
+    rounded:         "{rounded.none}"
+    width:           "11px"
+    height:          "11px"
+
+  heatmapCellMid:
+    backgroundColor: "{colors.dim}"
+    textColor:       "{colors.bone}"
+    rounded:         "{rounded.none}"
+    width:           "11px"
+    height:          "11px"
+
+  heatmapCellHigh:
+    backgroundColor: "{colors.ash}"
+    textColor:       "{colors.bone}"
+    rounded:         "{rounded.none}"
+    width:           "11px"
+    height:          "11px"
+
+  # Global Deferred bar row — quoted text · relative time · REPLY ⏎.
+  # Single-timestamp rule (relative only) is enforced at the data layer; this
+  # component captures the canonical visual layout.
+  deferredRow:
+    backgroundColor: "transparent"
+    textColor:       "{colors.bone}"
+    typography:      "{typography.body}"
+    padding:         "10px 0"
+    height:          "40px"
 ---
 
 # Overview
@@ -340,7 +431,7 @@ Same roles, retuned values:
 | `accent`      | `#C8553D`   | `#B3452D`   | deepened terracotta for AA contrast on light  |
 | `success`     | `#9AB87A`   | `#5B7A3E`   | moss                                          |
 | `warn`        | `#D8B256`   | `#8A6520`   | dark amber                                    |
-| `danger`      | `#C75C4D`   | `#A83A28`   | brick                                         |
+| `danger`      | `#B14A3C`   | `#963328`   | brick — pulled away from accent to avoid visual merge when adjacent (carmine ≈ accent without this nudge) |
 
 Implementation: ship dark as default; expose light as a CSS-variable
 override via a single root-level theme class. **Do not** duplicate
@@ -354,9 +445,9 @@ components per theme.
   pulsing 0.32 → 1.0 opacity, dissolves into the first streamed token)
 - the **target pane outline** (1px outline at `accentBorder`, with
   `outline-offset: -1px` so the action row doesn't overpaint it)
-- the **active-mode chip border** in the unified input bar (NOT the
-  to-target chip — that one is also accent because targeting is a live
-  action)
+- the **TO chip border** in the unified input bar (targeting an agent
+  is a live action — the **MODE chip is not accent**, see
+  `ui-ux-spec.md` §"Unified input bar"; mode is state, not action)
 - the **single primary CTA per page** (e.g. `▸ recommended problem` on
   Today; `start drill →` on Post-Mortem and Analytics; `SEND ⏎` in the
   unified input bar)
@@ -412,7 +503,7 @@ arrow-suffixed: `all →`, `start drill →`).
 | --------------------------------- | --------------- | ------------------------------------------ |
 | Today                             | 860px           | KPI strip + begin row + recent + rail      |
 | Active · 3 agents                 | 1040px          | grew from 820 to fit global Deferred bar   |
-| Active · Contrarian (focused)     | 1040px          | same chrome, double-click zoom             |
+| Active · {Agent} (focused)        | 1040px          | same chrome, double-click zoom; agent name is variable (Contrarian shown in screenshots is illustrative) |
 | Active · ? problem peek           | 820px           | overlay; bg page inert behind              |
 | Active · Consultor                | 820px           | overlay; council strip dimmed              |
 | Active · Draw overlay             | 820px           | overlay; full-bleed canvas                 |
@@ -481,6 +572,9 @@ Pane states: **active**, **idle**, **replied (collapsed)** — the
 last shows `LAST RESPONSE` summary text and `collapsed · click to
 expand`.
 
+→ see `ui-ux-spec.md` §"Three agent panes (parallel, equal width)"
+for the full state machine and per-pane action-row behavior.
+
 ## Targeted pane indicator
 
 When the user `@N`-mentions an agent in the unified input, the
@@ -489,12 +583,18 @@ addressed pane gets a 1px outline at `accentBorder` with
 the action row. Other panes do **not** dim — that's focus mode (a
 separate interaction).
 
+→ see `ui-ux-spec.md` §"`@N` mention behavior (in input)" for the
+multi-target rules and the distinction from focus mode.
+
 ## Focus mode (double-tap pane)
 
 Double-tap a pane → it grows to ~50% width; flanking panes shrink to
 ~25% each AND get hard-dimmed/desaturated. Input target auto-sets to
 the focused agent. Top problem strip, council strip, and the global
 Deferred bar stay visually identical. `esc` exits.
+
+→ see `ui-ux-spec.md` §"Focus mode (double-tap pane)" for keyboard
+aliases and exit semantics.
 
 ## Unified input bar
 
@@ -509,6 +609,9 @@ TO  [@1 cost-guide]   MODE  [↩ reply]                tab to cycle target · / 
 - Mode resets to `reply` after each send. Target is sticky.
 - `SEND ⏎` is the page's single primary `accent` CTA on Active.
 
+→ see `ui-ux-spec.md` §"Unified input bar" for slash commands,
+keyboard map, and the canonical TO/MODE chip behavior.
+
 ## Global Deferred bar
 
 Bottom of Active. Lists every deferred question across all panes,
@@ -516,6 +619,9 @@ oldest first. Each row: quoted text + relative time (e.g. `5m ago`)
 + `REPLY ⏎`. **Show only one timestamp per row** — relative time
 preferred; absolute time is duplicate noise. `⌘D` toggles bar
 visibility.
+
+→ see `ui-ux-spec.md` §"Deferred bar (bottom)" for reply-flow
+state, undo via `↩`, and the data binding.
 
 ## KPI strip (Today, Profile)
 
