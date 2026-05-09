@@ -2,6 +2,9 @@
 .bv/
 bin/
 *.exe
+node_modules/
+dist/
+.algopeeps/
 
 # Embedded repos (reference only)
 blessed-contrib/

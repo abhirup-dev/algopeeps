@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "buddy": {
+      "command": "buddy-mcp",
+      "args": [],
+      "lifecycle": "keep-alive",
+      "directTools": ["buffer.read", "buffer.cursor", "buffer.diagnostics"]
+    }
+  },
+  "settings": {
+    "toolPrefix": "short",
+    "idleTimeout": 30
+  }
+}

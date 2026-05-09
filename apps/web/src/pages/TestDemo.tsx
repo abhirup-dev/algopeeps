@@ -13,7 +13,7 @@ interface Turn {
   streaming?: boolean;
 }
 
-const DEFAULT_WS = (import.meta.env.VITE_PI_WS as string | undefined) ?? '';
+const DEFAULT_WS = (import.meta.env.VITE_PI_WS as string | undefined) ?? '/ws/test-demo';
 
 /**
  * Test-demo · single pane harness for live-testing pi-agent-core while it's
@@ -27,9 +27,8 @@ const DEFAULT_WS = (import.meta.env.VITE_PI_WS as string | undefined) ?? '';
  *   { "type": "agent.message.token", "id": "msg_...", "delta": "..." }
  *   { "type": "agent.message.end",   "id": "msg_..." }
  *
- * If no endpoint is configured (VITE_PI_WS empty), the harness echoes the
- * user message back token-by-token after a short delay so the UI plumbing
- * can be exercised without a live backend.
+ * Defaults to the same-origin Vite proxy endpoint. Clear the endpoint field to
+ * use the mock echo path when exercising UI plumbing without a live backend.
  */
 export function TestDemoPage() {
   const [endpoint, setEndpoint] = useState(DEFAULT_WS);
@@ -215,7 +214,7 @@ export function TestDemoPage() {
         <input
           value={endpoint}
           onChange={(e) => setEndpoint(e.target.value)}
-          placeholder="ws://127.0.0.1:8787/v1/test"
+          placeholder="/ws/test-demo"
           spellCheck={false}
           style={{
             flex: 1,
