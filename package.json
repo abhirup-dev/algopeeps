@@ -1,0 +1,22 @@
+{
+  "name": "algopeeps",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "node": ">=22.12.0 <26",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @algopeeps/server dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "pi:smoke": "pnpm --filter @algopeeps/server pi:smoke",
+    "auth:codex": "pnpm --filter @algopeeps/server auth:codex",
+    "pi:codex": "pnpm --filter @algopeeps/server pi:codex"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.9.3"
+  }
+}
