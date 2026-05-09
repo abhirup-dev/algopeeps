@@ -1,6 +1,7 @@
 {
   "name": "algopeeps",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "packageManager": "pnpm@10.14.0",
   "engines": {
@@ -8,8 +9,11 @@
     "pnpm": ">=10"
   },
   "scripts": {
-    "dev": "pnpm --filter @algopeeps/server dev",
+    "dev": "pnpm --filter @algopeeps/web dev",
+    "dev:web": "pnpm --filter @algopeeps/web dev",
+    "dev:server": "pnpm --filter @algopeeps/server dev",
     "build": "pnpm -r build",
+    "preview": "pnpm --filter @algopeeps/web preview",
     "typecheck": "pnpm -r typecheck",
     "pi:smoke": "pnpm --filter @algopeeps/server pi:smoke",
     "auth:codex": "pnpm --filter @algopeeps/server auth:codex",
