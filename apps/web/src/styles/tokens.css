@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+ * Algopeeps · v6 design tokens
+ * Source of truth: /design/design.md frontmatter (lines 12-110).
+ * Don't edit values here; update design.md and re-mirror.
+ * --------------------------------------------------------------------------- */
+
+@theme {
+  /* surfaces */
+  --color-bg:        #0E0E10;
+  --color-panel:     #131316;
+  --color-panel2:    #181818;
+
+  /* text */
+  --color-bone:      #ECE8DE;
+  --color-ash:       #A09B90;
+  --color-dim:       #7A766C;
+  --color-faint:     #52504A;
+
+  /* hairlines */
+  --color-hairline:  #272622;
+  --color-hairline2: #34322C;
+
+  /* brand accent — live action only */
+  --color-accent:        #C8553D;
+  --color-accent-soft:   rgba(200, 85, 61, 0.10);
+  --color-accent-border: rgba(200, 85, 61, 0.55);
+
+  /* sentiment */
+  --color-success:    #9AB87A;
+  --color-success-dim:#5D6F4A;
+  --color-warn:       #D8B256;
+  --color-warn-dim:   #7D6730;
+  --color-danger:     #B14A3C;
+  --color-danger-dim: #6B3128;
+
+  /* type */
+  --font-sans:  "Inter", system-ui, sans-serif;
+  --font-mono:  "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* spacing */
+  --spacing-base: 8px;
+  --spacing-xxl:  36px;
+}
+
+/* Light theme — same role names, retuned values. design.md §"Light mode shifts". */
+html[data-theme='light'] {
+  --color-bg:        #F3EFE6;
+  --color-panel:     #FAF6EC;
+  --color-panel2:    #E7E0D0;
+
+  --color-bone:      #1C1814;
+  --color-ash:       #5A564D;
+  --color-dim:       #7D7868;
+  --color-faint:     #B4AFA4;
+
+  --color-hairline:  #CFC7B3;
+  --color-hairline2: #DDD5C1;
+
+  --color-accent:        #B3452D;
+  --color-accent-soft:   rgba(179, 69, 45, 0.10);
+  --color-accent-border: rgba(179, 69, 45, 0.55);
+
+  --color-success:    #5B7A3E;
+  --color-success-dim:#8AA56E;
+  --color-warn:       #8A6520;
+  --color-warn-dim:   #B89150;
+  --color-danger:     #963328;
+  --color-danger-dim: #C46E5E;
+}

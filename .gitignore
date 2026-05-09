@@ -8,3 +8,16 @@ blessed-contrib/
 ink/
 ink-table/
 react-blessed-contrib/
+
+# Node / pnpm — apps/web scaffold
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+*.tsbuildinfo
+.vite/
+
+# Local env
+.env
+.env.local
+*.local
