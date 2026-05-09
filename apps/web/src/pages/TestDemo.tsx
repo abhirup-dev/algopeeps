@@ -120,14 +120,32 @@ export function TestDemoPage() {
     streamingIdRef.current = null;
   };
 
+  // System-prefixed message ids (e.g. `sys_connected`) carry connection /
+  // status signals from the backend, not agent turns. Render them as
+  // system/info rows so the agent transcript stays clean.
+  const isSystemId = (id?: string) => Boolean(id?.startsWith('sys_'));
+
+  const appendSystemToken = (delta: string) => {
+    setTurns((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.who === 'system' && last.streaming) {
+        return [...prev.slice(0, -1), { ...last, text: last.text + delta }];
+      }
+      return [...prev, { who: 'system', text: delta, streaming: true }];
+    });
+  };
+
   const handleServerEvent = (msg: { type?: string; id?: string; delta?: string }) => {
+    const sys = isSystemId(msg.id);
     switch (msg.type) {
       case 'agent.message.start':
         streamingIdRef.current = msg.id ?? 'unknown';
-        pushTurn({ who: 'agent', text: '', streaming: true });
+        pushTurn({ who: sys ? 'system' : 'agent', text: '', streaming: true });
         break;
       case 'agent.message.token':
-        if (msg.delta) appendToken(msg.delta);
+        if (!msg.delta) break;
+        if (sys) appendSystemToken(msg.delta);
+        else appendToken(msg.delta);
         break;
       case 'agent.message.end':
         finishStream();
