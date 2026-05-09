@@ -2,7 +2,15 @@ import { TopBar } from '../components/TopBar';
 import { StatusBar } from '../components/StatusBar';
 import { PageFrame } from '../components/PageFrame';
 
-const HEATMAP_RAMP = ['#1a1a1c', '#2a2a2c', '#3e3e40', '#5a5a5c', '#8a8a8c'];
+// Neutral graphite ramp via tokens — switches correctly under light theme.
+// See design.md §Components → heatmapCell{Empty,Low,Mid,High}.
+const HEATMAP_RAMP = [
+  'var(--color-panel2)',  // empty
+  'var(--color-faint)',   // low
+  'var(--color-dim)',     // mid
+  'var(--color-ash)',     // high
+  'var(--color-bone)',    // peak (rare)
+];
 
 const KPIS: Array<[string, string, string, 'success' | 'warn' | null]> = [
   ['sessions', '64', 'last 90d', null],
