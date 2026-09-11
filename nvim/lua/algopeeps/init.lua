@@ -95,6 +95,26 @@ function M.disconnect()
   client.disconnect()
 end
 
+--- Remove installed plugin files from Neovim config
+function M.uninstall()
+  M.disconnect()
+
+  local plugin_path = vim.fn.stdpath('config') .. '/lua/algopeeps'
+  local ok, stat = pcall(vim.loop.fs_stat, plugin_path)
+  if not ok or not stat then
+    vim.notify('Algopeeps plugin not found at ' .. plugin_path, vim.log.levels.WARN)
+    return
+  end
+
+  local deleted = vim.fn.delete(plugin_path, 'rf')
+  if deleted ~= 0 then
+    vim.notify('Failed to remove algopeeps plugin at ' .. plugin_path, vim.log.levels.ERROR)
+    return
+  end
+
+  vim.notify('Removed algopeeps plugin from ' .. plugin_path, vim.log.levels.INFO)
+end
+
 --- Create user commands
 local function create_commands()
   vim.api.nvim_create_user_command('AlgopeepsConnect', function()
@@ -107,6 +127,12 @@ local function create_commands()
     M.disconnect()
   end, {
     desc = 'Disconnect from algopeeps server'
+  })
+
+  vim.api.nvim_create_user_command('AlgopeepsUninstall', function()
+    M.uninstall()
+  end, {
+    desc = 'Remove algopeeps plugin files from Neovim config'
   })
 end
 

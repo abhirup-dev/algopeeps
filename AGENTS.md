@@ -2,102 +2,224 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
-## Quick Reference
+## Development Commands
 
+### Build & Run
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Claim work
-bd close <id>         # Complete work
-bd sync               # Sync with git
+make build              # Build binary to bin/algopeeps
+make run                # Build and run
+make dev                # Run with go run (dev mode)
+make fmt                # Format code with go fmt
+make lint               # Run golangci-lint
+make tidy               # Tidy go.mod dependencies
+make clean              # Clean build artifacts
 ```
 
-## Landing the Plane (Session Completion)
-
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd sync
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-
-
-<!-- bv-agent-instructions-v1 -->
-
----
-
-## Beads Workflow Integration
-
-This project uses [beads_viewer](https://github.com/Dicklesworthstone/beads_viewer) for issue tracking. Issues are stored in `.beads/` and tracked in git.
-
-### Essential Commands
-
+### Testing
 ```bash
-# View issues (launches TUI - avoid in automated sessions)
-bv
+make test               # Run all unit tests (go test ./... -v)
+go test ./... -v        # Same as make test
+go test ./internal/...  # Test specific package
 
-# CLI commands for agents (use these instead)
-bd ready              # Show issues ready to work (no blockers)
-bd list --status=open # All open issues
-bd show <id>          # Full issue details with dependencies
-bd create --title="..." --type=task --priority=2
-bd update <id> --status=in_progress
-bd close <id> --reason="Completed"
-bd close <id1> <id2>  # Close multiple issues at once
-bd sync               # Commit and push changes
+# Integration tests (requires opencode serve running)
+make test-integration    # Run integration tests
+INTEGRATION_TESTS=1 go test ./internal/integration/... -v
+
+# Run single test
+go test -v ./internal/integration -run TestTCPServer_AcceptsConnection
+
+# Run benchmarks
+go test ./... -bench=. -benchmem
 ```
 
-### Workflow Pattern
-
-1. **Start**: Run `bd ready` to find actionable work
-2. **Claim**: Use `bd update <id> --status=in_progress`
-3. **Work**: Implement the task
-4. **Complete**: Use `bd close <id>`
-5. **Sync**: Always run `bd sync` at session end
-
-### Key Concepts
-
-- **Dependencies**: Issues can block other issues. `bd ready` shows only unblocked work.
-- **Priority**: P0=critical, P1=high, P2=medium, P3=low, P4=backlog (use numbers, not words)
-- **Types**: task, bug, feature, epic, question, docs
-- **Blocking**: `bd dep add <issue> <depends-on>` to add dependencies
-
-### Session Protocol
-
-**Before ending any session, run this checklist:**
-
+### Installing Neovim Plugin
 ```bash
-git status              # Check what changed
-git add <files>         # Stage code changes
-bd sync                 # Commit beads changes
-git commit -m "..."     # Commit code
-bd sync                 # Commit any new beads changes
-git push                # Push to remote
+make install-plugin      # Symlink nvim/ to ~/.config/nvim/lua/algopeeps
 ```
 
-### Best Practices
+## Code Style Guidelines
 
-- Check `bd ready` at session start to find available work
-- Update status as you work (in_progress → closed)
-- Create new issues with `bd create` when you discover tasks
-- Use descriptive titles and set appropriate priority/type
-- Always `bd sync` before ending session
+### Import Organization
+- Standard library imports first (blank line separator)
+- Third-party imports second (blank line separator)
+- Use descriptive aliases for readability (e.g., `tea` for `bubbletea`)
+
+```go
+import (
+    "fmt"
+    "os"
+
+    "github.com/abhirupda/algopeeps/internal/server"
+    tea "github.com/charmbracelet/bubbletea"
+)
+```
+
+### Error Handling
+- Always check errors immediately with `if err != nil`
+- Wrap errors with context using `fmt.Errorf("context: %w", err)`
+- Never ignore errors (use `_` only if intentionally ignoring, with comment)
+
+```go
+if err != nil {
+    return fmt.Errorf("failed to start server: %w", err)
+}
+```
+
+### Naming Conventions
+- **Packages**: Short, singular, lowercase (`server`, `protocol`, `tui`)
+- **Structs/Types**: Exported = `PascalCase`, unexported = `camelCase`
+- **Receivers**: Short, 1-letter abbreviations (`m` for `Model`, `s` for `Server`)
+- **Variables**: `camelCase` for local, `PascalCase` for exported constants
+- **Factory functions**: `NewTypeName()` returning `*TypeName`
+
+```go
+func NewServer(addr string) *Server { ... }
+func (s *Server) Start() error { ... }
+```
+
+### Formatting
+- Use `gofmt` (tabs for indentation, no trailing whitespace)
+- Group related constants/types in `const (...)` or `type (...)` blocks
+- 80-100 char line length preference (not strict)
+- One struct tag per line if multiple tags
+
+```go
+type BufferEvent struct {
+    Type      MessageType `json:"type"`
+    Timestamp time.Time   `json:"timestamp"`
+    Event     EventType   `json:"event"`
+    Buffer    Buffer      `json:"buffer"`
+}
+```
+
+### Comments
+- Exported symbols MUST have doc comments starting with symbol name
+- Package comments at top of file explain purpose
+- Inline comments for non-obvious logic only
+- Use `// TODO:` for future work, `// FIXME:` for known issues
+
+```go
+// Server handles TCP connections from Neovim
+type Server struct { ... }
+
+// New creates a new TCP server
+func New(addr string) *Server { ... }
+```
+
+### Struct & Interface Patterns
+- Prefer factory functions `NewType()` returning `*Type`
+- Use struct tags for JSON/marshaling
+- Minimal interface usage (mainly external `tea.Model`)
+- Composition over inheritance
+
+```go
+type Config struct {
+    BaseURL string
+}
+
+func DefaultConfig() Config {
+    return Config{BaseURL: "http://localhost:4096"}
+}
+```
+
+### Logging
+- Use `fmt.Fprintf(os.Stderr, ...)` for fatal errors in main()
+- Minimal logging elsewhere (pending future implementation)
+- Use `t.Logf()` in tests for debugging
+
+```go
+if err := tcpServer.Start(); err != nil {
+    fmt.Fprintf(os.Stderr, "Error starting TCP server: %v\n", err)
+    os.Exit(1)
+}
+```
+
+## Testing Guidelines
+
+### Test Organization
+- Unit tests: `*_test.go` alongside source files
+- Integration tests: `internal/integration/` directory
+- Test data: `testdata/` directory alongside tests
+
+### Integration Tests
+- Gate with `INTEGRATION_TESTS=1` environment variable
+- Use `skipIfNotIntegration(t)` helper for conditional skipping
+- Requires external dependencies running (e.g., `opencode serve`)
+
+```go
+func skipIfNotIntegration(t *testing.T) {
+    t.Helper()
+    if os.Getenv("INTEGRATION_TESTS") != "1" {
+        t.Skip("Skipping integration test. Set INTEGRATION_TESTS=1 to run")
+    }
+}
+```
+
+### Test Helpers
+- Use `t.Helper()` in helper functions for proper line reporting
+- Register cleanup with `t.Cleanup(func() { ... })`
+- Use descriptive names for test helpers
+
+```go
+func setupTestServer(t *testing.T) (*server.Server, string) {
+    t.Helper()
+    srv := server.New("127.0.0.1:0")
+    err := srv.Start()
+    if err != nil {
+        t.Fatalf("Failed to start test server: %v", err)
+    }
+    t.Cleanup(func() { srv.Stop() })
+    return srv, srv.Addr()
+}
+```
+
+### Test Naming
+- Use `Test<FunctionName>_<Scenario>` format
+- Descriptive, self-documenting test names
+- Separate concerns with underscore
+
+```go
+func TestTCPServer_AcceptsConnection(t *testing.T) { ... }
+func TestBufferEventValidation(t *testing.T) { ... }
+```
+
+## Project Structure
+
+```
+algopeeps/
+├── cmd/algopeeps/      # Main entry point
+├── internal/
+│   ├── config/          # Configuration management
+│   ├── integration/     # Integration tests (INTEGRATION_TESTS=1)
+│   ├── opencode/       # OpenCode SDK client
+│   ├── protocol/       # TCP protocol types and validation
+│   ├── server/         # TCP server implementation
+│   └── tui/           # Bubble Tea TUI (app.go, components/, styles.go)
+└── nvim/lua/algopeeps/ # Neovim plugin (init.lua, client.lua, debounce.lua)
+```
+
+## Session Completion Checklist
+
+**When ending work session**, run:
+
+```bash
+# 1. Check changes
+git status
+
+# 2. Stage and commit code
+git add <files>
+git commit -m "message"
+
+# 3. Sync beads changes
+bd sync
+
+# 4. Push to remote
+git push
+
+# 5. Verify clean state
+git status  # MUST show "up to date with origin"
+```
+
+**CRITICAL:** Work is NOT complete until `git push` succeeds.
 
 <!-- end-bv-agent-instructions -->

@@ -27,6 +27,10 @@ install-plugin:
 	ln -sf $(PWD)/nvim/lua/algopeeps ~/.config/nvim/lua/algopeeps
 	@echo "Plugin installed. Add: require('algopeeps').setup() to your init.lua"
 
+uninstall-plugin:
+	rm -rf ~/.config/nvim/lua/algopeeps
+	@echo "Plugin removed from ~/.config/nvim/lua/algopeeps"
+
 # Clean build artifacts
 clean:
 	rm -rf bin/

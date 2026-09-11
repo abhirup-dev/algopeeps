@@ -82,7 +82,7 @@ Create `opencode.json` in the project root (or copy the provided example):
 Start the OpenCode server with this config:
 
 ```bash
-opencode serve --config opencode.json
+opencode serve --config opencode.json.v0
 ```
 
 ### Install Neovim Plugin

@@ -2,6 +2,7 @@ package components
 
 import (
 	"fmt"
+
 	"github.com/charmbracelet/lipgloss"
 )
 

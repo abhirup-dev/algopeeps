@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/abhirupda/algopeeps/internal/opencode"
 	"github.com/abhirupda/algopeeps/internal/tui/components"
@@ -27,6 +28,8 @@ type Model struct {
 	bufferLines       int
 	lastEvent         string
 	lastError         string
+	devLogEntries     []components.DevLogEntry
+	devLogMax         int
 }
 
 func NewModel() Model {
@@ -41,6 +44,8 @@ func NewModel() Model {
 		agents:        make(map[string]string),
 		agentThinking: make(map[string]bool),
 		ocClient:      client,
+		devLogEntries: make([]components.DevLogEntry, 0),
+		devLogMax:     5, // TODO(abhirup): Make this configurable and constant
 	}
 }
 
@@ -79,6 +84,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.ready = true
 	case ConnectionStatusMsg:
+		status := "disconnected"
+		if msg.Connected {
+			status = "connected"
+		}
+		m.addDevLogEntry("tcp", fmt.Sprintf("%s %s", msg.Source, status))
 		switch msg.Source {
 		case "nvim":
 			m.nvimConnected = msg.Connected
@@ -86,16 +96,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.openCodeConnected = msg.Connected
 		}
 	case ErrorMsg:
+		m.addDevLogEntry("error", fmt.Sprintf("%s: %v", msg.Context, msg.Error))
 		m.lastError = fmt.Sprintf("%s: %v", msg.Context, msg.Error)
 	case opencode.AgentTextMsg:
 		if m.agents == nil {
 			m.agents = make(map[string]string)
+		}
+		if len(m.agents[msg.Agent]) == 0 {
+			m.addDevLogEntry("agent", fmt.Sprintf("%s responding", msg.Agent))
 		}
 		m.agents[msg.Agent] += msg.Text
 		m.agentThinking[msg.Agent] = false
 	case opencode.AgentIdleMsg:
 		m.agentThinking[msg.Agent] = false
 	case BufferEventMsg:
+		m.addDevLogEntry("tcp", fmt.Sprintf("%s: %s", msg.LastEvent, msg.Filename))
 		m.bufferFilename = msg.Filename
 		m.bufferFiletype = msg.Filetype
 		m.bufferLine = msg.CursorLine
@@ -139,6 +154,19 @@ func (m *Model) handleBufferEvent(msg BufferEventMsg) {
 	go func() {
 		_ = m.ocClient.SendPrompt("bug-spotter", prompt)
 	}()
+}
+
+// addDevLogEntry adds a new entry to the devlog
+func (m *Model) addDevLogEntry(category, message string) {
+	entry := components.DevLogEntry{
+		Timestamp: time.Now(),
+		Category:  category,
+		Message:   message,
+	}
+	m.devLogEntries = append(m.devLogEntries, entry)
+	if len(m.devLogEntries) > m.devLogMax {
+		m.devLogEntries = m.devLogEntries[1:]
+	}
 }
 
 // buildPrompt constructs the prompt from the template
@@ -219,7 +247,8 @@ func (m Model) View() string {
 		contentWidth = 80
 	}
 
-	mainWidth := int(float64(contentWidth) * 0.8)
+	devLogWidth := int(float64(contentWidth) * 0.25)
+	mainWidth := contentWidth - devLogWidth - 3
 	cardWidth := (mainWidth - 4) / 2
 
 	reviewerCardStyled := lipgloss.NewStyle().Width(cardWidth).Render(reviewerCard.Render())
@@ -272,13 +301,25 @@ func (m Model) View() string {
 		),
 	)
 
-	return lipgloss.JoinVertical(
+	mainContent := lipgloss.JoinVertical(
 		lipgloss.Left,
 		header,
 		"",
 		agentsRow,
 		"",
 		summaryBar.Render(),
-		statusBar,
 	)
+	mainSection := lipgloss.NewStyle().Width(mainWidth).Render(mainContent)
+
+	devLog := components.DevLog{
+		Title:   "DEVLOG",
+		Entries: m.devLogEntries,
+		Width:   devLogWidth,
+		Height:  m.height - 4,
+	}
+	devLogSection := devLog.Render()
+
+	body := lipgloss.JoinHorizontal(lipgloss.Top, mainSection, " ", devLogSection)
+
+	return lipgloss.JoinVertical(lipgloss.Left, body, statusBar)
 }

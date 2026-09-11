@@ -1,0 +1,24 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "enabled_providers": [
+    "zai-coding-plan"
+  ],
+  "mcp": {},
+  "provider": {},
+  "agent": {
+    "code-reviewer": {
+      "name": "code-reviewer",
+      "mode": "subagent",
+      "model": "zai-coding-plan/glm-4.7",
+      "description": "Reviews code quality, style, and best practices",
+      "prompt": "You are a code review assistant..."
+    },
+    "bug-spotter": {
+      "name": "bug-spotter",
+      "mode": "subagent",
+      "model": "zai-coding-plan/glm-4.7",
+      "description": "Identifies potential bugs and edge cases",
+      "prompt": "You are a bug detection assistant..."
+    }
+  }
+}
