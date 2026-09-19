@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "canvas": {
+      "url": "http://127.0.0.1:3100/mcp",
+      "directTools": true,
+      "protocolVersion": "auto",
+      "lifecycle": "eager"
+    },
+    "excalidraw-official": {
+      "url": "http://127.0.0.1:3001/mcp",
+      "directTools": true,
+      "protocolVersion": "auto",
+      "lifecycle": "eager",
+      "disabled": true
+    }
+  }
+}

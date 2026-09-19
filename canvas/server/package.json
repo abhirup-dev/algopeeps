@@ -1,0 +1,30 @@
+{
+  "name": "@algopeeps/canvas-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "cd .. && prettier --check server",
+    "format:fix": "cd .. && prettier --write server",
+    "test": "bun test",
+    "dev": "bun src/main.ts"
+  },
+  "dependencies": {
+    "@algopeeps/canvas-shared": "workspace:*",
+    "@modelcontextprotocol/express": "2.0.0",
+    "@modelcontextprotocol/ext-apps": "^2.0.0",
+    "@modelcontextprotocol/node": "2.0.0",
+    "@modelcontextprotocol/server": "2.0.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.0"
+  }
+}

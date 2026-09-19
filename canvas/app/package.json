@@ -1,0 +1,33 @@
+{
+  "name": "@algopeeps/canvas-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "cd .. && prettier --check app",
+    "format:fix": "cd .. && prettier --write app",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@algopeeps/canvas-shared": "workspace:*",
+    "@excalidraw/excalidraw": "0.18.1",
+    "@modelcontextprotocol/ext-apps": "2.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.5",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "algopeeps-canvas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "test": "bun run --filter '*' test",
+    "check": "bun run typecheck && bun run lint && bun run format && bun run test",
+    "smoke": "bun test/smoke.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@modelcontextprotocol/client": "2.0.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.8",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.70.0"
+  },
+  "workspaces": [
+    "shared",
+    "server",
+    "app"
+  ]
+}

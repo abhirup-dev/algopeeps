@@ -1,0 +1,13 @@
+# WP-D-prep — integration prep that does not need the server
+
+Read `canvas/CONTRACT.md` and `canvas/NOTES.md` (§WP-A, §WP-C) first. Another worker is building `canvas/server/` right now; do not touch `server/`.
+
+**Scope:** `canvas/app/src/contract.ts` (swap only), `canvas/app/package.json`, `canvas/scripts/**`, `canvas/AGENTS.md`, `canvas/.mcp.json`, `canvas/README.md`.
+
+1. **Fold the app into the workspace.** Replace the local types in `app/src/contract.ts` with re-exports from `@algopeeps/canvas-shared` (add it as a workspace dependency). Keep the file so imports elsewhere in `app/` don't change. `bun run --cwd canvas install && bun run --cwd canvas typecheck && bun run --cwd canvas/app test` must stay green. Do not change app behaviour. Answer WP-C's contract question 1 in NOTES.md by pointing at the discriminator the server will use (agent-format elements have no `seed`; that is the rule, write it down under `## Contract answers`).
+2. **Host runner** `canvas/scripts/host.sh`: starts the ext-apps reference host from `/tmp/ext-apps-audit/examples/basic-host` (already `npm install`ed there) with `SERVERS='["http://127.0.0.1:3100/mcp"]'`, ports 8080/8081, and prints the URL. Also `canvas/scripts/dev-all.sh` that runs server (`bun run --cwd canvas/server dev`, may not exist yet — guard with a message) and host together, tearing both down on Ctrl-C. Plain bash, no new dependencies. Note in a comment that the reference host lives outside the repo for now and that WP-E may vendor it.
+3. **pi wiring.** Change `canvas/.mcp.json` so the server entry is `canvas` → `http://127.0.0.1:3100/mcp` with `directTools: true`, `protocolVersion: "auto"`, `lifecycle: "eager"`; keep the `excalidraw-official` entry but add `"disabled": true`. Leave `.pi/settings.json` as is.
+4. **Tutor rules** `canvas/AGENTS.md` (pi and Claude Code both read it): the agent is a whiteboard tutor that never states the solution; it may only (a) circle a mistake, (b) add a concrete counterexample input, (c) label an invariant the human implied, (d) stamp a data-structure asset the human asks for, (e) move the camera to what it is talking about; always `canvas_describe` or `canvas_changes` before commenting; call `canvas_guide` once per session; keep annotations to at most two per human turn; never edit or delete human elements. Under 60 lines.
+5. **README** `canvas/README.md`: 40 lines max — what this is, the three processes and ports, how to run (`dev-all.sh`, open host URL, `cd canvas && pi`), where events live, link to CONTRACT.md.
+
+Done means: typecheck/test green, files above exist, a 6-line summary under `## WP-D-prep` in `canvas/NOTES.md`. Do not commit. Reply in the terminal with `WP-D-PREP DONE` on its own line.

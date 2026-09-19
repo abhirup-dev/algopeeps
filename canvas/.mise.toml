@@ -1,0 +1,5 @@
+# WP-H: toolchain for canvas/ — Bun for install/run/test (and the server
+# runtime), Node 24 for tooling that still needs it (Vite/Playwright plugins).
+[tools]
+bun = "latest"
+node = "24"

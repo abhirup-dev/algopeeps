@@ -1,0 +1,10 @@
+# worktrunk project config — see https://worktrunk.dev/config/
+# URL column in `wt list`: the canvas host dev server per worktree (deterministic port from branch name).
+[list]
+url = "http://localhost:{{ branch | hash_port }}"
+
+# WP-I: the canvas quality gate (typecheck + lint + format + tests) runs before
+# every commit — agents ignore warnings, so this is the hard stop. The human must
+# approve it once: `wt config approvals add`
+[[pre-commit]]
+canvas-check = "cd canvas && bun run check"

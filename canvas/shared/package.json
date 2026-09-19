@@ -1,0 +1,17 @@
+{
+  "name": "@algopeeps/canvas-shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "cd .. && prettier --check shared",
+    "format:fix": "cd .. && prettier --write shared",
+    "test": "bun test"
+  }
+}

@@ -1,0 +1,167 @@
+/* CanvasApp host sizing. Excalidraw's root (.excalidraw) is auto-height by
+   default; without this it feeds its own ResizeObserver (canvas → wrapper →
+   .excalidraw) until the canvas hits the 2^25 px cap and Chromium refuses
+   the backing store (blank canvas). The wrapper carries the allocated
+   height; the editor must fill it exactly. */
+.canvas-host {
+  overflow: hidden;
+  font-family: var(--ui-font);
+
+  /* Design tokens (briefs/WP-Q-design.md). Excalidraw scopes its variables to
+     `.excalidraw`; our overlay, palette and badges are siblings of it, so we
+     mirror the names here with Excalidraw's own light values. `--agent` is the
+     collaboration purple; Excalidraw's indigo `--color-primary` stays for its
+     own controls. */
+  --ui-font:
+    Assistant, system-ui, BlinkMacSystemFont, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --island-bg-color: #fff;
+  --color-surface-low: #ececf4;
+  --color-surface-high: #f1f0ff;
+  --color-surface-lowest: #fff;
+  --default-border-color: var(--color-surface-high);
+  --text-primary-color: #1b1b1f;
+  --color-muted: #7a7a7a;
+  --color-primary: #6965db;
+  --color-gray-40: #b8b8b8;
+  --shadow-island:
+    0 0 0.93px 0 rgb(0 0 0 / 17%), 0 0 3.13px 0 rgb(0 0 0 / 8%),
+    0 7px 14px 0 rgb(0 0 0 / 5%);
+  --agent: #9c36b5;
+  --agent-soft: rgb(156 54 181 / 12%);
+  --human: #1b1b1f;
+  --tooltip-bg: #1b1b1f;
+  --tooltip-fg: #fff;
+}
+.canvas-host[data-theme="dark"] {
+  --island-bg-color: #232329;
+  --color-surface-low: hsl(240deg 8% 15%);
+  --color-surface-high: hsl(245deg 10% 21%);
+  --color-surface-lowest: hsl(0deg 0% 7%);
+  --text-primary-color: #e3e3e8;
+  --color-muted: #b8b8b8;
+  --color-primary: #a8a5ff;
+  --color-gray-40: #7a7a7a;
+  --agent: #c77dff;
+  --agent-soft: rgb(199 125 255 / 20%);
+  --human: #e3e3e8;
+  --tooltip-bg: #e3e3e8;
+  --tooltip-fg: #1b1b1f;
+}
+.canvas-host > .excalidraw {
+  height: 100%;
+}
+
+/* Comment tool: Excalidraw resets the cursor to auto for custom tools. */
+.canvas-host.is-commenting canvas.interactive {
+  cursor: crosshair !important;
+}
+
+/* Top-right island (renderTopRightUI) */
+.canvas-topright {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  height: var(--lg-button-size, 2.25rem);
+  padding: 0 4px;
+  border-radius: var(--border-radius-lg, 8px);
+  background: var(--island-bg-color);
+  box-shadow: var(--shadow-island);
+}
+.canvas-topright button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-primary-color);
+  background: transparent;
+  font-family: var(--ui-font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+}
+.canvas-topright button svg {
+  width: 16px;
+  height: 16px;
+}
+.canvas-topright button:hover {
+  background: var(--color-surface-high);
+}
+.canvas-topright button.is-active {
+  color: #fff;
+  background: var(--agent);
+}
+.canvas-topright button.is-icon {
+  width: 28px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Footer filter row */
+.canvas-footer {
+  display: flex;
+  align-items: center;
+  height: var(--lg-button-size, 2.25rem);
+  padding: 0 4px;
+  border-radius: var(--border-radius-lg, 8px);
+  background: var(--island-bg-color);
+  box-shadow: var(--shadow-island);
+}
+
+/* Segmented control, shared by the sidebar tabs and the footer. */
+.canvas-segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--color-surface-low);
+}
+.canvas-segmented button {
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-primary-color);
+  background: transparent;
+  font-family: var(--ui-font);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 24px;
+  cursor: pointer;
+}
+.canvas-segmented button[aria-selected="true"] {
+  background: var(--island-bg-color);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+  font-weight: 600;
+}
+.canvas-segmented button:not([aria-selected="true"]):hover {
+  color: var(--agent);
+}
+
+/* Toast */
+.canvas-toast {
+  position: absolute;
+  z-index: 30;
+  bottom: 64px;
+  left: 50%;
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: var(--tooltip-fg);
+  background: var(--tooltip-bg);
+  box-shadow: var(--shadow-island);
+  font-size: 12px;
+  font-weight: 500;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: canvas-toast-in 160ms ease-out;
+}
+@keyframes canvas-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}

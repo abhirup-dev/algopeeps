@@ -1,0 +1,5 @@
+#!/bin/sh
+# WP-I: canvas quality gate for plain `git commit` (same command as the worktrunk
+# pre-commit hook in .config/wt.toml). Enable once per clone:
+#   git config core.hooksPath .githooks
+cd canvas && bun run check

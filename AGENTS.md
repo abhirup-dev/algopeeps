@@ -181,3 +181,13 @@ bd prime                # Refresh Beads context
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/core-concepts/sync-concepts.md for details and anti-patterns.
 <!-- END BEADS CODEX SETUP -->
+
+## Beads × worktrees (worktrunk)
+
+Worktrees share the main checkout's Dolt DB through the git common directory, so claims and
+closes made in any worktree are visible everywhere. Two rules keep the git-side export sane:
+
+1. Run `bd export -o .beads/issues.jsonl` and commit it **only from the master worktree**
+   (`~/Codes/Personal/algopeeps`). Feature branches must not commit `.beads/issues.jsonl`.
+2. `.gitattributes` declares `merge=beads`, but bd 1.3 ships no merge driver, so a conflicting
+   export merges as plain text. Rule 1 avoids the conflict; `bd conflicts` inspects one if it happens.

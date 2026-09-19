@@ -1,0 +1,124 @@
+/* §11 thread overlay — plain DOM above the Excalidraw canvas, never part of
+   the scene. The overlay itself is click-through; pills/cards opt in. */
+.threads-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15; /* above the canvas, below the fullscreen button (z 20) */
+}
+.threads-overlay.threads-armed {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.thread-pill {
+  position: absolute;
+  pointer-events: auto;
+  border: 1px solid #ced4da;
+  border-radius: 999px;
+  background: #fff;
+  color: #495057;
+  cursor: pointer;
+  font: 13px sans-serif;
+  padding: 2px 10px;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.thread-pill.unread {
+  border-color: #9c36b5; /* last message from the agent, not yet read */
+  box-shadow: 0 0 0 2px #9c36b5;
+}
+.thread-pill.resolved {
+  background: #e9ecef;
+  color: #868e96;
+}
+
+.thread-card {
+  position: absolute;
+  pointer-events: auto;
+  width: 280px;
+  box-sizing: border-box;
+  background: #fffef5; /* post-it */
+  border: 1px solid #e0d489;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  font: 13px/1.4 sans-serif;
+  color: #212529;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.thread-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #868e96;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.thread-msgs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.thread-msg {
+  display: flex;
+  gap: 6px;
+}
+.thread-author {
+  flex: none;
+  font-size: 11px;
+  color: #868e96;
+}
+.thread-msg.agent .thread-author,
+.thread-msg.agent .thread-text {
+  color: #9c36b5;
+}
+.thread-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.thread-input {
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font: 13px sans-serif;
+  padding: 4px;
+  resize: vertical;
+}
+.thread-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.thread-collapse,
+.thread-resolve,
+.thread-send {
+  border: 1px solid #ced4da;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font: 12px sans-serif;
+  padding: 2px 8px;
+}
+.thread-send {
+  background: #1971c2;
+  border-color: #1971c2;
+  color: #fff;
+}
+.thread-send:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 💬 Comment button, rendered via renderTopRightUI */
+.threads-arm-btn {
+  border: 1px solid #ced4da;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font: 13px sans-serif;
+  padding: 4px 10px;
+}

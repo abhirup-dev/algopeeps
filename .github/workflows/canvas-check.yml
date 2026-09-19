@@ -1,0 +1,23 @@
+name: canvas-check
+
+on:
+  push:
+    paths: ["canvas/**"]
+  pull_request:
+    paths: ["canvas/**"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: canvas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd app exec playwright install --with-deps chromium
+      - run: bun run check

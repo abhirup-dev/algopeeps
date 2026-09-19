@@ -1,0 +1,108 @@
+.asset-palette {
+  position: absolute;
+  z-index: 16;
+  top: 50%;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--island-bg-color);
+  box-shadow: var(--shadow-island);
+  transform: translateY(-50%);
+  transition: left 160ms ease-out;
+}
+/* Excalidraw's properties panel (202 px island at x=15) appears on selection. */
+.asset-palette.is-shifted {
+  left: 232px;
+}
+.asset-palette.is-collapsed {
+  padding: 0;
+}
+
+.asset-tile {
+  position: relative;
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-primary-color);
+  background: transparent;
+  cursor: grab;
+}
+.asset-tile svg {
+  width: 24px;
+  height: 24px;
+}
+.asset-tile:hover {
+  background: var(--color-surface-high);
+}
+.asset-tile:active {
+  cursor: grabbing;
+}
+.asset-tile.is-active {
+  border-color: var(--agent);
+  color: var(--agent);
+  background: var(--agent-soft);
+}
+.asset-tile[data-kind="comment"] {
+  margin-top: 4px;
+  border-top: 1px solid var(--default-border-color);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  color: var(--agent);
+}
+.asset-tile[data-kind="comment"].is-active {
+  border-color: var(--agent);
+}
+
+/* Tooltip to the right of the tile. */
+.asset-tile::after {
+  content: attr(data-label);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 10px);
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--tooltip-fg);
+  background: var(--tooltip-bg);
+  font-family: var(--ui-font);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 120ms ease-out;
+  pointer-events: none;
+}
+.asset-tile:hover::after {
+  opacity: 1;
+}
+
+.asset-palette-tab {
+  display: inline-flex;
+  width: 100%;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  color: var(--color-muted);
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+.asset-palette.is-collapsed .asset-palette-tab {
+  width: 20px;
+  height: 44px;
+  font-size: 13px;
+}
+.asset-palette-tab:hover {
+  color: var(--text-primary-color);
+  background: var(--color-surface-high);
+}

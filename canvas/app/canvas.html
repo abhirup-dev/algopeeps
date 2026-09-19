@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Algopeeps Canvas</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #root {
+        height: 100%;
+      }
+    </style>
+    <script>
+      // Excalidraw runtime-fetches fonts/locales relative to this path; the
+      // version-pinned CDN mirrors the package's dist/prod/ layout (13 MB of
+      // fonts — too heavy to inline under the 5 MB budget).
+      window.EXCALIDRAW_ASSET_PATH =
+        "https://unpkg.com/@excalidraw/excalidraw@0.18.1/dist/prod/";
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
