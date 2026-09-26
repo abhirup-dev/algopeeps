@@ -518,6 +518,7 @@ boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
   `diff(await sceneAt(from), await sceneAt(to))`. readScene drops
   `isDeleted`, so browser deletes show as `removed`. R2 end to end is in
   `adapters/server/src/store.test.ts`.
+
 ### 1.6 Lint validated on the dogfood fixtures (2026-09-26)
 
 - `test/parity/lint/lint.e2e.ts` (`bun run --cwd elkdraw/test/parity
