@@ -1,3 +1,6 @@
 
 # Use bd merge for beads JSONL files
 .beads/issues.jsonl merge=beads
+
+# Append-only agent log: keep both sides on merge
+elkdraw/NOTES.md merge=union
