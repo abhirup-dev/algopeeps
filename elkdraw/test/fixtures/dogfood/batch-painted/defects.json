@@ -1,0 +1,273 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final.png",
+  "report": "canvas/docs/dogfood-excalidraw-batch.md",
+  "defects": [
+    {
+      "id": "batch-01",
+      "rule": "label-on-node",
+      "ids": ["a2-label", "gateway", "auth"],
+      "description": "First batch: \"2 verify token\" is wider than the 130 px gap and sits on Gateway and Auth.",
+      "source": "report §2.3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed in fix1 by widening the column spacing."
+    },
+    {
+      "id": "batch-02",
+      "rule": "label-on-node",
+      "ids": ["a5-label", "trip", "matching"],
+      "description": "First batch: \"5 find driver\" sits on Trip and Matching.",
+      "source": "report §2.3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed in fix1."
+    },
+    {
+      "id": "batch-03",
+      "rule": "label-on-node",
+      "ids": ["a8-label", "matching", "notification"],
+      "description": "First batch: \"8 offer ride\" sits on Matching and Notification.",
+      "source": "report §2.3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed in fix1."
+    },
+    {
+      "id": "batch-04",
+      "rule": "label-on-border",
+      "ids": ["a3-label", "zone-core"],
+      "description": "First batch: \"3 create trip\" lands on the Core zone's dashed border.",
+      "source": "report §2.3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed in fix1 by moving the Core zone down."
+    },
+    {
+      "id": "batch-05",
+      "rule": "label-on-border",
+      "ids": ["a7-label", "zone-data"],
+      "description": "First batch: \"7 GEOSEARCH\" lands on the Data zone's border.",
+      "source": "report §2.3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed in fix1."
+    },
+    {
+      "id": "batch-06",
+      "rule": "label-on-border",
+      "ids": ["a7-label", "zone-core"],
+      "description": "Edit (b): \"7 GEOSEARCH\" is back on a border (the Core zone's, per the transcript) after the Data zone moved down.",
+      "source": "report §2.3, §6(b); transcript",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed in the last apply by moving Location to y=680."
+    },
+    {
+      "id": "batch-07a",
+      "rule": "text-wrapped",
+      "ids": ["postgres-label"],
+      "description": "First batch: \"Postgres (trips)\" wraps inside its 200 px ellipse.",
+      "source": "transcript (first-pass review), not in report",
+      "reported": false,
+      "fixedInFinal": true,
+      "note": "Fixed in fix1 by widening the ellipses to 260 px. warehouse-label wrapped too and still does (batch-12)."
+    },
+    {
+      "id": "batch-07b",
+      "rule": "text-wrapped",
+      "ids": ["kafka-label"],
+      "description": "First batch: \"Kafka event bus\" wraps inside its 200 px ellipse.",
+      "source": "transcript (first-pass review), not in report",
+      "reported": false,
+      "fixedInFinal": true
+    },
+    {
+      "id": "batch-07c",
+      "rule": "text-wrapped",
+      "ids": ["redis-label"],
+      "description": "First batch: \"Redis geo-index\" wraps inside its 200 px ellipse.",
+      "source": "transcript (first-pass review), not in report",
+      "reported": false,
+      "fixedInFinal": true
+    },
+    {
+      "id": "batch-08",
+      "rule": "crossing",
+      "ids": ["a-trip-pg", "e-payment-kafka"],
+      "description": "Trip->Postgres crosses Payment->Kafka.",
+      "source": "report §1 checklist, §2.1",
+      "reported": true,
+      "fixedInFinal": false,
+      "note": "Present since the first batch. The fix2 curve did not remove it; edit (b) flattened the curve and the last apply re-curved it."
+    },
+    {
+      "id": "batch-09",
+      "rule": "crossing",
+      "ids": ["a4", "e-matching-kafka"],
+      "description": "Arrow 4 (\"4 quote\", trip->pricing) crosses Matching->Kafka near its arrowhead.",
+      "source": "report §1 checklist, §6(a)",
+      "reported": true,
+      "fixedInFinal": false,
+      "note": "Introduced by edit (a)."
+    },
+    {
+      "id": "batch-10",
+      "ruleGap": "label-on-own-arrowhead",
+      "ids": ["a1-label", "a1"],
+      "description": "\"1 request\" touches its own arrowhead.",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false,
+      "note": "No v0 rule covers a label running into its own arrowhead.",
+      "notDrawn": {
+        "reason": "Not drawn in final.png or in our render of this painted scene: in final.png the label's ink ends at x 673 and the arrowhead's upper wing starts at x 687 (14 px, with about 12 px of plain line between); our render leaves 13 px (label box right 674, head base 687, tip 712). Lint's threshold is the tip within head + mask (30 px); here it is 38 px.",
+        "evidence": "evidence/batch-10.png"
+      }
+    },
+    {
+      "id": "batch-11",
+      "ruleGap": "label-on-own-arrowhead",
+      "ids": ["a2-label", "a2"],
+      "description": "\"2 verify token\" touches its own arrowhead.",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "batch-12",
+      "rule": "text-wrapped",
+      "ids": ["warehouse-label"],
+      "description": "\"Analytics warehouse\" wraps to two lines inside its ellipse (not clipped).",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false,
+      "note": "The tester judged it acceptable; text-wrapped should still report it."
+    },
+    {
+      "id": "batch-13",
+      "rule": "arrow-through-node",
+      "ids": ["e-matching-kafka", "pricing"],
+      "description": "Matching->Kafka grazes Pricing's top-left corner.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "batch-14",
+      "ruleGap": "label-on-own-arrowhead",
+      "ids": ["a5-label", "a5"],
+      "description": "\"5 find driver\" touches its own arrowhead.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "batch-15",
+      "ruleGap": "label-on-own-arrowhead",
+      "ids": ["a8-label", "a8"],
+      "description": "\"8 offer ride\" touches its own arrowhead.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    }
+  ],
+  "cleanRegions": [
+    {
+      "name": "legend",
+      "ids": [
+        "legend",
+        "legend-title",
+        "legend-sync",
+        "legend-sync-t",
+        "legend-async",
+        "legend-async-t",
+        "legend-store",
+        "legend-store-t"
+      ],
+      "bbox": { "x": 1770, "y": 590, "width": 280, "height": 220 },
+      "note": "Legend arrows are unbound on purpose; dangling-endpoint must not fire."
+    },
+    {
+      "name": "stripe-payment",
+      "ids": [
+        "stripe",
+        "stripe-label",
+        "payment",
+        "payment-label",
+        "a-pay-stripe"
+      ],
+      "bbox": { "x": 50, "y": 590, "width": 500, "height": 90 },
+      "note": "Stripe sits outside every zone by design; outside-zone must not fire."
+    },
+    {
+      "name": "location-redis",
+      "ids": [
+        "location",
+        "location-label",
+        "a7",
+        "a7-label",
+        "redis",
+        "redis-label"
+      ],
+      "bbox": { "x": 1440, "y": 670, "width": 280, "height": 390 },
+      "note": "\"7 GEOSEARCH\" was on a border twice (batch-05, batch-06) and sits in the gap between zones now."
+    },
+    {
+      "name": "notification-apns-driver",
+      "ids": [
+        "notification",
+        "notification-label",
+        "apns",
+        "apns-label",
+        "a-notif-apns",
+        "driver",
+        "driver-label",
+        "a-apns-driver"
+      ],
+      "bbox": { "x": 1470, "y": 150, "width": 500, "height": 350 },
+      "note": "a-apns-driver crosses the Edge zone border, which is not a defect."
+    },
+    {
+      "name": "surge",
+      "ids": ["surge", "surge-label", "a-pricing-surge"],
+      "bbox": { "x": 1090, "y": 668, "width": 220, "height": 142 }
+    },
+    {
+      "name": "title-and-zones",
+      "ids": [
+        "title",
+        "zone-edge",
+        "zone-edge-label",
+        "zone-core",
+        "zone-core-label",
+        "zone-data",
+        "zone-data-label"
+      ],
+      "bbox": { "x": 290, "y": 10, "width": 1440, "height": 1100 },
+      "note": "Zone titles sit inside their zones' top-left corners; label-on-border must not fire."
+    }
+  ],
+  "unmapped": [
+    {
+      "description": "Mermaid path: [( )] cylinders became rectangles, so store shapes were lost.",
+      "source": "report §2.6",
+      "reason": "The Mermaid scene was cleared before the batch rebuild and is not a fixture; it is not a geometry defect either."
+    },
+    {
+      "description": "Mermaid path: subgraph titles mid-container (\"Edge\" centred, \"Core services\" on an arrow, \"Data\" on the Kafka->warehouse arrow).",
+      "source": "report §2.6",
+      "reason": "Mermaid scene not in the fixture set; its ids were random."
+    },
+    {
+      "description": "Mermaid path: cross-subgraph edges drawn as long curves through other zones; \"7 GEOSEARCH\" detached from its arrow; Stripe placed between zones.",
+      "source": "report §2.6",
+      "reason": "Mermaid scene not in the fixture set; its ids were random."
+    },
+    {
+      "description": "Edit (b) silently flattened the hand-curved Trip->Postgres arrow.",
+      "source": "report §2.1, §6(b)",
+      "reason": "A routing regression during the session; the final scene has the curve re-applied (see batch-08)."
+    }
+  ]
+}
