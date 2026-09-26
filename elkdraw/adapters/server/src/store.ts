@@ -98,6 +98,57 @@ export class Store {
     return { rev: this.rev, upserts: won, deletes: gone };
   }
 
+  /** The scene as it was at `rev`: replay from the last keyframe at or before
+   * it. Reads the file; the live scene is untouched. rev 0 = empty. */
+  sceneAt(rev: number): Element[] {
+    if (!Number.isInteger(rev) || rev < 0 || rev > this.rev)
+      throw new RangeError(
+        `rev ${String(rev)} is not in 0..${String(this.rev)}`,
+      );
+    const lines = this.lines();
+    let start = 0;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (line?.op === "keyframe" && line.rev <= rev) {
+        start = i;
+        break;
+      }
+    }
+    const scene = new Map<string, Element>();
+    let base = 0;
+    for (const line of lines.slice(start)) {
+      if (line.rev > rev) break;
+      if (line.op === "keyframe") {
+        scene.clear();
+        for (const el of line.elements) scene.set(el.id, el);
+        base = line.rev;
+      } else if (line.rev > base) {
+        for (const el of line.upserts) scene.set(el.id, el);
+        for (const id of line.deletes) scene.delete(id);
+      }
+    }
+    return [...scene.values()];
+  }
+
+  /** Who changed the scene and when, for each delta after `since`. */
+  log(
+    since: number,
+  ): { rev: number; author: FeedLine["author"]; time: string }[] {
+    return this.lines().flatMap((line) =>
+      line.op === "delta" && line.rev > since
+        ? [{ rev: line.rev, author: line.author, time: line.time }]
+        : [],
+    );
+  }
+
+  private lines(): EventLine[] {
+    if (!existsSync(this.file)) return [];
+    return readFileSync(this.file, "utf8")
+      .split("\n")
+      .filter((raw) => raw !== "")
+      .map((raw) => parseJson(EventLine, raw));
+  }
+
   private change(upserts: readonly Element[], deletes: readonly string[]) {
     for (const el of upserts) this.elements.set(el.id, el);
     for (const id of deletes) this.elements.delete(id);
