@@ -20,6 +20,7 @@
     "test": "bun test",
     "check": "bun run typecheck && bun run lint && bun run format && bun run test",
     "dev": "sh scripts/dev.sh",
+    "smoke:p0": "sh scripts/smoke-p0.sh",
     "build": "tsc -b"
   },
   "devDependencies": {
