@@ -1,15 +1,21 @@
 import { afterAll, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tools } from "@elkdraw/mcp";
-import { defaultUrl } from "./index.ts";
 
 const MAIN = fileURLToPath(new URL("main.ts", import.meta.url));
 
 async function cli(...args: string[]) {
+  return cliEnv({}, ...args);
+}
+
+async function cliEnv(env: Record<string, string>, ...args: string[]) {
   const proc = Bun.spawn([process.execPath, MAIN, ...args], {
     stdout: "pipe",
     stderr: "pipe",
-    env: { ...process.env, ELKDRAW_URL: "", PORT: "" },
+    env: { ...process.env, ELKDRAW_URL: "", PORT: "", ...env },
   });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
@@ -136,12 +142,30 @@ test("unreachable server exits 3", async () => {
   expect((await cli("--url", deadUrl, "lint")).code).toBe(3);
 });
 
-test("base URL: $ELKDRAW_URL, else $PORT, else 3940", () => {
-  expect(defaultUrl({ ELKDRAW_URL: "http://h:1", PORT: "2" })).toBe(
-    "http://h:1",
-  );
-  expect(defaultUrl({ PORT: "2" })).toBe("http://127.0.0.1:2");
-  expect(defaultUrl({ ELKDRAW_URL: "", PORT: "" })).toBe(
-    "http://127.0.0.1:3940",
-  );
+test("start spawns the real server; status, a 501 stub, stop", async () => {
+  const probe = Bun.serve({ port: 0, fetch: () => new Response() });
+  const port = String(probe.port);
+  await probe.stop(true);
+  const dataDir = mkdtempSync(join(tmpdir(), "elkdraw-cli-"));
+  const env = { ELKDRAW_DATA_DIR: dataDir, PORT: port };
+  const url = `http://127.0.0.1:${port}`;
+  try {
+    const started = await cliEnv(env, "start", "--no-open");
+    expect(started.code).toBe(0);
+    expect(started.stdout).toContain(`"port":${port}`);
+    const s = await cliEnv(env, "status");
+    expect(s.code).toBe(0);
+    expect(s.stdout).toContain(`"url":"${url}"`);
+    const stub = await cliEnv(env, "lint");
+    expect(stub.code).toBe(1);
+    expect(stub.stderr).toContain("NOT_IMPLEMENTED");
+  } finally {
+    expect((await cliEnv(env, "stop")).code).toBe(0);
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+  for (let i = 0; i < 50; i++) {
+    if ((await cliEnv(env, "status")).code === 3) return;
+    await Bun.sleep(100);
+  }
+  throw new Error("server still up after stop");
 });

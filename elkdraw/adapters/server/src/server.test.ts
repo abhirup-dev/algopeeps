@@ -7,6 +7,7 @@ import {
   Client,
   StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { createMcpServer, ToolErrorBody, tools } from "@elkdraw/mcp";
 import { z } from "zod";
 import { type RunningServer, Store, startServer } from "./index.ts";
 
@@ -18,6 +19,8 @@ const Status = z.object({
   rev: z.number(),
   clients: z.number(),
 });
+
+const ErrorReply = z.object({ error: ToolErrorBody });
 
 const cleanup: (() => unknown)[] = [];
 afterEach(async () => {
@@ -211,20 +214,66 @@ test("store keyframes, replays from the last one, and cuts a torn line", () => {
   expect(new Store(dir, 2).scene()).toEqual([rect("b"), rect("c")]);
 });
 
-test("/mcp lists the placeholder status tool; REST dispatch runs it", async () => {
+test("/mcp lists the @elkdraw/mcp tools; REST maps errors to SURFACE.md codes", async () => {
   const { url } = start(tempDir());
   const client = new Client({ name: "test", version: "0.0.0" });
   await client.connect(
     new StreamableHTTPClientTransport(new URL(`${url}/mcp`)),
   );
   cleanup.push(() => client.close());
-  const { tools } = await client.listTools();
-  expect(tools.map((t) => t.name)).toEqual(["status"]);
+  const { tools: listed } = await client.listTools();
+  expect(listed.map((t) => t.name).sort()).toEqual(
+    tools.map((t) => t.name).sort(),
+  );
+  const viaMcp = await client.callTool({ name: "status", arguments: {} });
+  expect(viaMcp.structuredContent).toMatchObject({ session: "t", rev: 0 });
 
-  const res = await fetch(`${url}/api/tools/status`, { method: "POST" });
+  const post = (name: string, body?: string) =>
+    fetch(`${url}/api/tools/${name}`, {
+      method: "POST",
+      ...(body === undefined ? {} : { body }),
+    });
+  const res = await post("status");
   expect(await res.json()).toMatchObject({ session: "t", rev: 0 });
-  const bad = await fetch(`${url}/api/tools/nope`, { method: "POST" });
-  expect(bad.status).toBe(400);
+  const codes = await Promise.all(
+    [
+      post("nope"),
+      post("look", "{}"),
+      post("look", "{not json"),
+      post("lint", "{}"),
+    ].map(async (p) => {
+      const r = await p;
+      return [r.status, parseJson(ErrorReply, await r.text()).error.code];
+    }),
+  );
+  expect(codes).toEqual([
+    [404, "UNKNOWN_TOOL"],
+    [400, "INVALID_INPUT"],
+    [400, "INVALID_INPUT"],
+    [501, "NOT_IMPLEMENTED"],
+  ]);
+});
+
+test("a handler that throws a non-ToolError is a 500 INTERNAL", async () => {
+  const appDir = tempDir();
+  const server = startServer({
+    port: 0,
+    session: "t",
+    open: false,
+    appDir,
+    dataDir: tempDir(),
+    tools: () => ({
+      createMcpServer: () => createMcpServer(),
+      dispatch: () => Promise.reject(new Error("boom")),
+    }),
+  });
+  cleanup.push(server.stop);
+  const r = await fetch(`${server.url}/api/tools/lint`, { method: "POST" });
+  expect(r.status).toBe(500);
+  expect(parseJson(ErrorReply, await r.text()).error).toMatchObject({
+    code: "INTERNAL",
+    message: "boom",
+  });
 });
 
 test("rejects a foreign Host or Origin (DNS rebinding)", async () => {

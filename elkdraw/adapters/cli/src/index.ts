@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { Command } from "@commander-js/extra-typings";
 import { safeParseJson } from "@elkdraw/core";
 import {
+  baseUrl,
   inputJsonSchema,
   ServerStatus,
   type ToolDef,
@@ -27,15 +28,6 @@ class CliExit extends Error {
   ) {
     super(message);
   }
-}
-
-/** Empty env vars count as unset. */
-const nonEmpty = (value: string | undefined) =>
-  value === "" ? undefined : value;
-
-export function defaultUrl(env: Record<string, string | undefined>): string {
-  const port = nonEmpty(env["PORT"]) ?? DEFAULT_PORT;
-  return nonEmpty(env["ELKDRAW_URL"]) ?? `http://127.0.0.1:${port}`;
 }
 
 async function request(
@@ -76,11 +68,11 @@ async function fetchStatus(base: string): Promise<ServerStatus | undefined> {
   return parsed.value;
 }
 
-async function start(base: string): Promise<ServerStatus> {
+async function start(base: string, open: boolean): Promise<ServerStatus> {
   const running = await fetchStatus(base);
   if (running !== undefined) return running;
   const port = new URL(base).port || DEFAULT_PORT;
-  spawn(process.execPath, [SERVER_MAIN], {
+  spawn(process.execPath, [SERVER_MAIN, ...(open ? [] : ["--no-open"])], {
     detached: true,
     stdio: "ignore",
     env: { ...process.env, PORT: port },
@@ -176,7 +168,7 @@ function addToolCommand(program: Command, def: ToolDef): void {
 
 function baseOf(program: Command): string {
   const { url } = program.opts() as { url?: string };
-  return url ?? defaultUrl(process.env);
+  return url ?? baseUrl(process.env);
 }
 
 export function buildCli(): Command {
@@ -196,8 +188,9 @@ export function buildCli(): Command {
     .description(
       "Start the server detached (no-op when running); prints its status",
     )
-    .action(async () => {
-      console.log(JSON.stringify(await start(baseOf(program))));
+    .option("--no-open", "Do not open the canvas in a browser")
+    .action(async ({ open }) => {
+      console.log(JSON.stringify(await start(baseOf(program), open)));
     });
   program
     .command("stop")
@@ -218,7 +211,9 @@ export function buildCli(): Command {
       }
       console.log(JSON.stringify(status));
     });
-  for (const def of tools) addToolCommand(program, def);
+  // `status` is the lifecycle command above (GET /api/status, exit 3 when down).
+  for (const def of tools)
+    if (def.name !== "status") addToolCommand(program, def);
   return program;
 }
 

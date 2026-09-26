@@ -14,6 +14,7 @@ meaning carries over, so the two run side by side (`:3000` for yctimlin,
 
 | Tool         | Input (JSON Schema via `z.toJSONSchema`)                                        | Output                                         |
 | ------------ | ------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `status`     | `{}`                                                                            | `ServerStatus`                                 |
 | `add`        | `{elements: Skeleton[]}`                                                        | `ApplyReply`                                   |
 | `apply`      | `{text?: .mmd, patches?: AstPatch[], dryRun?, force?, ifRev?}`, text or patches | `ApplyReply`                                   |
 | `get`        | `{id}`                                                                          | `{rev, element: SceneElement}`                 |
@@ -33,12 +34,21 @@ meaning carries over, so the two run side by side (`:3000` for yctimlin,
 `Point` come from `@elkdraw/core` (CONTRACTS.md). `Skeleton` is loose
 (`{type, id?, ...}`) until the phase 1 skeleton schema lands.
 
-`start`, `stop` and `status` are CLI-only. An MCP host owns the lifecycle of
-the server it talks to, so they are not tools. The status JSON is still
-available to anyone as `GET /api/status`.
+`start` and `stop` are CLI-only: an MCP host owns the lifecycle of the server
+it talks to. `status` is both a tool (so a host learns which server, branch and
+canvas URL it is on) and the CLI command, which reads `GET /api/status`.
 
-All handlers are stubs in phase 0. They reject with `NOT_IMPLEMENTED` and echo
-the tool's input JSON Schema.
+In phase 0 only `status` is real. Every other tool rejects with
+`NOT_IMPLEMENTED` and echoes its input JSON Schema.
+
+Transports:
+
+- Streamable HTTP at `/mcp` on the server.
+- stdio via `bun elkdraw/adapters/mcp/src/stdio.ts`. It forwards every call to
+  `POST /api/tools/<name>` on the running server (base URL as for the CLI), so
+  it sees the same scene. It does not start the server; when the server is
+  down, calls fail with `UNREACHABLE`. For portless https URLs, set
+  `NODE_EXTRA_CA_CERTS=~/.portless/ca.pem` (Bun's fetch reads it).
 
 ## Mapping from yctimlin
 
@@ -140,8 +150,8 @@ The base URL is resolved in this order:
 3. `http://127.0.0.1:$PORT`;
 4. `http://127.0.0.1:3940`.
 
-`start` spawns `bun elkdraw/adapters/server/src/main.ts` detached, with `PORT`
-set from the URL's port. It then polls `GET /api/status`.
+`start [--no-open]` spawns `bun elkdraw/adapters/server/src/main.ts` detached,
+with `PORT` set from the URL's port. It then polls `GET /api/status`.
 
 ## REST contract (server lane implements)
 
@@ -167,29 +177,21 @@ ServerStatus = {
   clients: int, // connected browser tabs (WebSocket clients)
 };
 ToolErrorBody = {
-  code: "INVALID_INPUT" | "UNKNOWN_TOOL" | "NOT_IMPLEMENTED",
+  code: "INVALID_INPUT" | "UNKNOWN_TOOL" | "NOT_IMPLEMENTED" | "INTERNAL" | "UNREACHABLE",
   message: string,
   tool: string,
   inputSchema?: object,
 };
-httpStatus = { INVALID_INPUT: 400, UNKNOWN_TOOL: 404, NOT_IMPLEMENTED: 501 };
+httpStatus = {
+  INVALID_INPUT: 400, // bad input, or a body that is not JSON
+  UNKNOWN_TOOL: 404,
+  NOT_IMPLEMENTED: 501,
+  INTERNAL: 500, // any other error, e.g. a handler output failing its schema
+  UNREACHABLE: 503, // client-side only (stdio forwarding); the server never sends it
+};
 ```
 
-The tool route is `dispatch` plus a catch:
-
-```ts
-try {
-  return Response.json(await dispatch(name, body, handlers));
-} catch (error) {
-  if (!(error instanceof ToolError)) throw error;
-  return Response.json(
-    { error: error.body },
-    { status: httpStatus[error.body.code] },
-  );
-}
-```
-
-`dispatch` validates the input and fills gaps with `stubHandlers`. It also
-validates the handler's output against the tool's output schema. That failure is
-a `ZodError`, not a `ToolError`: any error other than a `ToolError` is a 500,
-which the CLI reports as exit 1.
+The route is implemented in `adapters/server/src/server.ts`: `dispatch` from
+`@elkdraw/mcp` plus this mapping. `dispatch` validates the input, fills gaps
+with `stubHandlers`, and validates the handler's output against the tool's
+output schema.
