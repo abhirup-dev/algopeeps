@@ -68,7 +68,7 @@ const manifest = z.strictObject({
 
 const scene = z.object({ elements: z.array(z.object({ id: z.string() })) });
 
-for (const name of ["yct", "batch"]) {
+for (const name of ["yct", "batch", "bst"]) {
   test(`${name}/defects.json is valid and references real elements`, async () => {
     const dir = `${dogfood}${name}/`;
     const m = parseJson(manifest, await Bun.file(`${dir}defects.json`).text());

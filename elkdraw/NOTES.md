@@ -175,3 +175,22 @@ later tasks should not need `bun add`.
   Lint verified with scratch files: app, mcp and cli importing it error;
   server and backends/excalidraw pass. `app/dist` after `vite build` has no
   elkjs (grep for `elkjs`, `elk-worker`, `org.eclipse.elk`: 0 files).
+
+### 1.13 BST defect manifest (2026-09-26)
+
+- `test/fixtures/dogfood/bst/`: `scene.excalidraw`, `final.png`,
+  `defects.json` for dogfood round 3 (tester A, yctimlin server). No round-3
+  export existed (`/tmp/xd_r3.excalidraw` predates both fix patches), but the
+  tester's server on :3010 was still up with its browser tab, so the scene is a
+  fresh `export` (read-only) whose geometry equals the tester's own final
+  `query` dump (`/tmp/xd_r3_all.json`, 0 mismatches). Filtered to the 65 BST
+  elements plus their 30 bound `-label` texts; the ride-hailing round-2 state
+  on the same canvas is dropped (its defects are in no manifest). `final.png`
+  is the tester's last screenshot `/tmp/xd_bst_v3.png` cropped to the tester's
+  own 1000x720 window at x=2900.
+- Final PNG is clean: both defects (t10, t12 `text-wrapped`) are
+  `fixedInFinal: true`, so BST scoring only measures false positives
+  (`flaggedFixed`, `cleanRegionHits`); `missed` is 0 by construction. The
+  textAlign-ignored index labels are in `unmapped` (no v0 rule). Round 3 has
+  no section in `dogfood-excalidraw-yctimlin.md`; `report` points at
+  `dogfood-synthesis.md`, and sources cite transcript d24dbb60 line 407.
