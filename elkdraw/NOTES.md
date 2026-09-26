@@ -761,3 +761,36 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   files (checked with `grep '^#'` before/after against
   `~/.claude/skills/excalidraw-skill`).
 - Needs from others: none. Nothing found outside `Owns:`.
+
+### 1.12 Phase 1 eval (2026-09-26)
+
+- Report: `eval/phase-1/phase-1.md`. Both tasks fail the §17.4 bar. On
+  ride-hailing, calls and tokens are flat against the dogfood (35 calls,
+  59969 tokens). On BST they are 3.5x and 2.5x. Lint errors left: 0 on both.
+  Missed defects: 1 on each. Recommendation: go for Phase 2, after four
+  Phase 1 bugs are fixed first (place-only apply wipes the element; partial
+  upsert resets it; bound arrows don't re-route on move; frames clip
+  cross-zone arrows).
+- Gotcha: managed settings on this machine set
+  `allowManagedPermissionRulesOnly`, so `claude -p --allowedTools` rules are
+  ignored and even `Bash(bun:*)` gets denied. The allowlist therefore lives
+  in `eval/src/gate.ts`, a PreToolUse hook that `live()` installs through
+  `--settings`. `live()` also passes `--setting-sources project,local` and
+  `--strict-mcp-config`. `--allowed-tools RULE` (repeatable) replaces the
+  default `ELKDRAW_TOOLS`. Denials: `transcript.ts` `denials`, and the
+  markdown row gained a column.
+- `live()` resolves cwd with realpath: `/tmp` is `/private/tmp`, and the
+  transcript dir follows the real path. It saves `<cwd>.result.json`.
+- Setup: `eval/phase-1/setup.sh <task> <port>`. The server's `TMPDIR` must
+  sit inside the scratch cwd, or the tester cannot Read the look and
+  screenshot PNGs. `export` is still `NOT_IMPLEMENTED`, so final scenes come
+  from `query --limit 1000`.
+- Whole-canvas `screenshot` crops the bottom of the scene (the legend's
+  bottom edge on ride-hailing); `look` does not.
+- 4c0.11: a fresh Opus given only the skill finished the ride-hailing draft
+  and both edits. Skill findings:
+  - The CLI path is relative to the repo root.
+  - The `/tmp/scene.json` example sits outside a sandboxed cwd.
+  - It claims arrows re-route on move, which they don't.
+  - It says `clear` is both unimplemented and available.
+  - Its 120 px gap advice still gets `label-on-own-arrowhead` at 140 px.

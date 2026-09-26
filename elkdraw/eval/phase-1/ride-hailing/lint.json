@@ -1,0 +1,19 @@
+{
+  "rev": 9,
+  "hits": [
+    {
+      "code": "crossing",
+      "ids": ["s7", "notif-apns"],
+      "bbox": { "x": 1797.9, "y": 641, "width": 8, "height": 8 },
+      "severity": "info",
+      "hint": "Reorder shapes if it's cheap; otherwise fine to leave"
+    },
+    {
+      "code": "crossing",
+      "ids": ["pay-stripe", "trip-pg"],
+      "bbox": { "x": 446, "y": 641, "width": 8, "height": 8 },
+      "severity": "info",
+      "hint": "Reorder shapes if it's cheap; otherwise fine to leave"
+    }
+  ]
+}

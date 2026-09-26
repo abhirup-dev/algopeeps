@@ -1,0 +1,110 @@
+{
+  "duration_api_ms": 334830,
+  "stop_reason": "end_turn",
+  "session_id": "a536f468-f3a4-4919-a4d3-1a3baeaca8eb",
+  "total_cost_usd": 1.6091534,
+  "usage": {
+    "input_tokens": 64,
+    "cache_creation_input_tokens": 74250,
+    "cache_read_input_tokens": 1745587,
+    "output_tokens": 33289,
+    "output_tokens_details": { "thinking_tokens": 9132 },
+    "server_tool_use": { "web_search_requests": 0, "web_fetch_requests": 0 },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 74250,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 143,
+        "cache_read_input_tokens": 78011,
+        "cache_creation_input_tokens": 5189,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 5189
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 64,
+      "outputTokens": 33289,
+      "cacheReadInputTokens": 1745587,
+      "cacheCreationInputTokens": 74250,
+      "webSearchRequests": 0,
+      "costUSD": 1.6091534,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 9132,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01GEKw8KJ1cGBHzZshTSLT8Z",
+      "tool_input": {
+        "command": "cd /private/tmp/elkdraw-eval-ride-hailing.peEs; ls; ls elkdraw canvas canvas/docs; wc -l elkdraw/AGENTS.md .claude/skills/elkdraw/references/cheatsheet.md; date +%s; bun elkdraw/adapters/cli/src/main.ts status --url http://127.0.0.1:4721"
+      }
+    },
+    {
+      "tool_name": "Read",
+      "tool_use_id": "toolu_014nc7unapDea6EyQMChsr8c",
+      "tool_input": {
+        "file_path": "/private/tmp/elkdraw-eval-ride-hailing.peEs/elkdraw/AGENTS.md"
+      }
+    },
+    {
+      "tool_name": "Write",
+      "tool_use_id": "toolu_01MmomcDdvsHTt7B5vGXHyAT",
+      "tool_input": {
+        "file_path": "/tmp/elkdraw-ride-peEs/scene.json",
+        "content": "{\n  \"elements\": [\n    {\"id\": \"title\", \"type\": \"text\", \"x\": 60, \"y\": 0, \"text\": \"Ride-hailing: Request a ride\", \"fontSize\": 32},\n\n    {\"id\": \"edge\", \"type\": \"frame\", \"x\": 60, \"y\": 80, \"width\": 1660, \"height\": 170, \"name\": \"Edge\", \"children\": [\"rider\", \"gateway\", \"auth\", \"driver\"]},\n    {\"id\": \"core\", \"type\": \"frame\", \"x\": 60, \"y\": 340, \"width\": 1660, \"height\": 390, \"name\": \"Core services\", \"children\": [\"trip\", \"pricing\", \"matching\", \"location\", \"payment\", \"notification\"]},\n    {\"id\": \"data\", \"type\": \"frame\", \"x\": 60, \"y\": 820, \"width\": 1660, \"height\": 200, \"name\": \"Data\", \"children\": [\"postgres\", \"kafka\", \"analytics\", \"redis\"]},\n\n    {\"id\": \"rider\", \"type\": \"rectangle\", \"x\": 100, \"y\": 130, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Rider app\"}},\n    {\"id\": \"gateway\", \"type\": \"rectangle\", \"x\": 440, \"y\": 130, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"API gateway\"}},\n    {\"id\": \"auth\", \"type\": \"rectangle\", \"x\": 780, \"y\": 130, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Auth service\"}},\n    {\"id\": \"driver\", \"type\": \"rectangle\", \"x\": 1460, \"y\": 130, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Driver app\"}},\n\n    {\"id\": \"trip\", \"type\": \"rectangle\", \"x\": 440, \"y\": 400, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Trip service\"}},\n    {\"id\": \"pricing\", \"type\": \"rectangle\", \"x\": 780, \"y\": 400, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Pricing service\"}},\n    {\"id\": \"matching\", \"type\": \"rectangle\", \"x\": 1120, \"y\": 400, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Matching service\"}},\n    {\"id\": \"location\", \"type\": \"rectangle\", \"x\": 1460, \"y\": 400, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Location service\"}},\n    {\"id\": \"payment\", \"type\": \"rectangle\", \"x\": 440, \"y\": 610, \"width\": 200, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Payment service\"}},\n    {\"id\": \"notification\", \"type\": \"rectangle\", \"x\": 1120, \"y\": 610, \"width\": 220, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#a5d8ff\", \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"Notification service\"}},\n\n    {\"id\": \"postgres\", \"type\": \"ellipse\", \"x\": 90, \"y\": 880, \"width\": 220, \"height\": 80, \"fillStyle\": \"solid\", \"backgroundColor\": \"#b2f2bb\", \"strokeColor\": \"#2f9e44\", \"label\": {\"text\": \"Postgres (trips)\"}},\n    {\"id\": \"kafka\", \"type\": \"ellipse\", \"x\": 770, \"y\": 880, \"width\": 220, \"height\": 80, \"fillStyle\": \"solid\", \"backgroundColor\": \"#b2f2bb\", \"strokeColor\": \"#2f9e44\", \"label\": {\"text\": \"Kafka event bus\"}},\n    {\"id\": \"analytics\", \"type\": \"ellipse\", \"x\": 1100, \"y\": 880, \"width\": 240, \"height\": 80, \"fillStyle\": \"solid\", \"backgroundColor\": \"#b2f2bb\", \"strokeColor\": \"#2f9e44\", \"label\": {\"text\": \"Analytics warehouse\"}},\n    {\"id\": \"redis\", \"type\": \"ellipse\", \"x\": 1430, \"y\": 880, \"width\": 260, \"height\": 80, \"fillStyle\": \"solid\", \"backgroundColor\": \"#b2f2bb\", \"strokeColor\": \"#2f9e44\", \"label\": {\"text\": \"Redis geo-index\\n(driver locations)\"}},\n\n    {\"id\": \"stripe\", \"type\": \"rectangle\", \"x\": -260, \"y\": 610, \"width\": 180, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#e9ecef\", \"strokeColor\": \"#868e96\", \"label\": {\"text\": \"Stripe\"}},\n    {\"id\": \"apns\", \"type\": \"rectangle\", \"x\": 1800, \"y\": 610, \"width\": 180, \"height\": 70, \"fillStyle\": \"solid\", \"backgroundColor\": \"#e9ecef\", \"strokeColor\": \"#868e96\", \"label\": {\"text\": \"APNs / FCM\"}},\n\n    {\"id\": \"s1\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"rider\"}, \"end\": {\"id\": \"gateway\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"1 request\"}},\n    {\"id\": \"s2\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"gateway\"}, \"end\": {\"id\": \"auth\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"2 verify\"}},\n    {\"id\": \"s3\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"auth\"}, \"end\": {\"id\": \"trip\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"3 create trip\"}},\n    {\"id\": \"s4\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"trip\"}, \"end\": {\"id\": \"pricing\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"4 quote\"}},\n    {\"id\": \"s5\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"pricing\"}, \"end\": {\"id\": \"matching\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"5 match\"}},\n    {\"id\": \"s6\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"matching\"}, \"end\": {\"id\": \"location\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"6 nearby\"}},\n    {\"id\": \"s7\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"location\"}, \"end\": {\"id\": \"redis\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"7 GEOSEARCH\"}},\n    {\"id\": \"s8\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"matching\"}, \"end\": {\"id\": \"notification\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"8 notify\"}},\n    {\"id\": \"s9\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"trip\"}, \"end\": {\"id\": \"payment\"}, \"strokeColor\": \"#1971c2\", \"label\": {\"text\": \"9 charge\"}},\n\n    {\"id\": \"pay-stripe\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"payment\"}, \"end\": {\"id\": \"stripe\"}, \"strokeColor\": \"#1971c2\"},\n    {\"id\": \"notif-apns\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"notification\"}, \"end\": {\"id\": \"apns\"}, \"strokeColor\": \"#1971c2\"},\n    {\"id\": \"apns-driver\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"apns\"}, \"end\": {\"id\": \"driver\"}, \"strokeColor\": \"#1971c2\"},\n    {\"id\": \"trip-pg\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"trip\"}, \"end\": {\"id\": \"postgres\"}, \"strokeColor\": \"#1971c2\"},\n\n    {\"id\": \"a-trip\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"trip\"}, \"end\": {\"id\": \"kafka\"}, \"strokeColor\": \"#e8590c\", \"strokeStyle\": \"dashed\"},\n    {\"id\": \"a-pay\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"payment\"}, \"end\": {\"id\": \"kafka\"}, \"strokeColor\": \"#e8590c\", \"strokeStyle\": \"dashed\"},\n    {\"id\": \"a-notif\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"notification\"}, \"end\": {\"id\": \"kafka\"}, \"strokeColor\": \"#e8590c\", \"strokeStyle\": \"dashed\"},\n    {\"id\": \"a-analytics\", \"type\": \"arrow\", \"x\": 0, \"y\": 0, \"start\": {\"id\": \"kafka\"}, \"end\": {\"id\": \"analytics\"}, \"strokeColor\": \"#e8590c\", \"strokeStyle\": \"dashed\"},\n\n    {\"id\": \"legend\", \"type\": \"frame\", \"x\": 60, \"y\": 1100, \"width\": 460, \"height\": 200, \"name\": \"Legend\", \"children\": [\"lg-sync\", \"lg-sync-t\", \"lg-async\", \"lg-async-t\", \"lg-store\", \"lg-store-t\"]},\n    {\"id\": \"lg-sync\", \"type\": \"arrow\", \"x\": 100, \"y\": 1150, \"points\": [[0, 0], [100, 0]], \"strokeColor\": \"#1971c2\"},\n    {\"id\": \"lg-sync-t\", \"type\": \"text\", \"x\": 230, \"y\": 1138, \"text\": \"sync call\", \"fontSize\": 20},\n    {\"id\": \"lg-async\", \"type\": \"arrow\", \"x\": 100, \"y\": 1200, \"points\": [[0, 0], [100, 0]], \"strokeColor\": \"#e8590c\", \"strokeStyle\": \"dashed\"},\n    {\"id\": \"lg-async-t\", \"type\": \"text\", \"x\": 230, \"y\": 1188, \"text\": \"async event\", \"fontSize\": 20},\n    {\"id\": \"lg-store\", \"type\": \"ellipse\", \"x\": 100, \"y\": 1235, \"width\": 100, \"height\": 45, \"fillStyle\": \"solid\", \"backgroundColor\": \"#b2f2bb\", \"strokeColor\": \"#2f9e44\"},\n    {\"id\": \"lg-store-t\", \"type\": \"text\", \"x\": 230, \"y\": 1245, \"text\": \"data store\", \"fontSize\": 20}\n  ]\n}\n"
+      }
+    },
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01LSoDgq66Gf9Wz9XExDzDgH",
+      "tool_input": {
+        "command": "bun elkdraw/adapters/cli/src/main.ts get --url http://127.0.0.1:4721 --id s3; bun elkdraw/adapters/cli/src/main.ts describe --url http://127.0.0.1:4721 --scope frame:core"
+      }
+    }
+  ],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": { "background": 0, "foreground": 0, "unset": 0 },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": { "parent": 0, "user": 0, "system": 0 },
+    "refused": { "depth_limit": 0, "concurrency_limit": 0, "budget": 0 },
+    "by_type": {}
+  },
+  "is_error": false,
+  "num_turns": 37,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "I drew the 51-element ride-hailing diagram with elkdraw (all requirements and both edits met, but zones are dashed rectangles because frames clipped cross-zone arrows); the worst bugs were that a `place` move silently turned Pricing into a blank unlabelled box, partial updates wiped styles, and moved shapes left their arrows dangling — report: `canvas/docs/dogfood-elkdraw.md`.",
+  "ttft_ms": 2465,
+  "type": "result",
+  "duration_ms": 343618,
+  "uuid": "021065a0-5a86-4217-b4a3-de518da8bc20",
+  "ttft_stream_ms": 1835,
+  "time_to_request_ms": 231,
+  "first_content_frame_ms": 1835,
+  "queued_turn_count": 0,
+  "result_index": 0
+}
