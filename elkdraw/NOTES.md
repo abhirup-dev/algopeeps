@@ -912,6 +912,7 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   regenerated; CONTRACTS.md changelog; SKILL.md table has 2 new rows and 2
   changed ones. Stale elsewhere (not owned): CONTEXT.md "twelve lint codes"
   and skill/MAINTAINERS.md "12 codes".
+
 ### 1.17 Frames: cross-zone arrows, frame re-send, place on a frame (2026-09-26)
 
 - Root cause of p1rh-01: `convertToExcalidrawElements`'s frame step sets
