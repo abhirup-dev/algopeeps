@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "bin": {
+    "elkdraw-eval": "./src/cli.ts"
+  },
   "dependencies": {
     "@elkdraw/core": "workspace:*",
     "@elkdraw/backend-excalidraw": "workspace:*",
@@ -13,7 +16,8 @@
     "@elkdraw/sidecar": "workspace:*",
     "@elkdraw/mcp": "workspace:*",
     "@elkdraw/server": "workspace:*",
-    "@elkdraw/cli": "workspace:*"
+    "@elkdraw/cli": "workspace:*",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.0.0",

@@ -105,6 +105,9 @@
     "eval": {
       "name": "@elkdraw/eval",
       "version": "0.0.0",
+      "bin": {
+        "elkdraw-eval": "./src/cli.ts",
+      },
       "dependencies": {
         "@elkdraw/backend-excalidraw": "workspace:*",
         "@elkdraw/backend-fake": "workspace:*",
@@ -113,6 +116,7 @@
         "@elkdraw/mcp": "workspace:*",
         "@elkdraw/server": "workspace:*",
         "@elkdraw/sidecar": "workspace:*",
+        "zod": "^4.6.5",
       },
       "devDependencies": {
         "@modelcontextprotocol/client": "2.0.0",

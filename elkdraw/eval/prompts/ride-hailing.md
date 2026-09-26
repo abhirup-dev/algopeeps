@@ -1,0 +1,1 @@
+Read canvas/briefs/DOGFOOD-diagram.md and follow it. Tool under test: ELK draw (elkdraw); read its AGENTS.md and use its CLI or MCP tools only. Use your own session and port; never touch another canvas. Report file: canvas/docs/dogfood-elkdraw.md. When done, reply with a one-line summary.
