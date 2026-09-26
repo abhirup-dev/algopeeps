@@ -118,6 +118,9 @@ const Text = z.strictObject({
 const Frame = z.strictObject({
   type: z.literal("frame"),
   ...common,
+  // Optional: convertToExcalidrawElements sizes a frame from its children.
+  x: z.number().exactOptional(),
+  y: z.number().exactOptional(),
   children: z.array(SkeletonId),
   name: z.string().exactOptional(),
 });

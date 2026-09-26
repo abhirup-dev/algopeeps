@@ -205,5 +205,5 @@ later tasks should not need `bun add`.
 - Dogfood scenes are wire scenes, not skeleton input: raw, they fail. The test
   projects them (bound text → `label`, bindings → `start`/`end`, store fields
   dropped by name) and the projection validates. Keys Excalidraw ignores are
-  dropped by name and counted: `fontSize` on non-text (yct 3, batch 26, most
-  disagreeing with the label's fontSize) and `elbowed` (yct 20, batch 21).
+  dropped by name and counted: `fontSize` on non-text (yct 3, all 3
+  disagreeing with the label's fontSize; batch 26, 9 disagreeing) and `elbowed` (yct 20, batch 21).

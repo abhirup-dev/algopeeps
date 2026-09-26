@@ -58,6 +58,7 @@ test("a terse skeleton validates", () => {
         label: { text: "Trip" },
       },
       { type: "ellipse", id: "ride/data/pg", x: 200, y: 0 },
+      { type: "frame", id: "ride/core", children: ["ride/core/trip"] },
       {
         type: "arrow",
         id: "ride/core/trip->ride/data/pg",
