@@ -1,7 +1,7 @@
 // The one boundary between wire elements and Excalidraw's element types.
 import { restoreElements } from "@excalidraw/excalidraw";
 import type { OrderedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import type { Element } from "./protocol.ts";
+import type { Element } from "@elkdraw/core";
 
 export type SceneElement = OrderedExcalidrawElement;
 
