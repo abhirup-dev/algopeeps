@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "update-snapshots": "bun test --update-snapshots src/snapshot.test.ts"
+  },
   "dependencies": {
     "@elkdraw/core": "workspace:*",
     "@elkdraw/backend-excalidraw": "workspace:*",
