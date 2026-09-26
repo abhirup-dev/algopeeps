@@ -2,7 +2,7 @@
 // `bun run --cwd elkdraw/sidecar test:e2e` (builds the app first).
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { type Box, Element } from "@elkdraw/core";
+import { type Box, Element, type SkeletonElement } from "@elkdraw/core";
 import { z } from "zod";
 
 const BoxShape = z.object({
@@ -312,6 +312,57 @@ test("measureText: wraps, and a cache hit skips the browser", async () => {
     .catch((e: unknown) => e);
   expect(String(miss)).toContain("start()");
 }, 60_000);
+
+test("convert: a frame's children already on the canvas keep their id and version", async () => {
+  // Regression: convertToExcalidrawElements only resolves ids within its own
+  // batch, so a frame naming a pre-existing (not created this call) child
+  // used to throw "Element with <id> wasn't mapped correctly".
+  const existing: Element = {
+    id: "existing-rect",
+    type: "rectangle",
+    version: 5,
+    versionNonce: 111,
+    x: 100,
+    y: 100,
+    width: 50,
+    height: 50,
+    angle: 0,
+    strokeColor: "#1e1e1e",
+    backgroundColor: "transparent",
+    fillStyle: "solid",
+    strokeWidth: 1,
+    strokeStyle: "solid",
+    roughness: 1,
+    opacity: 100,
+    groupIds: [],
+    frameId: null,
+    roundness: null,
+    seed: 1,
+    boundElements: null,
+    updated: 1,
+    link: null,
+    locked: false,
+    isDeleted: false,
+  };
+  const skeletons: SkeletonElement[] = [
+    {
+      type: "frame",
+      id: "frame-1",
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 300,
+      children: ["existing-rect"],
+    },
+  ];
+  const out = await sidecar.convert(skeletons, [existing]);
+  const frame = out.find((e) => e.id === "frame-1");
+  const rect = out.find((e) => e.id === "existing-rect");
+  expect(frame).toBeDefined();
+  expect(rect?.version).toBe(5);
+  expect(rect?.["versionNonce"]).toBe(111);
+  expect(rect?.["frameId"]).toBe(frame?.id);
+});
 
 test("bad input is rejected before the page", async () => {
   const error: unknown = await sidecar

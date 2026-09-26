@@ -156,36 +156,47 @@ async function convert(
         t.text,
       );
   }
-  // convertToExcalidrawElements binds only within its batch: pass the scene
-  // elements an arrow names as bare bindable skeletons, then merge the new
-  // binding back into the stored element.
+  // convertToExcalidrawElements resolves ids only within its own batch: an
+  // arrow end or a frame `children` entry naming a stored element outside the
+  // batch (not created in this call) is otherwise unresolvable and throws
+  // ("Element with <id> wasn't mapped correctly" for a frame child). Pass
+  // those stored elements in as bare skeletons too, then merge whatever field
+  // the reference changed (a binding, a frameId) back onto the original, so
+  // its id, version and everything else stay exactly as stored.
   const batch = new Set(skeletons.map((s) => s.id));
   const stored = new Map(scene.map((e) => [e.id, e]));
-  const anchors = new Map<string, Element>();
+  const referenced = new Map<string, Element>();
   for (const s of skeletons) {
     if (s.type !== "arrow" && s.type !== "line") continue;
     for (const end of [s.start, s.end]) {
       const e = end && !batch.has(end.id) ? stored.get(end.id) : undefined;
       if (e && BINDABLE.has(e.type) && e["isDeleted"] !== true)
-        anchors.set(e.id, e);
+        referenced.set(e.id, e);
     }
   }
-  const input = [...skeletons, ...anchors.values()];
+  for (const s of skeletons) {
+    if (s.type !== "frame") continue;
+    for (const id of s.children) {
+      const e = !batch.has(id) ? stored.get(id) : undefined;
+      if (e && e["isDeleted"] !== true) referenced.set(id, e);
+    }
+  }
+  const input = [...skeletons, ...referenced.values()];
   // Unchecked cast: SkeletonElement is our strict subset of Excalidraw's
-  // skeleton, and anchors are stored Excalidraw elements.
+  // skeleton, and referenced entries are stored Excalidraw elements.
   const out = convertToExcalidrawElements(
     input as unknown as Parameters<typeof convertToExcalidrawElements>[0],
     { regenerateIds: false },
   );
   const merged = out.map((el): Element => {
-    const prev = anchors.get(el.id);
+    const prev = referenced.get(el.id);
     if (!prev) return { ...el };
     const had = Array.isArray(prev["boundElements"])
       ? (prev["boundElements"] as { id: string; type: string }[])
       : [];
     const ids = new Set(had.map((b) => b.id));
     const added = (el.boundElements ?? []).filter((b) => !ids.has(b.id));
-    return { ...prev, boundElements: [...had, ...added] };
+    return { ...prev, boundElements: [...had, ...added], frameId: el.frameId };
   });
   const byId = new Map(merged.map((e) => [e.id, e]));
   return merged.map((e) => route(e, byId));
