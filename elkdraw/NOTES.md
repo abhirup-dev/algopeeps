@@ -545,3 +545,20 @@ test:e2e`, ~2 s after the app build): per fixture, sidecar `measure` →
 - bst-first now has no must-flag defect: it only guards false positives, like
   bst. If a Virgil-16 wrap fixture is wanted, it has to be built for our
   renderer.
+
+### 1.6b As-painted fixture variants (2026-09-26)
+
+- `test/fixtures/dogfood/{yct,batch,bst-first}-painted/`: the scenes as the
+  tester's browser painted them, written by `test/parity/lint/paint.ts`
+  (all text fontFamily 5, bound labels 20 px; bst-first `t12`, `t10` height
+  44 → 80, measured from final.png's ink). Manifests = originals minus
+  `envOnly`; batch-10 gets a new `notDrawn` field (label ink to arrowhead wing
+  14 px in final.png, 13 px in our snap; tip 38 px from the label box).
+- `lint.e2e.ts` now runs 7 fixtures: yct-painted 14/14, batch-painted 7/7,
+  bst-first-painted 2/2 must-flag matched; 0 clean-region hits, 0 unlisted
+  hits, no fixed defect matched. No lint change: every defect visible in the
+  painted snaps is flagged.
+- Painted label boxes match final.png: batch "1 request" inks 586-673 in
+  final.png and 585.5-674 in our snap.
+- `test/parity/src/defects.test.ts` (not owned here) still schema-checks only
+  the 4 originals; adding the painted ones needs `notDrawn` in its schema.

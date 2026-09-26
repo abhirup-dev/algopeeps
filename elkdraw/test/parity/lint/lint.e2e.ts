@@ -2,8 +2,9 @@
 // test/fixtures/dogfood/*/defects.json is flagged, no fixed defect is, and no
 // hit falls in a clean region or matches no defect. Pipeline as in production:
 // sidecar measure -> readScene -> lint. Defects marked `envOnly` were painted
-// only in the tester's browser and are out of the must-flag set (see
-// test/fixtures/README.md). Run with `bun run --cwd elkdraw/test/parity test:e2e`.
+// only in the tester's browser; `notDrawn` ones are drawn in neither render.
+// Both are out of the must-flag set (see test/fixtures/README.md). The
+// `-painted` variants are the scenes as the tester's browser painted them. Run with `bun run --cwd elkdraw/test/parity test:e2e`.
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { Element, parseJson } from "@elkdraw/core";
 import { lint } from "@elkdraw/core/engine";
@@ -22,6 +23,9 @@ const Manifest = z.object({
       ids: z.array(z.string()),
       fixedInFinal: z.boolean(),
       envOnly: z.object({ reason: z.string() }).optional(),
+      notDrawn: z
+        .object({ reason: z.string(), evidence: z.string() })
+        .optional(),
     }),
   ),
   cleanRegions: z.array(
@@ -30,8 +34,16 @@ const Manifest = z.object({
 });
 const Scene = z.object({ elements: z.array(Element) });
 
-/** Must-flag defects per fixture, from the manifests (open, not envOnly). */
-const EXPECTED = { yct: 11, batch: 3, "bst-first": 0, bst: 0 };
+/** Must-flag defects per fixture (open, not envOnly or notDrawn). */
+const EXPECTED = {
+  yct: 11,
+  batch: 3,
+  "bst-first": 0,
+  bst: 0,
+  "yct-painted": 14,
+  "batch-painted": 7,
+  "bst-first-painted": 2,
+};
 
 const sidecar = new Sidecar();
 beforeAll(async () => {
@@ -68,7 +80,9 @@ for (const [name, mustFlag] of Object.entries(EXPECTED)) {
           d.ids.every((id) => h.ids.includes(id)),
       );
 
-    const open = m.defects.filter((d) => !d.fixedInFinal && !d.envOnly);
+    const open = m.defects.filter(
+      (d) => !d.fixedInFinal && !d.envOnly && !d.notDrawn,
+    );
     expect(open.length).toBe(mustFlag);
     expect(open.filter((d) => !matches(d).length).map((d) => d.id)).toEqual([]);
     expect(

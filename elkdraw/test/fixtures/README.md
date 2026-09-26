@@ -11,6 +11,7 @@ fixtures/
   dogfood/batch/      scene.excalidraw  final.png  defects.json   batch-path tester
   dogfood/bst/        scene.excalidraw  final.png  defects.json   round-3 BST, final
   dogfood/bst-first/  scene.excalidraw  final.png  defects.json   round-3 BST, first add
+  dogfood/*-painted/  scene.excalidraw  final.png  defects.json   yct, batch, bst-first as the tester's browser painted them
   tasks/              ride-hailing.mmd  bst.mmd                    the two dogfood tasks as Mermaid
   mermaid/            <family>-N.mmd                               Mermaid docs samples, 10 families
 ```
@@ -46,6 +47,27 @@ on the same canvas. The PNGs are cropped to the tester's own 1000x720 window
 The final BST is clean, so `bst` only measures false positives; `bst-first`
 holds the same two wraps unfixed and is the one that tests lint.
 
+### As painted (`*-painted`)
+
+`yct-painted`, `batch-painted` and `bst-first-painted` are the same scenes
+rewritten to what the testers' browser painted (see `envOnly` below), so
+`text-wrapped` and `label-on-own-arrowhead` have real must-flag cases. Written
+by `bun elkdraw/test/parity/lint/paint.ts` from the originals:
+
+- every text in Excalifont (fontFamily 5); bound labels at 20 px (the server
+  stores none; free texts keep their stored size, which the server has too);
+- container geometry `final.png` shows changed: in `bst-first` the wrapped
+  keys stretched circles `t12` and `t10` to height 80 (ink 88 px tall at
+  1x in `final.png`, 85 in our snap; the unstretched `t8` inks 52 and 48).
+  yct and batch keep their geometry.
+
+`final.png` is a copy of the original's. `defects.json` is the original's with
+every `envOnly` dropped (those defects are drawn now and must be flagged), and
+batch-10 marked `notDrawn`. `evidence/` holds the same composites as the
+originals, with the painted scene on the right. Clean regions are unchanged:
+the stretched circles stay inside the `tree` region's bbox, and no region's
+ids changed.
+
 The PNG is what the browser rendered and is the truth. The stored geometry is
 not: arrow label `x/y` and arrow endpoints are recomputed at render time (for
 example the stored yct `a8-label` box overlaps Matching and Notification, but
@@ -67,7 +89,8 @@ measured boxes, as the design says.
     "reported": true,                // false = seen in final.png, not in the report
     "fixedInFinal": false,           // true = fixed during the session; still listed
     "note": "optional history",
-    "envOnly": { "reason": "…", "evidence": "evidence/batch-12.png" } // optional, see below
+    "envOnly": { "reason": "…", "evidence": "evidence/batch-12.png" }, // optional, see below
+    "notDrawn": { "reason": "…", "evidence": "evidence/batch-10.png" }  // optional, see below
   }],
   "cleanRegions": [{ "name": "legend", "ids": […], "bbox": {x,y,width,height} }],
   "unmapped": [{ "description", "source", "reason" }]
@@ -78,7 +101,8 @@ measured boxes, as the design says.
   defect's `rule` (or `ruleGap`: lint 1.5 implements both gap codes) and its
   ids include all of the defect's `ids`. Lint names bound text
   `<owner>#label`; the test maps it to the fixtures' `<owner>-label`. Every
-  defect with `fixedInFinal: false` and no `envOnly` must be matched; no defect
+  defect with `fixedInFinal: false` and no `envOnly` or `notDrawn` must be
+  matched; no defect
   with `fixedInFinal: true` may be; every hit must match some defect. The
   schema test guarantees no hit can match both a fixed and an unfixed entry (a
   fixed entry's ids are never a subset of an unfixed entry's ids under the same
@@ -97,7 +121,11 @@ measured boxes, as the design says.
   Excalidraw's defaults (Excalifont 20 px), while the exported scene records
   Virgil 16 (nodes) or 14 (arrow labels). Re-measured with bound labels at
   Excalifont 20, lint flags 9 of the 10; batch-10 is a near-miss in both
-  renders.
+  renders. The `*-painted` variants hold them as must-flag defects.
+- **`notDrawn`:** reported, but drawn in neither `final.png` nor our render of
+  the painted scene; `reason` records the measured gap. Only batch-10 in
+  `batch-painted`: label ink to the arrowhead's wing is 14 px in `final.png`
+  and 13 px in our snap (tip 38 px from the label box; lint fires under 30).
 - **Clean regions:** a lint hit whose ids all belong to one region's `ids` is a
   false positive. `bbox` (scene coordinates, 10 px padding) is for `look` and
   humans; the ids are the contract. Regions include the legends (unbound arrows
@@ -123,6 +151,9 @@ measured boxes, as the design says.
 | batch     | 17      | 11       | 6            | 8       | 4         | 4        | 5        | 3         |
 | bst       | 2       | 2        | 0            | 0       | 0         | 1        | 0        | 0         |
 | bst-first | 2       | 2        | 0            | 2       | 0         | 1        | 2        | 0         |
+
+The `*-painted` variants have the same defect lists; must flag: yct-painted
+14, batch-painted 7 (batch-10 is `notDrawn`), bst-first-painted 2.
 
 Not in any fixture: the Mermaid-path scene (batch report §2.6, cleared before
 the rebuild), and round 2 defects (Analytics over Postgres after the "human"
