@@ -12,34 +12,49 @@ meaning carries over, so the two run side by side (`:3000` for yctimlin,
 
 ## Tools
 
-| Tool         | Input (JSON Schema via `z.toJSONSchema`)                                        | Output                                         |
-| ------------ | ------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `status`     | `{}`                                                                            | `ServerStatus`                                 |
-| `add`        | `{elements: Skeleton[]}`                                                        | `ApplyReply`                                   |
-| `apply`      | `{text?: .mmd, patches?: AstPatch[], dryRun?, force?, ifRev?}`, text or patches | `ApplyReply`                                   |
-| `get`        | `{id}`                                                                          | `{rev, element: SceneElement}`                 |
-| `describe`   | `{scope?}`                                                                      | `{rev, text}`                                  |
-| `query`      | `{type?, ids?, bbox?: Box, limit?}`                                             | `{rev, elements: SceneElement[], truncated}`   |
-| `screenshot` | `{format?: png\|svg, out?, maxPx?}`                                             | `{path, format, width, height}`                |
-| `export`     | `{format: excalidraw\|obsidian\|mmd\|svg\|png, out?}`                           | `{format, path?, content?}`                    |
-| `snapshot`   | `{action: save\|list\|restore, name?}`                                          | `{rev, snapshots: {name, rev, time}[]}`        |
-| `clear`      | `{yes: true}`                                                                   | `{rev, deleted}`                               |
-| `lint`       | `{scope?, ids?}`                                                                | `{rev, hits: LintHit[]}`                       |
-| `look`       | `{target, r?, marks?, maxPx?, out?}`                                            | `{path, bbox: Box, scale, marks: {id: Point}}` |
-| `diff`       | `{from?, to?}` (rev or `.mmd` path)                                             | `{changes: FeedLine[], lints: {added, fixed}}` |
-| `changes`    | `{since?}`                                                                      | `{rev, lines: FeedLine[]}`                     |
-| `wait`       | `{for?: change\|review, since?, timeoutMs?}`                                    | `{rev, reason: change\|review\|timeout}`       |
+16 tools. `apply`, `add`, `validate`, `lint`, `look`, `diff` and `changes` are
+real, over the engines in `@elkdraw/core/engine` (besides `status`). The rest
+(`get`, `describe`, `query`, `screenshot`, `export`, `snapshot`, `clear`,
+`wait`) reject with `NOT_IMPLEMENTED` and echo their input JSON Schema.
 
-`ApplyReply`, `AstPatch`, `LintHit`, `FeedLine`, `SceneElement`, `Box` and
-`Point` come from `@elkdraw/core` (CONTRACTS.md). `Skeleton` is loose
-(`{type, id?, ...}`) until the phase 1 skeleton schema lands.
+| Tool         | Input (JSON Schema via `z.toJSONSchema`)                                                                                        | Output                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `status`     | `{}`                                                                                                                            | `ServerStatus`                                                           |
+| `add`        | `{elements: SkeletonElement[]}`                                                                                                 | `ApplyReply`                                                             |
+| `apply`      | `{elements?, place?: PlaceOp[], patches?: ApplyPatch[], prune?, dryRun?, ifRev?}`, one of `elements`/`place`/`patches` required | `ApplyReply`                                                             |
+| `validate`   | same as `apply`                                                                                                                 | `{ok: true, ids: Id[]}`                                                  |
+| `get`        | `{id}`                                                                                                                          | `{rev, element: SceneElement}`                                           |
+| `describe`   | `{scope?}`                                                                                                                      | `{rev, text}`                                                            |
+| `query`      | `{type?, ids?, bbox?: Box, limit?}`                                                                                             | `{rev, elements: SceneElement[], truncated}`                             |
+| `screenshot` | `{format?: png\|svg, out?, maxPx?}`                                                                                             | `{path, format, width, height}`                                          |
+| `export`     | `{format: excalidraw\|obsidian\|mmd\|svg\|png, out?}`                                                                           | `{format, path?, content?}`                                              |
+| `snapshot`   | `{action: save\|list\|restore, name?}`                                                                                          | `{rev, snapshots: {name, rev, time}[]}`                                  |
+| `clear`      | `{yes: true}`                                                                                                                   | `{rev, deleted}`                                                         |
+| `lint`       | `{scope?, ids?}`                                                                                                                | `{rev, hits: LintHit[]}`                                                 |
+| `look`       | `{target, r?, marks?, maxPx?, out?}`                                                                                            | `{path, bbox: Box, scale, marks: {id: Point}, boxes: {id: Box}}`         |
+| `diff`       | `{from?: rev, to?: rev}`                                                                                                        | `{changes: (FeedLine sans author/time)[], lints: {added, fixed}, delta}` |
+| `changes`    | `{since?}`                                                                                                                      | `{rev, lines: FeedLine[]}`                                               |
+| `wait`       | `{for?: change\|review, since?, timeoutMs?}`                                                                                    | `{rev, reason: change\|review\|timeout}`                                 |
+
+`ApplyReply`, `ApplyPatch`, `PlaceOp`, `LintHit`, `FeedLine`, `SceneElement`,
+`Id`, `Box` and `Point` come from `@elkdraw/core` (CONTRACTS.md).
+`SkeletonElement` is the strict schema in `core/skeleton/schema.ts`.
+
+`look`'s `marks` holds each target id's centre in crop pixels (only when
+`marks: true` was given; nothing is drawn on the PNG); `boxes` holds each
+target id's rendered box in scene coordinates. `diff`'s `from` defaults to the
+rev before the last agent `apply` (not the CLI's last invocation); `to`
+defaults to now. `validate` reads the live canvas to resolve arrow ends,
+frame `children` and patch ids that aren't in the input itself.
 
 `start` and `stop` are CLI-only: an MCP host owns the lifecycle of the server
 it talks to. `status` is both a tool (so a host learns which server, branch and
 canvas URL it is on) and the CLI command, which reads `GET /api/status`.
 
-In phase 0 only `status` is real. Every other tool rejects with
-`NOT_IMPLEMENTED` and echoes its input JSON Schema.
+As of 1.10, `status`, `add`, `apply`, `validate`, `lint`, `look`, `diff` and
+`changes` are real. `get`, `describe`, `query`, `screenshot`, `export`,
+`snapshot`, `clear` and `wait` still reject with `NOT_IMPLEMENTED` and echo
+their input JSON Schema.
 
 Transports:
 
@@ -61,65 +76,76 @@ Kinds:
 
 ### MCP tools
 
-| yctimlin                   | ELK draw                                  | Kind    | Note                                                                            |
-| -------------------------- | ----------------------------------------- | ------- | ------------------------------------------------------------------------------- |
-| `create_element`           | `add`                                     | renamed | One skeleton in `elements`                                                      |
-| `batch_create_elements`    | `add`                                     | renamed |                                                                                 |
-| `update_element`           | `apply` (`set` patch)                     | renamed | By id; a label edit never changes the id                                        |
-| `delete_element`           | `apply` (`delete` patch)                  | renamed | Edges touching a deleted node cascade                                           |
-| `get_element`              | `get`                                     | renamed | Neutral `SceneElement`, not raw Excalidraw JSON                                 |
-| `query_elements`           | `query`                                   | renamed | `bbox` is a `Box` `{x, y, width, height}`                                       |
-| `describe_scene`           | `describe`                                | renamed | `scope` narrows it                                                              |
-| `get_canvas_screenshot`    | `screenshot`                              | renamed | Rendered headlessly by the sidecar; no browser tab needed. Crops: `look`        |
-| `export_scene`             | `export`                                  | renamed | `format: excalidraw\|obsidian`                                                  |
-| `export_to_image`          | `export`                                  | renamed | `format: png\|svg`                                                              |
-| `import_scene`             | `add` / `apply`                           | renamed | Elements via `add`, `.mmd` via `apply --text`                                   |
-| `create_from_mermaid`      | `apply`                                   | renamed | `.mmd` through ELK layout, not mermaid-to-excalidraw                            |
-| `snapshot_scene`           | `snapshot` (`action: save`)               | renamed |                                                                                 |
-| `restore_snapshot`         | `snapshot` (`action: restore`)            | renamed |                                                                                 |
-| `clear_canvas`             | `clear`                                   | renamed | Needs `yes: true`, like yctimlin's `clear --yes`                                |
-| `align_elements`           | —                                         | dropped | Layout owns positions (ELK + placer). Human moves are kept by `apply`           |
-| `distribute_elements`      | —                                         | dropped | Same                                                                            |
-| `group_elements`           | —                                         | dropped | Zones replace groups (`apply` `move` patch)                                     |
-| `ungroup_elements`         | —                                         | dropped | Same                                                                            |
-| `lock_elements`            | —                                         | dropped | Pins in element meta replace locks (phase 1)                                    |
-| `unlock_elements`          | —                                         | dropped | Same                                                                            |
-| `duplicate_elements`       | —                                         | dropped | Add the nodes again with new ids                                                |
-| `set_viewport`             | —                                         | dropped | The agent sees through `look` crops, not a shared camera                        |
-| `read_diagram_guide`       | —                                         | dropped | The ELK draw skill ships the guide (P0.13)                                      |
-| `get_resource`             | —                                         | dropped | No MCP resources in phase 0                                                     |
-| `export_to_excalidraw_url` | —                                         | dropped | Local only; no upload to excalidraw.com                                         |
-| —                          | `lint`, `look`, `diff`, `changes`, `wait` | new     | Rendered lint, crops, semantic diff with lint delta, change feed, blocking wait |
+| yctimlin                   | ELK draw                                              | Kind    | Note                                                                                                     |
+| -------------------------- | ----------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| `create_element`           | `add`                                                 | renamed | One skeleton in `elements`                                                                               |
+| `batch_create_elements`    | `add`                                                 | renamed |                                                                                                          |
+| `update_element`           | `apply` (`set` patch)                                 | renamed | By id; a label edit never changes the id                                                                 |
+| `delete_element`           | `apply` (`delete` patch)                              | renamed | Edges touching a deleted node cascade                                                                    |
+| `get_element`              | `get`                                                 | renamed | Neutral `SceneElement`, not raw Excalidraw JSON                                                          |
+| `query_elements`           | `query`                                               | renamed | `bbox` is a `Box` `{x, y, width, height}`                                                                |
+| `describe_scene`           | `describe`                                            | renamed | `scope` narrows it                                                                                       |
+| `get_canvas_screenshot`    | `screenshot`                                          | renamed | Rendered headlessly by the sidecar; no browser tab needed. Crops: `look`                                 |
+| `export_scene`             | `export`                                              | renamed | `format: excalidraw\|obsidian`                                                                           |
+| `export_to_image`          | `export`                                              | renamed | `format: png\|svg`                                                                                       |
+| `import_scene`             | `add` / `apply`                                       | renamed | Elements via `add`, `.mmd` via `apply --text`                                                            |
+| `create_from_mermaid`      | `apply`                                               | renamed | `.mmd` through ELK layout, not mermaid-to-excalidraw                                                     |
+| `snapshot_scene`           | `snapshot` (`action: save`)                           | renamed |                                                                                                          |
+| `restore_snapshot`         | `snapshot` (`action: restore`)                        | renamed |                                                                                                          |
+| `clear_canvas`             | `clear`                                               | renamed | Needs `yes: true`, like yctimlin's `clear --yes`                                                         |
+| `align_elements`           | —                                                     | dropped | Layout owns positions (ELK + placer). Human moves are kept by `apply`                                    |
+| `distribute_elements`      | —                                                     | dropped | Same                                                                                                     |
+| `group_elements`           | —                                                     | dropped | Zones replace groups (`apply` `move` patch)                                                              |
+| `ungroup_elements`         | —                                                     | dropped | Same                                                                                                     |
+| `lock_elements`            | —                                                     | dropped | Pins in element meta replace locks (phase 1)                                                             |
+| `unlock_elements`          | —                                                     | dropped | Same                                                                                                     |
+| `duplicate_elements`       | —                                                     | dropped | Add the nodes again with new ids                                                                         |
+| `set_viewport`             | —                                                     | dropped | The agent sees through `look` crops, not a shared camera                                                 |
+| `read_diagram_guide`       | —                                                     | dropped | The ELK draw skill ships the guide (P0.13)                                                               |
+| `get_resource`             | —                                                     | dropped | No MCP resources in phase 0                                                                              |
+| `export_to_excalidraw_url` | —                                                     | dropped | Local only; no upload to excalidraw.com                                                                  |
+| —                          | `lint`, `look`, `diff`, `changes`, `wait`, `validate` | new     | Rendered lint, crops, semantic diff with lint delta, change feed, blocking wait, dry-run reference check |
+
+Note (1.11): the `apply` and `import`/`mermaid` rows above describe the
+Phase 0 design (`.mmd` text, `{create, update, delete}`). As built (1.10),
+`apply` takes `{elements?, place?, patches?, prune?, dryRun?, ifRev?}` (SURFACE
+`## Tools` above); `.mmd` text is not accepted (see NOTES.md 1.10, "Mermaid
+Conversion" in the skill).
 
 ### CLI verbs
 
-| yctimlin                       | `elkdraw`                                 | Kind    | Note                                                                 |
-| ------------------------------ | ----------------------------------------- | ------- | -------------------------------------------------------------------- |
-| (no args: MCP stdio)           | `bun elkdraw/adapters/mcp/src/stdio.ts`   | renamed | Separate entry, not the CLI bin                                      |
-| `start`                        | `start`                                   | same    | Detached; prints the status JSON; a no-op when the server is running |
-| `stop`                         | `stop`                                    | same    |                                                                      |
-| `status`                       | `status`                                  | same    | `{port, url, branch, session, rev, clients}`                         |
-| `add`                          | `add`                                     | same    | `--elements '<json>'` or `--input -` for stdin                       |
-| `apply`                        | `apply`                                   | same    | Takes `.mmd` or AST patches, not `{create, update, delete}`          |
-| `update`                       | `apply` (`set` patch)                     | renamed |                                                                      |
-| `delete`                       | `apply` (`delete` patch)                  | renamed |                                                                      |
-| `get`                          | `get --id`                                | same    |                                                                      |
-| `query`                        | `query`                                   | same    | `--bbox '{"x":0,"y":0,"width":9,"height":9}'`, not `x0,y0,x1,y1`     |
-| `describe`                     | `describe`                                | same    | JSON `{rev, text}`, not plain text                                   |
-| `screenshot`                   | `screenshot`                              | same    | Headless; never needs a browser tab (no exit 4)                      |
-| `export`                       | `export --format`                         | same    | Adds `mmd`, `svg`, `png`                                             |
-| `import`                       | `add` / `apply`                           | renamed |                                                                      |
-| `mermaid`                      | `apply --text`                            | renamed |                                                                      |
-| `snapshot save\|list\|restore` | `snapshot --action`                       | same    |                                                                      |
-| `arrange …`                    | —                                         | dropped | See the align/group/lock/duplicate rows above                        |
-| `share`                        | —                                         | dropped | Local only                                                           |
-| `clear --yes`                  | `clear --yes`                             | same    |                                                                      |
-| `install-skill`                | —                                         | dropped | Deferred to the skill task (P0.13)                                   |
-| —                              | `lint`, `look`, `diff`, `changes`, `wait` | new     |                                                                      |
+| yctimlin                       | `elkdraw`                                             | Kind    | Note                                                                 |
+| ------------------------------ | ----------------------------------------------------- | ------- | -------------------------------------------------------------------- |
+| (no args: MCP stdio)           | `bun elkdraw/adapters/mcp/src/stdio.ts`               | renamed | Separate entry, not the CLI bin                                      |
+| `start`                        | `start`                                               | same    | Detached; prints the status JSON; a no-op when the server is running |
+| `stop`                         | `stop`                                                | same    |                                                                      |
+| `status`                       | `status`                                              | same    | `{port, url, branch, session, rev, clients}`                         |
+| `add`                          | `add`                                                 | same    | `--elements '<json>'` or `--input -` for stdin                       |
+| `apply`                        | `apply`                                               | same    | Takes `.mmd` or AST patches, not `{create, update, delete}`          |
+| `update`                       | `apply` (`set` patch)                                 | renamed |                                                                      |
+| `delete`                       | `apply` (`delete` patch)                              | renamed |                                                                      |
+| `get`                          | `get --id`                                            | same    |                                                                      |
+| `query`                        | `query`                                               | same    | `--bbox '{"x":0,"y":0,"width":9,"height":9}'`, not `x0,y0,x1,y1`     |
+| `describe`                     | `describe`                                            | same    | JSON `{rev, text}`, not plain text                                   |
+| `screenshot`                   | `screenshot`                                          | same    | Headless; never needs a browser tab (no exit 4)                      |
+| `export`                       | `export --format`                                     | same    | Adds `mmd`, `svg`, `png`                                             |
+| `import`                       | `add` / `apply`                                       | renamed |                                                                      |
+| `mermaid`                      | `apply --text`                                        | renamed |                                                                      |
+| `snapshot save\|list\|restore` | `snapshot --action`                                   | same    |                                                                      |
+| `arrange …`                    | —                                                     | dropped | See the align/group/lock/duplicate rows above                        |
+| `share`                        | —                                                     | dropped | Local only                                                           |
+| `clear --yes`                  | `clear --yes`                                         | same    |                                                                      |
+| `install-skill`                | —                                                     | dropped | Deferred to the skill task (P0.13)                                   |
+| —                              | `lint`, `look`, `diff`, `changes`, `wait`, `validate` | new     |                                                                      |
 
 snake_case aliases (`--compat yctimlin`, agent-native-diagramming.md §1a) are
 deferred: yctimlin's skill and evals would need argument translation too, not
 just names.
+
+Note (1.11): `get`, `query`, `describe`, `screenshot`, `export`, `snapshot`
+and `clear` above are listed as `same`, but as built (1.10) every one of them
+still replies `NOT_IMPLEMENTED` (`## Tools` above); only `add`, `apply`,
+`validate`, `lint`, `look`, `diff` and `changes` (besides `status`) are real.
 
 ## CLI
 

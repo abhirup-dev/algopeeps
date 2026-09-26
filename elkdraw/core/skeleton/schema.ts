@@ -173,13 +173,24 @@ const pathText = (path: readonly PropertyKey[]) =>
     )
     .join("");
 
-/** One `path: message` line per error; unknown keys get one line each. */
+/** Keys agents coming from yctimlin's `mcp-excalidraw-server` send instead of
+ * this schema's fields; each unrecognized-key error for one of them gets a
+ * fix hint naming the field to use instead. */
+const KNOWN_KEY_FIXES: Record<string, string> = {
+  text: "label.text",
+  startElementId: "start.id",
+  endElementId: "end.id",
+};
+
+/** One `path: message` line per error; unknown keys get one line each, with a
+ * fix hint for keys a yctimlin-style agent is known to send. */
 export function skeletonErrors(error: z.ZodError): string[] {
   return error.issues.flatMap((issue) => {
     if (issue.code === "unrecognized_keys")
-      return issue.keys.map(
-        (key) => `${pathText([...issue.path, key])}: unknown key`,
-      );
+      return issue.keys.map((key) => {
+        const fix = KNOWN_KEY_FIXES[key];
+        return `${pathText([...issue.path, key])}: unknown key${fix ? `; use ${fix}` : ""}`;
+      });
     return [`${pathText(issue.path)}: ${issue.message}`];
   });
 }

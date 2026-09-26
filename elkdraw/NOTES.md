@@ -620,3 +620,50 @@ elkdraw/adapters/server test:e2e`, ~1 s warm) runs draft → apply → lint → 
   `bun …/main.ts` under portless survived it (orphaned, ppid 1) in this run. It
   was stopped by hand. A direct SIGTERM to the server now exits cleanly,
   Chromium included.
+
+### 1.11b Skill reconcile (2026-09-26)
+
+- Ran every CLI example in `skill/SKILL.md`/`cheatsheet.md` against a live dev
+  server. Biggest gap: only `status`, `add`, `apply`, `validate`, `lint`,
+  `look`, `diff`, `changes` are real (1.10); `get`, `describe`, `query`,
+  `screenshot`, `export`, `snapshot`, `clear`, `wait` still reply
+  `NOT_IMPLEMENTED` (each has a CLI command and MCP tool, so they show up in
+  `help` and a host's tool list). The skill previously documented all of them
+  as working. Rewrote the affected rows/sections to say "not available" with
+  a fallback (`scene.json` as source of truth, `look`/`lint` for rendered
+  views, `apply --patches` for deletes), keeping every heading and section
+  order the same as `~/.claude/skills/excalidraw-skill` (only the tool
+  descriptions changed, per the 1.14 audit constraint).
+- Fixed against verified server behavior: `look --marks` returns each id's
+  centre in crop pixels and draws nothing on the PNG (was: "draws the ids on
+  the crop"); `validate` reads the canvas to resolve references and does not
+  say "no canvas access"; `diff`'s `changes` carry no `author`/`time`, the
+  reply adds `delta`, and `from` defaults to the rev before the last agent
+  `apply` (not "your last turn"); `dangling-endpoint` fires only on a missing
+  bound target or a bound end >15px off its shape, never on an unbound end
+  (verified against `core/lint/lint.ts`, matches the 1.5 log). `apply`'s
+  `{elements: [], prune: true}` alone fails validation (needs a non-empty
+  `elements`/`place`/`patches`), so dropped that as a "clear" workaround.
+- `SURFACE.md`: fixed the tool count (16, `validate` was missing), the `apply`
+  input shape (Phase 0 `.mmd`/`AstPatch` text was stale), `look`'s `boxes`
+  output, `diff`'s `delta` and `from` default, and which 8 tools are still
+  `NOT_IMPLEMENTED`. Left the yctimlin mapping tables' stale rows in place
+  with a dated Note pointing at the real shape, rather than rewriting rows
+  outside this task's scope.
+- `core/skeleton/schema.ts`: `skeletonErrors`' unrecognized-key errors now add
+  a fix hint for `text`/`startElementId`/`endElementId` (yctimlin's
+  `mcp-excalidraw-server` field names) — `elements[0].text: unknown key; use
+label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
+  Unit test in `schema.test.ts`.
+- `skill/MAINTAINERS.md` rewritten: every row that was "waits on 1.10" and is
+  now built says so; the still-stub tools and their fallback strategy are
+  spelled out, with a pointer for whoever implements one next (update this
+  table, then the skill's "not available" spots, then `SURFACE.md`'s stub
+  list — structure stays fixed, only cell contents move).
+- Not touched (outside `Owns:`): a real bug surfaced while testing —
+  `apply`/`add` with a `frame` whose `children` are pre-existing ids already
+  on the canvas (not created in the same call) throws `INTERNAL: Element with
+<id> wasn't mapped correctly` from the sidecar's `convertToExcalidrawElements`
+  call. Frames created together with their children (the skill's own example)
+  work fine. Reporting under "Needs from others"; did not touch
+  `adapters/server/src/tools.ts`.

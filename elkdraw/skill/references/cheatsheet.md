@@ -24,40 +24,32 @@ Flags come from each tool's input schema: booleans are `--flag`, numbers `--flag
 
 ### Elements
 
-| Command                        | Description                                                                                                                                                            |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apply --input - < scene.json` | Upsert elements by id, run placement ops, apply patches. Input: `{elements?, place?, patches?, prune?, dryRun?, ifRev?}`                                               |
-| `apply --patches '[...]'`      | Patches by id: `{"op":"delete","id":"a"}` (arrows bound to it go too), `{"op":"set","id":"a","label":"New"}`                                                           |
-| `apply --dry-run`              | Validate, place and lint; write nothing                                                                                                                                |
-| `apply --if-rev <rev>`         | Fail unless the canvas is at this rev                                                                                                                                  |
-| `add --input -`                | Create only, from `{"elements":[...]}`; an existing id is an error                                                                                                     |
-| `validate --input -`           | Strict schema and reference check of the same input as `apply`; no canvas access                                                                                       |
-| `get --id <id>`                | One element in the neutral scene form (box, text, style, bindings, zone)                                                                                               |
-| `query`                        | `--type box\|zone\|line\|text` (neutral kinds, not Excalidraw types) `--ids a,b` `--bbox '{"x":0,"y":0,"width":800,"height":600}'` `--limit 50`; reply has `truncated` |
+| Command                        | Description                                                                                                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apply --input - < scene.json` | Upsert elements by id, run placement ops, apply patches. Input: `{elements?, place?, patches?, prune?, dryRun?, ifRev?}` (one of `elements`, `place`, `patches` required) |
+| `apply --patches '[...]'`      | Patches by id: `{"op":"delete","id":"a"}` (arrows bound to it go too), `{"op":"set","id":"a","label":"New"}`                                                              |
+| `apply --dry-run`              | Validate, place and lint; write nothing                                                                                                                                   |
+| `apply --if-rev <rev>`         | Fail unless the canvas is at this rev                                                                                                                                     |
+| `add --input -`                | Create only, from `{"elements":[...]}`; an existing id is an error                                                                                                        |
+| `validate --input -`           | Same input as `apply`: strict schema, placement, then reference check (reads the canvas to resolve ids). Replies `{ok: true, ids}`; writes nothing                        |
 
 ### Scene
 
-| Command                                                    | Description                                                                                                |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `describe [--scope all\|frame:<id>\|near:<id>,r=<px>]`     | `{rev, text}`: ids, positions, labels, connections                                                         |
-| `screenshot`                                               | Whole canvas, headless; `--out f.png`, `--format png\|svg`, `--max-px n` → `{path, format, width, height}` |
-| `export --format excalidraw\|obsidian\|svg\|png [--out f]` | Scene file or image; no `--out` → `content` inline                                                         |
-| `clear --yes`                                              | Wipe the canvas (not undoable; snapshot first)                                                             |
-| `snapshot --action save\|list\|restore [--name n]`         | Named canvas snapshots → `{rev, snapshots: [{name, rev, time}]}`                                           |
+Not available on this server: `describe`, `get`, `query`, `screenshot`, `export`, `snapshot`, `clear`. Each still has a CLI command and MCP tool (so they show up in `help` and a host's tool list) but every call replies `{"error": {"code": "NOT_IMPLEMENTED", ...}}`, exit 1. `scene.json` is the only source of truth; `look` and `lint` are the only rendered views; `apply --patches` (`delete` per id) is the only way to remove elements.
 
 ### Perception
 
-| Command                                                           | Description                                                                                                                                                  |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `lint [--scope ...] [--ids a,b]`                                  | `{rev, hits: [{code, ids, bbox, severity, hint, suppressed?}]}`                                                                                              |
-| `look --target <t> [--r px] [--marks] [--max-px n] [--out f.png]` | Crop → `{path, bbox, scale, marks, boxes}`; `<t>` = `<id>`, `<id>,<id>`, `frame:<id>` or `x,y,w,h`; `r` = margin in scene px                                 |
-| `changes [--since <rev>]`                                         | `{rev, lines: [{author, time, op, ids, detail?}]}`; `op` = `added\|removed\|moved\|relabelled\|restyled\|reconnected\|applied`; default since your last read |
-| `diff [--from <rev>] [--to <rev>]`                                | `{changes, lints: {added, fixed}}`; default from your last turn to now                                                                                       |
-| `wait [--for change] [--timeout-ms n]`                            | Block until the human changes the canvas or the timeout passes → `{rev, reason}`                                                                             |
+| Command                                                           | Description                                                                                                                                                                                                                                                                                |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `lint [--scope ...] [--ids a,b]`                                  | `{rev, hits: [{code, ids, bbox, severity, hint, suppressed?}]}`                                                                                                                                                                                                                            |
+| `look --target <t> [--r px] [--marks] [--max-px n] [--out f.png]` | Crop → `{path, bbox, scale, marks, boxes}`; `<t>` = `<id>`, `<id>,<id>`, `frame:<id>` or `x,y,w,h`; `r` = margin in scene px. `marks` is each id's centre in crop pixels (only with `--marks`; nothing is drawn on the PNG); `boxes` is each target id's rendered box in scene coordinates |
+| `changes [--since <rev>]`                                         | `{rev, lines: [{author, time, op, ids, detail?}]}`; `op` = `added\|removed\|moved\|relabelled\|restyled\|reconnected\|applied`; default since your last read                                                                                                                               |
+| `diff [--from <rev>] [--to <rev>]`                                | `{changes, lints: {added, fixed}, delta}`; `changes` is `FeedLine` without `author`/`time`; `delta` names the code counts (`+1 node-overlap, -1 crossing`) or `"lint unchanged"`; `from` defaults to the rev before the last agent `apply`, `to` defaults to now                           |
+| `wait`                                                            | Not available: `NOT_IMPLEMENTED`                                                                                                                                                                                                                                                           |
 
 ### Not available
 
-`arrange` (align, distribute, group, lock, duplicate), `import`, `mermaid`, `share`, `install-skill`: use placement ops, re-apply your file, and `export`.
+`describe`, `get`, `query`, `screenshot`, `export`, `snapshot`, `clear`, `wait`: `NOT_IMPLEMENTED` on this server (see Scene above). `arrange` (align, distribute, group, lock, duplicate), `import`, `mermaid`, `share`, `install-skill`: no tool at all — use placement ops and re-apply your file instead.
 
 ## MCP Tools
 
@@ -65,38 +57,34 @@ Names are namespaced by the host (`mcp__elkdraw__apply` in Claude Code, `elkdraw
 
 ### Element CRUD
 
-| Tool       | Description                             | Required params                           |
-| ---------- | --------------------------------------- | ----------------------------------------- |
-| `apply`    | Upsert elements, placement ops, patches | one of `elements`, `patches`              |
-| `add`      | Create elements                         | `elements[]`                              |
-| `validate` | Check input without writing             | as `apply`                                |
-| `get`      | Get single element by ID                | `id`                                      |
-| `query`    | Query by type/ids/bbox                  | (optional) `type`, `ids`, `bbox`, `limit` |
+| Tool       | Description                             | Required params                       |
+| ---------- | --------------------------------------- | ------------------------------------- |
+| `apply`    | Upsert elements, placement ops, patches | one of `elements`, `place`, `patches` |
+| `add`      | Create elements                         | `elements[]`                          |
+| `validate` | Check input without writing             | as `apply`                            |
 
 ### Scene Awareness (Iterative Refinement)
 
-| Tool         | Description                                                        | Required params                                   |
-| ------------ | ------------------------------------------------------------------ | ------------------------------------------------- |
-| `describe`   | Plain-text scene description (ids, positions, labels, connections) | (optional) `scope`                                |
-| `lint`       | Rendered lint hits with ids, bbox and hint                         | (optional) `scope`, `ids`                         |
-| `look`       | Cropped PNG around ids + rendered boxes                            | `target`, (optional) `r`, `marks`, `maxPx`, `out` |
-| `screenshot` | Whole-canvas PNG/SVG                                               | (optional) `format`, `out`, `maxPx`               |
-| `changes`    | Change feed since a rev                                            | (optional) `since`                                |
-| `diff`       | Changes between two revs + lint delta                              | (optional) `from`, `to`                           |
-| `wait`       | Block until the human changes the canvas                           | (optional) `for`, `since`, `timeoutMs`            |
+| Tool      | Description                                                          | Required params                                   |
+| --------- | -------------------------------------------------------------------- | ------------------------------------------------- |
+| `lint`    | Rendered lint hits with ids, bbox and hint                           | (optional) `scope`, `ids`                         |
+| `look`    | Cropped PNG around ids + rendered boxes                              | `target`, (optional) `r`, `marks`, `maxPx`, `out` |
+| `changes` | Change feed since a rev                                              | (optional) `since`                                |
+| `diff`    | Changes (no author/time) between two revs, lint added/fixed, `delta` | (optional) `from`, `to`                           |
 
-### File I/O & State
+### State
 
-| Tool       | Description                                           | Required params                 |
-| ---------- | ----------------------------------------------------- | ------------------------------- |
-| `export`   | .excalidraw JSON, Obsidian .excalidraw.md, SVG or PNG | `format`, (optional) `out`      |
-| `snapshot` | Save/list/restore named snapshots                     | `action`, `name` (save/restore) |
-| `clear`    | Remove all elements                                   | `yes: true`                     |
-| `status`   | Server, canvas URL, branch, rev, browser tabs         | (none)                          |
+| Tool     | Description                                   | Required params |
+| -------- | --------------------------------------------- | --------------- |
+| `status` | Server, canvas URL, branch, rev, browser tabs | (none)          |
+
+### Not implemented (present in the tool list, reply `NOT_IMPLEMENTED`)
+
+`get`, `query`, `describe`, `screenshot`, `export`, `snapshot`, `clear`, `wait`.
 
 Notes:
 
-- Labels are `"label": {"text": "..."}` on shapes and arrows; arrow binding is `"start": {"id": "..."}` / `"end": {"id": "..."}`. `text` on a shape and `startElementId` are rejected.
+- Labels are `"label": {"text": "..."}` on shapes and arrows; arrow binding is `"start": {"id": "..."}` / `"end": {"id": "..."}`. `text` on a shape and `startElementId`/`endElementId` are rejected, with a hint naming the field to use instead.
 - Every element needs an `id`. Re-sending an id updates it; unchanged elements count as `kept`.
 - Zones are `"type": "frame"` with `name` and `children` (ids).
 - `fontFamily` is Excalidraw's number (`5` Excalifont, `6` Nunito, `8` Comic Shanns) or omitted.

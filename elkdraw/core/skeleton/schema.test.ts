@@ -47,6 +47,34 @@ test("negative fixture: every planted defect is reported at its path", async () 
   expect(result.errors).toContain('elements[4].id: duplicate id "kafka"');
 });
 
+test("known yctimlin keys get a fix hint", () => {
+  const result = validateSkeleton({
+    elements: [
+      {
+        type: "rectangle",
+        id: "a",
+        x: 0,
+        y: 0,
+        text: "Trip",
+      },
+      {
+        type: "arrow",
+        id: "a-b",
+        x: 0,
+        y: 0,
+        startElementId: "a",
+        endElementId: "b",
+      },
+    ],
+  });
+  if (result.ok) throw new Error("expected unknown-key errors");
+  expect(result.errors).toEqual([
+    "elements[0].text: unknown key; use label.text",
+    "elements[1].startElementId: unknown key; use start.id",
+    "elements[1].endElementId: unknown key; use end.id",
+  ]);
+});
+
 test("a terse skeleton validates", () => {
   const input: SkeletonInput = {
     elements: [
