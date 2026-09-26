@@ -1039,3 +1039,47 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   `dogfood/yct`'s unfixed-defect count as 14; it is 15 now that yct-24 is a
   real entry. One-line fix: `expect(s.missed).toHaveLength(14)` -> `(15)` at
   `eval/src/score.test.ts:22`. `check` fails on this line until it lands.
+### 1.20 Convert: centred/right text drifts from its requested box (2026-09-26)
+
+- Root cause of p1bst-01 (won't-fix in lint, 1.19): traced into
+  `@excalidraw/excalidraw`'s bundled `newTextElement` (called by
+  `convertToExcalidrawElements`'s `text` case): it always sizes width/height
+  from the _measured_ text, ignoring a skeleton's given `width` entirely, and
+  for `textAlign: "center"/"right"` it treats the skeleton's `x` as the anchor
+  for that measured width (`x: opts.x - metrics.width/2` for centre), not as
+  the left edge of a requested box. `{x:84, width:32, textAlign:"center",
+text:"0"}` lands at x 79.35, width 9.30 (centred on x=84, not on the box's
+  centre, 100) — the exact numbers in the bead. `textAlign:"left"` has no
+  anchor offset, so it was already correct.
+- Fix in page-side `convert()` (`app/src/headless.ts`, `boxDelta()`, called
+  from the `merged` step before `byId`/`route`/the moved-arrow check so those
+  see the corrected position): for a free text skeleton with a `width` and
+  `textAlign` "center" or "right", recompute `x` from the requested box
+  (`s.x`, `s.width`) and the real converted width — `s.x + (s.width -
+el.width)/2` for centre, `s.x + s.width - el.width` for right. The element's
+  own `width` is left as Excalidraw measured it (not forced to the request):
+  the fix is a pure function of (requested box, textAlign, measured width)
+  recomputed on every `convert()` call, so it stays correct across a relabel
+  (new text) or a moved box (new x) with no extra state to keep in sync.
+  Considered forcing `width` to the request with `autoResize: false` instead
+  (bead's other option): rejected — `newTextElement` ignores `opts.width` even
+  for that at creation time (autoResize only pins width on a later in-editor
+  retype), so it would need the text to actually re-wrap into the fixed width,
+  which free (unbound) text doesn't do; the shift is the smaller, correct fix.
+- Frame `x`/`y` of 0 (1.17 "found, not fixed"): `frame.x || minX` in the same
+  bundled converter folds an explicit 0 into "not given" and refits the frame
+  to its children. Same `boxDelta()`, other branch: a frame skeleton's
+  explicit `x`/`y` (`!== undefined`, so 0 counts) is restored after
+  conversion. No fixture had a frame in this bug; covered by a small synthetic
+  test instead.
+- Test: `app/src/headless.e2e.ts` (new; `test:e2e` now runs it alongside
+  `canvas.e2e.ts`), built app + headless Chromium, `window.elkdraw.convert`
+  called directly (no Sidecar wrapper: that package is owned by another
+  task). One test reads the bst eval's first `Write` straight out of
+  `eval/phase-1/bst/transcript.jsonl` (not duplicated by hand) and asserts
+  `i0`/`i7`/`i14`/`t-lo`/`t-hi` centre in their requested box, plus a crop
+  snap at `app/test-results/bst-r1-array-crop.png` (by eye: matches
+  `test/fixtures/eval-p1/bst-r1/look.png`'s array row). Two more cover a
+  right-aligned box and a frame given `x:0,y:0`. All three fail on the base
+  (verified: `84` vs the expected `100`, frame `x:10` vs `0`, `100` vs the
+  expected right edge `150`).
