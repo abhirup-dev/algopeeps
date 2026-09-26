@@ -107,9 +107,9 @@ test("emit nests zones deep, makes coordinates absolute, never binds", () => {
   expect(line).not.toHaveProperty("to");
 });
 
-test("read and serialise round-trip the scene", () => {
+test("read and serialise round-trip the scene", async () => {
   const scene = fakeBackend.emit(graph);
-  const read = fakeBackend.read?.(scene);
+  const read = await fakeBackend.read?.(scene);
   expect(read).toEqual(scene);
   expect(parseJson(NeutralScene, fakeBackend.serialise(scene))).toEqual(scene);
 });

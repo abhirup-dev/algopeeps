@@ -109,6 +109,8 @@
               "label-on-label",
               "label-on-border",
               "arrow-through-node",
+              "arrow-through-label",
+              "label-on-own-arrowhead",
               "node-overlap",
               "dangling-endpoint",
               "outside-zone",
@@ -123,6 +125,31 @@
               "minLength": 1
             }
           },
+          "bbox": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number",
+                "minimum": 0
+              },
+              "height": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": ["x", "y", "width", "height"],
+            "additionalProperties": false
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["error", "info"]
+          },
           "hint": {
             "type": "string"
           },
@@ -131,7 +158,7 @@
             "minLength": 1
           }
         },
-        "required": ["code", "ids", "hint"],
+        "required": ["code", "ids", "bbox", "severity", "hint"],
         "additionalProperties": false
       }
     },

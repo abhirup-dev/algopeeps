@@ -11,6 +11,8 @@ const manifest = parseJson(
 const hit = (code: LintHit["code"], ...ids: string[]): LintHit => ({
   code,
   ids,
+  bbox: { x: 0, y: 0, width: 0, height: 0 },
+  severity: "error",
   hint: "",
 });
 

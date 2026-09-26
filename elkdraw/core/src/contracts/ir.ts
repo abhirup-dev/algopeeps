@@ -5,20 +5,12 @@
 // as is. Tree objects strip unknown keys instead of rejecting them: elkjs
 // writes an internal `$H` onto every node it lays out. Meta bags are strict.
 import { z } from "zod";
+import { Box, Point } from "./geometry.ts";
 import { Allow } from "./lint.ts";
 
+export { Box, Point };
+
 export const Id = z.string().min(1);
-
-export const Point = z.strictObject({ x: z.number(), y: z.number() });
-export type Point = z.infer<typeof Point>;
-
-export const Box = z.strictObject({
-  x: z.number(),
-  y: z.number(),
-  width: z.number().nonnegative(),
-  height: z.number().nonnegative(),
-});
-export type Box = z.infer<typeof Box>;
 
 /** Neutral style: the §11.7 classDef mapping table, camelCased. */
 export const Style = z.strictObject({

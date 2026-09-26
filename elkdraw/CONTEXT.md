@@ -109,21 +109,21 @@ Add a term when you introduce one; fix it here when the design changes it.
   strict skeleton validation.
 - **Rendered lint** — Rules on measured boxes and routed points (what drew),
   never stored geometry (phase 1, task 1.5).
-- **LintHit** — `{code, ids, hint, suppressed?}` in `lint.ts`; `bbox` and
-  `severity: error | info` land in task 1.0.
+- **LintHit** — `{code, ids, bbox, severity: error | info, hint,
+suppressed?}` in `lint.ts`. The §17.4 bar counts errors only.
 - **Allow / suppression** — `Allow {rule, why}` on one element (`@allow`,
   skeleton `allow` → `meta.allow`). Suppressed hits are returned with the
   reason, never dropped; no global or wildcard allow.
 - **Lint codes** — `text-overflow`, `text-wrapped`, `label-on-node`,
   `label-on-label`, `label-on-border`, `arrow-through-node`, `node-overlap`,
-  `dangling-endpoint`, `outside-zone`, `crossing` (info), and from task 1.0
+  `dangling-endpoint`, `outside-zone`, `crossing` (info),
   `arrow-through-label`, `label-on-own-arrowhead`.
 
 ## Diff and feed
 
-- **FeedLine** — `{author: human|agent, time, op, ids}` (`reply.ts`). Task
-  1.0 adds the `op` enum (`added`, `removed`, `moved`, `relabelled`,
-  `restyled`, `reconnected`, `applied`) and a `detail` payload.
+- **FeedLine** — `{author: human|agent, time, op, ids, detail?}`
+  (`reply.ts`). `op`: `added`, `removed`, `moved`, `relabelled`, `restyled`,
+  `reconnected`, `applied`; `detail`: `oldLabel`/`newLabel`, `dx`/`dy`.
 - **Feed / changes** — Short feed lines the agent reads instead of scene
   JSON; the `changes` tool returns them since a rev.
 - **Low-level diff** — Scene vs scene at two revs (`sceneAt`): moves, adds,
@@ -137,8 +137,8 @@ Add a term when you introduce one; fix it here when the design changes it.
 ## Backends
 
 - **BackendAdapter** — The seam: `emit`, `read?`, `measure`, `render?`,
-  `serialise` (`backend.ts`). Core never imports a backend. `read` turns
-  async in task 1.0 to reach the sidecar.
+  `serialise` (`backend.ts`). Core never imports a backend. `read` is
+  async so it can reach the sidecar.
 - **Capabilities** — A backend's limits: `nesting`, `bindings`, `opaqueMeta`,
   `edgeLabels`, `readBack`, `shapes`, `freeform`.
 - **NeutralScene** — What `read` returns and lint, diff, lift consume: box,

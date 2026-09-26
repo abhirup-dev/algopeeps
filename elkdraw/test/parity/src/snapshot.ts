@@ -3,10 +3,10 @@
 // change fails until `bun run --cwd test/parity update-snapshots` is run.
 import type { BackendAdapter, LaidGraph, NeutralScene } from "@elkdraw/core";
 
-export function sceneOf<Scene>(
+export async function sceneOf<Scene>(
   backend: BackendAdapter<Scene>,
   graph: LaidGraph,
-): NeutralScene {
+): Promise<NeutralScene> {
   if (backend.read === undefined)
     throw new Error(`${backend.id} cannot read back`);
   return backend.read(backend.emit(graph));

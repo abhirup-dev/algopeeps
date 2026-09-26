@@ -147,6 +147,8 @@ const examples: Examples = {
   LintHit: {
     code: "label-on-node",
     ids: ["gateway->trip#label", "trip"],
+    bbox: { x: 120, y: 40, width: 60, height: 20 },
+    severity: "error",
     hint: "labelAt",
   },
   ApplyReply: {
@@ -166,6 +168,7 @@ const examples: Examples = {
     time: "2026-09-26T14:02:00Z",
     op: "relabelled",
     ids: ["core:trip"],
+    detail: { oldLabel: "Trip", newLabel: "Trips svc" },
   },
 };
 

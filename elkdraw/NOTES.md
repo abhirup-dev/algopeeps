@@ -175,3 +175,15 @@ later tasks should not need `bun add`.
   Lint verified with scratch files: app, mcp and cli importing it error;
   server and backends/excalidraw pass. `app/dist` after `vite build` has no
   elkjs (grep for `elkjs`, `elk-worker`, `org.eclipse.elk`: 0 files).
+
+### 1.0 Contracts for Phase 1 (2026-09-26)
+
+- Landed §19.1 B1 + B2; see the `CONTRACTS.md` changelog. Consumers fixed:
+  fake backend `read` (`Promise.resolve`), parity `sceneOf` (async), eval
+  `score.test.ts` hit helper (bbox, severity).
+- Gotcha: `ir.ts` imports `Allow` from `lint.ts`, so `lint.ts` importing `Box`
+  from `ir.ts` is a cycle (runtime "Cannot access 'Box' before
+  initialization"). `Point`/`Box` now live in `geometry.ts`, re-exported by
+  `ir.ts`.
+- The server's event-log `DeltaLine` extends `FeedLine` and overrides `op`
+  with `"delta"`; it inherits the optional `detail`, unused.

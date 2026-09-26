@@ -37,8 +37,24 @@ export const FeedLine = z.strictObject({
   // TODO(phase 1.5): named authors, if collaboration needs more than two.
   author: z.enum(["human", "agent"]),
   time: z.iso.datetime(),
-  op: z.string().min(1),
-  // TODO(phase 1): the op vocabulary and a detail payload (old/new label, §12.4).
+  op: z.enum([
+    "added",
+    "removed",
+    "moved",
+    "relabelled",
+    "restyled",
+    "reconnected",
+    "applied",
+  ]),
   ids: z.array(Id),
+  /** `relabelled`: old/new label; `moved`: the shift. */
+  detail: z
+    .strictObject({
+      oldLabel: z.string().exactOptional(),
+      newLabel: z.string().exactOptional(),
+      dx: z.number().exactOptional(),
+      dy: z.number().exactOptional(),
+    })
+    .exactOptional(),
 });
 export type FeedLine = z.infer<typeof FeedLine>;
