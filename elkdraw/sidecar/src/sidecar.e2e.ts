@@ -364,6 +364,77 @@ test("convert: a frame's children already on the canvas keep their id and versio
   expect(rect?.["frameId"]).toBe(frame?.id);
 });
 
+test("convert: a cross-frame arrow is no frame's child and draws unclipped", async () => {
+  // p1rh-01: Excalidraw's converter put every arrow bound to a frame child
+  // into that frame, and the frame clipped it at its edge.
+  const box = (id: string, x: number): SkeletonElement => ({
+    id,
+    type: "rectangle",
+    x,
+    y: 60,
+    width: 160,
+    height: 60,
+    label: { text: id },
+  });
+  const frame = (id: string, x: number, child: string): SkeletonElement => ({
+    id,
+    type: "frame",
+    x,
+    y: 0,
+    width: 300,
+    height: 200,
+    children: [child],
+  });
+  const first = await sidecar.convert(
+    [
+      frame("fa", 0, "a"),
+      frame("fb", 600, "b"),
+      box("a", 70),
+      box("b", 670),
+      {
+        id: "ab",
+        type: "arrow",
+        x: 0,
+        y: 0,
+        start: { id: "a" },
+        end: { id: "b" },
+        label: { text: "cross" },
+      },
+    ],
+    [],
+  );
+  const get = (els: readonly Element[], id: string) =>
+    els.find((e) => e.id === id);
+  const labelOf = (els: readonly Element[], id: string) =>
+    els.find((e) => e["containerId"] === id);
+  expect(get(first, "a")?.["frameId"]).toBe("fa");
+  expect(labelOf(first, "a")?.["frameId"]).toBe("fa");
+  expect(get(first, "ab")?.["frameId"]).toBeNull();
+  expect(labelOf(first, "ab")?.["frameId"]).toBeNull();
+
+  // Drawn: the arrow's run in the gap between the frames (outside both) has
+  // ink, which a frame-clipped arrow would not.
+  await sidecar.measure(first);
+  const all = await sidecar.snap(
+    { x: -20, y: -20, width: 940, height: 240 },
+    1,
+  );
+  await Bun.write(
+    join(import.meta.dir, "..", "test-results", "cross-frame-arrow.png"),
+    all,
+  );
+  const gap = { x: 320, y: 0, width: 260, height: 200 };
+  const [between] = await inspect([await sidecar.snap(gap, 1)]);
+  expect(between?.ink).toBeGreaterThan(100);
+
+  // A frame re-sent with its labelled children only on the canvas used to
+  // throw "Bound element with id <label> doesn't exist".
+  const again = await sidecar.convert([frame("fa", 0, "a")], first);
+  expect(get(again, "fa")).toBeDefined();
+  expect(get(again, "a")?.["frameId"]).toBe("fa");
+  expect(get(again, "ab")).toBeUndefined(); // unchanged: not sent back
+}, 30_000);
+
 test("bad input is rejected before the page", async () => {
   const error: unknown = await sidecar
     .snap({ x: 0, y: 0, width: -1, height: 1 })

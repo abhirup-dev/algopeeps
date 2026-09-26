@@ -273,3 +273,93 @@ test("bound arrows follow a box moved by apply or place", async () => {
   // The end on the box that did not move stays put.
   expect((await line("w1")).at(-1)).toEqual(payEnd);
 }, 30_000);
+
+test("frames: cross-zone arrows stay unclipped; frames re-send and move", async () => {
+  const Y = 6000;
+  const box = (id: string, x: number) => ({
+    id,
+    type: "rectangle",
+    x,
+    y: Y + 80,
+    width: 160,
+    height: 60,
+    label: { text: id },
+  });
+  const frame = (id: string, x: number, child: string) => ({
+    id,
+    type: "frame",
+    x,
+    y: Y,
+    width: 300,
+    height: 220,
+    name: id,
+    children: [child],
+  });
+  const ab = {
+    id: "zab",
+    type: "arrow",
+    x: 0,
+    y: 0,
+    start: { id: "za" },
+    end: { id: "zb" },
+    label: { text: "cross" },
+  };
+  const get = async (id: string) =>
+    (await rest("get", { id }, defs.get.output)).element;
+  const boxOf = async (id: string) => {
+    const el = await get(id);
+    if (el.type !== "box" && el.type !== "zone") throw new Error(id);
+    return el.box;
+  };
+  const zoneHits = (reply: ApplyReply) =>
+    reply.lints.filter(
+      (h) => h.code === "outside-zone" && h.ids.includes("zab"),
+    );
+
+  // p1rh-01: one apply with two frames and an arrow between their children.
+  const first = await rest(
+    "apply",
+    {
+      elements: [
+        frame("fa", 0, "za"),
+        frame("fb", 600, "zb"),
+        box("za", 70),
+        box("zb", 670),
+        ab,
+      ],
+    },
+    ApplyReply,
+  );
+  expect(zoneHits(first)).toEqual([]);
+  expect((await get("za")).zone).toBe("fa");
+  expect((await get("zab")).zone).toBeUndefined();
+
+  // A full frame re-send whose labelled children are only on the canvas.
+  const resend = await rest(
+    "apply",
+    { elements: [frame("fa", 0, "za")] },
+    ApplyReply,
+  );
+  expect(zoneHits(resend)).toEqual([]);
+  expect((await get("za")).zone).toBe("fa");
+
+  // place on a canvas-only frame moves it with its children; the bound
+  // arrow re-routes.
+  const [faBefore, before] = [await boxOf("fa"), await boxOf("za")];
+  const moved = await rest(
+    "apply",
+    { place: [{ op: "below", id: "fa", of: "fb", gap: 100 }] },
+    ApplyReply,
+  );
+  const [fa, za] = [await boxOf("fa"), await boxOf("za")];
+  expect(fa.y).toBeGreaterThan(Y + 220 + 90);
+  expect(za.x - fa.x).toBeCloseTo(before.x - faBefore.x, 0);
+  expect(za.y - fa.y).toBeCloseTo(before.y - faBefore.y, 0);
+  expect((await get("za")).zone).toBe("fa");
+  expect(
+    errors(moved.lints)
+      .filter((h) => h.ids.includes("zab"))
+      .map((h) => h.code),
+  ).toEqual([]);
+  expect(zoneHits(moved)).toEqual([]);
+}, 30_000);

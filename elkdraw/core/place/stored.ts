@@ -72,13 +72,21 @@ export function fromStored(
     for (const k of LABEL_KEYS) if (text[k] !== undefined) label[k] = text[k];
     if (labelField.safeParse(label).success) out["label"] = label;
   }
+  // Labels follow their container and bound arrows follow their ends into
+  // (or out of) a frame, so neither is listed as a child.
   if (el.type === "frame")
     out["children"] = [...live.values()]
-      .filter((e) => e["frameId"] === el.id)
+      .filter((e) => e["frameId"] === el.id && !framedByOthers(e))
       .map((e) => e.id);
   const parsed = SkeletonElement.safeParse(out);
   return parsed.success ? parsed.data : undefined;
 }
+
+const bound = (b: unknown) => typeof b === "object" && b !== null;
+const framedByOthers = (e: Element) =>
+  (e.type === "text" && typeof e["containerId"] === "string") ||
+  ((e.type === "arrow" || e.type === "line") &&
+    (bound(e["startBinding"]) || bound(e["endBinding"])));
 
 /** `given` over the stored `el`: given fields win, a given label merges one
  * level deep, and a type change replaces the element. */

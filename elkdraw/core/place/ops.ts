@@ -85,12 +85,19 @@ export function place(
     const sc = sceneById.get(id);
     const stored = sc && fromStored(sc, scene);
     if (!stored) throw new Error(`place: unknown id "${id}"`);
-    // ponytail: a frame moves without its children, and the converter
-    // cannot re-take stored labelled children yet; place them instead.
-    if (stored.type === "frame")
-      throw new Error(`place: "${id}" is a frame; place its children instead`);
     out.set(id, { ...stored, x, y });
     order.push(id);
+    // A frame takes its children along (bound arrows re-route in convert).
+    if (stored.type !== "frame") return;
+    const [dx, dy] = [x - (stored.x ?? x), y - (stored.y ?? y)];
+    for (const child of stored.children) {
+      if (out.has(child)) continue;
+      const c = sceneById.get(child);
+      const sk = c && fromStored(c, scene);
+      if (!sk || sk.type === "frame") continue;
+      out.set(child, { ...sk, x: sk.x + dx, y: sk.y + dy });
+      order.push(child);
+    }
   };
 
   /** Adds (or merges an override onto) a generated asset element. */
