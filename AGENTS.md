@@ -2,6 +2,8 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+Working on an ELK draw task (label `elkdraw`)? Follow `elkdraw/AGENTS.md`; it overrides the session-completion steps below.
+
 ## Quick Reference
 
 ```bash
