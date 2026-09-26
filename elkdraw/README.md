@@ -54,6 +54,10 @@ bun run --cwd elkdraw dev               # builds app/ if stale, then serves
 - `portless list` shows live routes; `wt remove` the worktree once the server
   is stopped.
 
+Full registration steps for Claude Code and pi, stdio and HTTP:
+[`docs/REGISTER.md`](docs/REGISTER.md). Agent guide:
+[`skill/SKILL.md`](skill/SKILL.md).
+
 Registering the MCP server (Streamable HTTP at `/mcp`). Node and Bun clients
 do not read the macOS trust store, so give them portless's CA:
 
