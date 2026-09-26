@@ -288,6 +288,135 @@ describe("snap", () => {
   }, 30_000);
 });
 
+// Excalidraw red: distinct from the frame's own border (#bbb) and name label
+// (#999999), so a colour-matched scan isolates the box's own ink from either.
+const BOX_STROKE = { hex: "#e03131", rgb: [0xe0, 0x31, 0x31] };
+
+/** The ink bbox of pixels near `target` RGB in a PNG, in device px.
+ * `undefined` if none match. Independent of `snap`'s own crop math: decodes
+ * the bytes `snap` returned and scans them, nothing more. Colour-matched (not
+ * "any non-white pixel") so a frame's own border/name-label ink elsewhere in
+ * the crop cannot be mistaken for the target element's. */
+async function pngInkBox(
+  png: Uint8Array,
+  target: readonly number[] = BOX_STROKE.rgb,
+): Promise<Box | undefined> {
+  const page = await sidecar.page();
+  const raw: unknown = await page.evaluate(
+    async ({ b64, target }) => {
+      const res = await fetch(`data:image/png;base64,${b64}`);
+      const bmp = await createImageBitmap(await res.blob());
+      const ctx = new OffscreenCanvas(bmp.width, bmp.height).getContext("2d");
+      if (!ctx) throw new Error("no 2d");
+      ctx.drawImage(bmp, 0, 0);
+      const { width, height, data } = ctx.getImageData(
+        0,
+        0,
+        bmp.width,
+        bmp.height,
+      );
+      let [x0, y0, x1, y1] = [width, height, -1, -1];
+      const [tr, tg, tb] = target;
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4;
+          const [r, g, b] = [data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0];
+          if (
+            Math.abs(r - (tr ?? 0)) > 40 ||
+            Math.abs(g - (tg ?? 0)) > 40 ||
+            Math.abs(b - (tb ?? 0)) > 40
+          )
+            continue;
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          y1 = y;
+        }
+      }
+      if (x1 < 0) return undefined;
+      return { x: x0, y: y0, width: x1 + 1 - x0, height: y1 + 1 - y0 };
+    },
+    { b64: Buffer.from(png).toString("base64"), target },
+  );
+  return raw === undefined ? undefined : BoxShape.parse(raw);
+}
+
+describe("snap: scenes with frames (algopeeps-4c0.24)", () => {
+  // The child is red (BOX_STROKE), so its ink is never confused with the
+  // frame's own (grey) border or name label, whether or not either is drawn
+  // in a given crop.
+  const frameScene = async (): Promise<Record<string, Box>> => {
+    const skeletons: SkeletonElement[] = [
+      {
+        id: "box",
+        type: "rectangle",
+        x: 60,
+        y: 60,
+        width: 120,
+        height: 60,
+        strokeColor: BOX_STROKE.hex,
+      },
+      {
+        id: "f1",
+        type: "frame",
+        x: 0,
+        y: 0,
+        width: 300,
+        height: 200,
+        children: ["box"],
+      },
+    ];
+    const elements = await sidecar.convert(skeletons, []);
+    return sidecar.measure(elements);
+  };
+
+  test("snap(bbox) draws the box at its measured (ink) offset, not ~20px low", async () => {
+    const boxes = await frameScene();
+    const truth = boxes["box"];
+    if (!truth) throw new Error("no box measured");
+    const scale = 2;
+    // A big snap covering the whole scene: if export's own bounds silently
+    // grow to make room for the frame's name label above it (the bug), the
+    // box draws lower than `truth` says it should.
+    const bbox = { x: -20, y: -40, width: 340, height: 280 };
+    const png = await sidecar.snap(bbox, scale);
+    const ink = await pngInkBox(png);
+    if (!ink) throw new Error("no ink drawn");
+    const drawn = {
+      x: bbox.x + ink.x / scale,
+      y: bbox.y + ink.y / scale,
+      width: ink.width / scale,
+      height: ink.height / scale,
+    };
+    expect(edgeError(drawn, truth)).toBeLessThan(3);
+  });
+
+  test("look crop (pad around the box) centres it", async () => {
+    const boxes = await frameScene();
+    const truth = boxes["box"];
+    if (!truth) throw new Error("no box measured");
+    const r = 20;
+    const scale = 2;
+    const bbox = {
+      x: truth.x - r,
+      y: truth.y - r,
+      width: truth.width + 2 * r,
+      height: truth.height + 2 * r,
+    };
+    const png = await sidecar.snap(bbox, scale);
+    const ink = await pngInkBox(png);
+    if (!ink) throw new Error("no ink drawn");
+    const centre = {
+      x: ink.x / scale + ink.width / (2 * scale),
+      y: ink.y / scale + ink.height / (2 * scale),
+    };
+    // The box sits centred in bbox by construction (symmetric padding): its
+    // ink centre should land within a couple of px of the crop's own centre.
+    expect(Math.abs(centre.x - bbox.width / 2)).toBeLessThan(3);
+    expect(Math.abs(centre.y - bbox.height / 2)).toBeLessThan(3);
+  });
+});
+
 test("measureText: wraps, and a cache hit skips the browser", async () => {
   const own = new Sidecar();
   await own.start();
