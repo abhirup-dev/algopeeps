@@ -99,7 +99,7 @@ export function App({ url }: { url: string }) {
     <>
       <Excalidraw excalidrawAPI={setApi} onChange={onChange} />
       <div className={`elkdraw-pill elkdraw-pill-${state}`}>
-        {branch || "?"} · {state} · {url}
+        {branch || "?"} · {state} · {new URL(url).origin.replace(/^ws/, "http")}
       </div>
     </>
   );
