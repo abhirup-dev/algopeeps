@@ -562,6 +562,7 @@ test:e2e`, ~2 s after the app build): per fixture, sidecar `measure` →
   final.png and 585.5-674 in our snap.
 - `test/parity/src/defects.test.ts` (not owned here) still schema-checks only
   the 4 originals; adding the painted ones needs `notDrawn` in its schema.
+
 ### 1.10 CLI and MCP wiring for Phase 1 tools (2026-09-26)
 
 - Real now: `apply`, `add`, `validate`, `lint`, `look`, `diff`, `changes`
