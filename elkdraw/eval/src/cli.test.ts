@@ -18,6 +18,7 @@ test("--dry-run on a recorded transcript gives one JSON row and one markdown row
   // The dogfood itself is far above ⅓ calls; lint and review are unmeasured.
   expect(row.bar.verdict).toBe("no-go");
   expect(row.bar.next).toBe("fix-cycle");
+  expect(row.comparable).toBe(true);
   expect(row.vsBaseline).toEqual({ toolCalls: 1.031, tokens: 1 });
   expect(markdown).toBe(
     "| yct-ride-hailing | ride-hailing | 33 | 59997 (27158 + 15965 + 16874) | 11 | 441.4 | 1.031 | 1 | no-go |",

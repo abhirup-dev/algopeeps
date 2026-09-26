@@ -2,7 +2,7 @@
   "about": "Dogfood baseline for the §17.4 bar (canvas/docs/agent-layer-design.md). Two Claude Code testers (claude-opus-5-5, effort medium) drove mcp-excalidraw-server 2.0.0 via the excalidraw-skill CLI on 2026-09-25 (canvas/docs/dogfood-synthesis.md). Every metric comes from src/transcript.ts run on the tester transcript over the given window.",
   "method": {
     "toolCalls": "tool_use blocks in the window, deduplicated by block id. Counts every tool (Bash, Read, Skill, Write, ...), not just canvas CLI calls.",
-    "tokens": "output_tokens from API usage (deduplicated by message.id, includes thinking) + user-side text in the window (prompt, skill text, tool results) at 3.2 bytes/token (design §9.5) + images at (w*h)/750 after the API resize to <= 1568 px long edge and <= 1.15 MP. Cache reads and the session's system-prompt cache write are excluded: both are fixed or scale with turns x context, not with the task.",
+    "tokens": "output_tokens from API usage (deduplicated by message.id, includes thinking) + user-side text in the window (prompt, skill text, tool results) at 3.2 bytes/token (design §9.5) + images at (w*h)/750 after the API resize to <= 1568 px long edge and <= 1.15 MP. API input and cache fields (input_tokens, cache_read, cache_creation) are not used: they carry the fixed system prompt and scale with turns x context, not with the task; they are kept in `usage` for audit. Attachment records (hook output, reminders) are not counted.",
     "wallSeconds": "first to last user/assistant record in the window.",
     "window": "from the task prompt (inclusive) to the next orchestrator prompt (exclusive). It includes writing the report and the one-line summary the brief asks for.",
     "command": "bun eval/src/cli.ts --dry-run <transcript> --task <task> --from <from> --to <to>"
@@ -119,6 +119,7 @@
       }
     }
   ],
+  "tester": { "model": "claude-opus-5-5", "effort": "medium" },
   "reference": {
     "ride-hailing": {
       "toolCalls": 32,

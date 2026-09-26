@@ -17,6 +17,7 @@ import { checkBar, nextStep, TASKS, type Task } from "./bar.ts";
 import { readTranscript, type TranscriptMetrics } from "./transcript.ts";
 
 const Baseline = z.object({
+  tester: z.object({ model: z.string(), effort: z.string() }),
   reference: z.record(
     z.enum(TASKS),
     z.object({ toolCalls: z.number(), tokens: z.number() }),
@@ -70,8 +71,8 @@ export async function run(argv: string[]) {
   });
   const baselinePath =
     values.baseline ?? new URL("../baseline.json", import.meta.url).pathname;
-  const ref = parseJson(Baseline, await Bun.file(baselinePath).text())
-    .reference[task];
+  const baseline = parseJson(Baseline, await Bun.file(baselinePath).text());
+  const ref = baseline.reference[task];
   const bar = checkBar(
     task,
     {
@@ -93,6 +94,10 @@ export async function run(argv: string[]) {
       tokens: round(metrics.tokens.total / ref.tokens),
     },
     bar: { ...bar, next: nextStep(bar.verdict, attempt) },
+    // Thinking dominates output tokens and scales with effort: flag drift.
+    comparable:
+      metrics.model === baseline.tester.model &&
+      metrics.effort === baseline.tester.effort,
   };
   return { row, markdown: markdownRow(row.label, task, metrics, row) };
 }
@@ -106,6 +111,7 @@ function markdownRow(
   r: {
     vsBaseline: { toolCalls: number; tokens: number };
     bar: { verdict: string };
+    comparable: boolean;
   },
 ): string {
   const t = m.tokens;
@@ -118,7 +124,9 @@ function markdownRow(
     m.wallSeconds,
     r.vsBaseline.toolCalls,
     r.vsBaseline.tokens,
-    r.bar.verdict,
+    r.comparable
+      ? r.bar.verdict
+      : `${r.bar.verdict} (model/effort differ from baseline)`,
   ];
   return `| ${cells.map(String).join(" | ")} |`;
 }
@@ -133,8 +141,11 @@ async function live(promptFile?: string, cwd?: string): Promise<string> {
       "claude",
       "-p",
       prompt,
+      // Same tester as the dogfood (baseline.json `tester`).
       "--model",
-      "opus",
+      "claude-opus-5-5",
+      "--effort",
+      "medium",
       "--output-format",
       "json",
       "--permission-mode",
