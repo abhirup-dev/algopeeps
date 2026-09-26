@@ -870,3 +870,44 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   every bound end within 5 px outside pricing's new outline, w1's waypoint
   unchanged. It fails on the base (`updated` 1). `skill/SKILL.md:49` ("follow
   them when they move") is now true for apply and place; no wording change.
+### 1.19 Lint gaps from the Phase 1 eval (2026-09-26)
+
+- Fixtures: `test/fixtures/eval-p1/{rh-r1,rh-r2,rh-r4,rh-r8,rh-r9,bst-r1}`,
+  the eval scenes at the revs each by-eye defect was drawn, rebuilt with
+  `Store.sceneAt(rev)` from the runs' `events.jsonl` (provenance in its
+  README). `lint.e2e.ts` runs them after the 7 dogfood fixtures: 13 green.
+  New manifest field `wontFix: {reason}`, out of the must-flag set.
+- Per gap:
+  - Ellipse `text-wrapped` (p1rh-03): not ellipse-specific. `readScene` read
+    Excalidraw's `text`, which is the wrapped copy; now it reads
+    `originalText || text` (`backends/excalidraw/src/read/read.ts`, approved
+    by the orchestrator). The existing rule then fires. `describe`/diff now
+    see the written text too.
+  - A line under another arrow's label (p1rh-04): the notif-apns line clears
+    the "7 GEOSEARCH" ink by 12.5 px, so there is no overlap. `arrow-through-label`
+    now grows arrow labels (not free text) by `NEAR` = 0.75 × fontSize.
+    Calibration: 12.5 px (20 px font) and yct-12 at 6.1 px (14 px) flagged;
+    the closest clean one is s9's label vs a-trip at 19.9 px (limit 15).
+    Free texts stay on the ink box: the legend and pointer texts sit 15-20 px
+    from their lines.
+  - Reset to defaults (p1rh-05): the painted part is flagged. The legend
+    box reset to 100x100 had its unbound swatch arrow start 50 px inside and
+    cross the border. `arrow-through-node` now skips a shape only when an end
+    is on its outline (gap in (-BIND_GAP, TOL)), not anywhere inside. The
+    lost colours and dash are won't-fix: that is apply's partial-upsert bug.
+  - Lost label (p1rh-06): new `unlabelled-node`. A leaf with no label and no
+    free text inside it, with at least one arrow bound to it. Legend swatches
+    have no arrows.
+  - Arrowhead pile-up (p1rh-10): new `arrowhead-overlap`. Two lines with the
+    same `to` whose last points are < HEAD (25 px) apart; ids
+    `[a, b, target]`. It also fires on yct `e-trip`/`e-surge` into Kafka.
+    That pile-up is drawn in yct final.png but missing from the manifest, so
+    `lint.e2e.ts` adds it as `EXTRA` yct-17 until the manifest owner adds it.
+  - textAlign drift (p1bst-01): won't-fix in lint. Apply's convert stores
+    `{x: 84, width: 32, textAlign: "center"}` as width 9.3 centred on x 84.
+    The stored scene matches the pixels, so the lost width cannot be seen.
+    p1bst-02 (roughness doubles a line) is won't-fix too.
+- Contract: `LintCode` += `unlabelled-node`, `arrowhead-overlap`; schemas
+  regenerated; CONTRACTS.md changelog; SKILL.md table has 2 new rows and 2
+  changed ones. Stale elsewhere (not owned): CONTEXT.md "twelve lint codes"
+  and skill/MAINTAINERS.md "12 codes".

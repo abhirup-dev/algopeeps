@@ -70,8 +70,10 @@ export async function readScene(
         texts.map((t) => ({ id: t.id, type: t.type, text: t.text })),
       )
     : {};
+  // `text` is Excalidraw's wrapped copy; `originalText` is what was written
+  // (lint's text-wrapped counts written lines against rendered ones).
   const textBox = (t: ExcalidrawTextElement): TextBox => ({
-    text: t.text,
+    text: t.originalText || t.text,
     box: rendered[t.id] ?? box(t),
   });
 

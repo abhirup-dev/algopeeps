@@ -4,7 +4,10 @@
 // sidecar measure -> readScene -> lint. Defects marked `envOnly` were painted
 // only in the tester's browser; `notDrawn` ones are drawn in neither render.
 // Both are out of the must-flag set (see test/fixtures/README.md). The
-// `-painted` variants are the scenes as the tester's browser painted them. Run with `bun run --cwd elkdraw/test/parity test:e2e`.
+// `-painted` variants are the scenes as the tester's browser painted them.
+// eval-p1/* are the Phase 1 eval's scenes at the revs its by-eye defects were
+// drawn (1.19, test/fixtures/eval-p1/README.md); `wontFix` defects are ones
+// no rule over the scene can see. Run with `bun run --cwd elkdraw/test/parity test:e2e`.
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { Element, parseJson } from "@elkdraw/core";
 import { lint } from "@elkdraw/core/engine";
@@ -12,7 +15,7 @@ import { readScene, type ExcalidrawScene } from "@elkdraw/backend-excalidraw";
 import { Sidecar } from "@elkdraw/sidecar";
 import { z } from "zod";
 
-const dogfood = new URL("../../fixtures/dogfood/", import.meta.url).pathname;
+const fixtures = new URL("../../fixtures/", import.meta.url).pathname;
 
 const Manifest = z.object({
   defects: z.array(
@@ -26,6 +29,7 @@ const Manifest = z.object({
       notDrawn: z
         .object({ reason: z.string(), evidence: z.string() })
         .optional(),
+      wontFix: z.object({ reason: z.string() }).optional(),
     }),
   ),
   cleanRegions: z.array(
@@ -34,15 +38,35 @@ const Manifest = z.object({
 });
 const Scene = z.object({ elements: z.array(Element) });
 
-/** Must-flag defects per fixture (open, not envOnly or notDrawn). */
+/** Must-flag defects per fixture (open, not envOnly, notDrawn or wontFix). */
 const EXPECTED = {
-  yct: 11,
-  batch: 3,
-  "bst-first": 0,
-  bst: 0,
-  "yct-painted": 14,
-  "batch-painted": 7,
-  "bst-first-painted": 2,
+  "dogfood/yct": 12,
+  "dogfood/batch": 3,
+  "dogfood/bst-first": 0,
+  "dogfood/bst": 0,
+  "dogfood/yct-painted": 15,
+  "dogfood/batch-painted": 7,
+  "dogfood/bst-first-painted": 2,
+  "eval-p1/rh-r1": 18,
+  "eval-p1/rh-r2": 4,
+  "eval-p1/rh-r4": 4,
+  "eval-p1/rh-r8": 4,
+  "eval-p1/rh-r9": 3,
+  "eval-p1/bst-r1": 0,
+};
+
+// Drawn in the dogfood PNGs but missing from their manifests (not owned by
+// 1.19): the two dashed heads tangle on Kafka in yct final.png. Move into
+// the manifests and drop this.
+const yct17 = {
+  id: "yct-17",
+  rule: "arrowhead-overlap",
+  ids: ["e-trip", "e-surge", "kafka"],
+  fixedInFinal: false,
+};
+const EXTRA: Record<string, z.infer<typeof Manifest>["defects"]> = {
+  "dogfood/yct": [yct17],
+  "dogfood/yct-painted": [yct17],
 };
 
 const sidecar = new Sidecar();
@@ -55,8 +79,9 @@ afterAll(async () => {
 
 for (const [name, mustFlag] of Object.entries(EXPECTED)) {
   test(`${name}: lint flags every open defect, nothing else`, async () => {
-    const dir = `${dogfood}${name}/`;
+    const dir = `${fixtures}${name}/`;
     const m = parseJson(Manifest, await Bun.file(`${dir}defects.json`).text());
+    m.defects.push(...(EXTRA[name] ?? []));
     const scene = parseJson(
       Scene,
       await Bun.file(`${dir}scene.excalidraw`).text(),
@@ -67,10 +92,12 @@ for (const [name, mustFlag] of Object.entries(EXPECTED)) {
       elements: scene.elements as unknown as ExcalidrawScene["elements"],
     };
     const neutral = await readScene(excalidraw, () => Promise.resolve(boxes));
-    // lint names bound text `<owner>#label`; the fixtures say `<owner>-label`.
+    // lint names bound text `<owner>#label`; the dogfood fixtures say
+    // `<owner>-label` (eval-p1 scenes come from apply and use `#label`).
+    const dash = name.startsWith("dogfood/");
     const hits = lint(neutral).map((h) => ({
       code: h.code,
-      ids: h.ids.map((id) => id.replace(/#label$/, "-label")),
+      ids: dash ? h.ids.map((id) => id.replace(/#label$/, "-label")) : h.ids,
     }));
     const tag = (h: (typeof hits)[number]) => `${h.code}:${h.ids.join(",")}`;
     const matches = (d: (typeof m.defects)[number]) =>
@@ -81,7 +108,7 @@ for (const [name, mustFlag] of Object.entries(EXPECTED)) {
       );
 
     const open = m.defects.filter(
-      (d) => !d.fixedInFinal && !d.envOnly && !d.notDrawn,
+      (d) => !d.fixedInFinal && !d.envOnly && !d.notDrawn && !d.wontFix,
     );
     expect(open.length).toBe(mustFlag);
     expect(open.filter((d) => !matches(d).length).map((d) => d.id)).toEqual([]);

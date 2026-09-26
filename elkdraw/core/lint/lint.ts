@@ -1,4 +1,4 @@
-// Rendered lint (design §5, §19.1 B1): twelve rules over a NeutralScene whose
+// Rendered lint (design §5, §19.1 B1): fourteen rules over a NeutralScene whose
 // text boxes are where the text drew (the sidecar's ink boxes, via readScene's
 // `measure`). Pure and synchronous: no sidecar, no Excalidraw here.
 //
@@ -34,6 +34,9 @@ const HEAD = 25;
 const MASK = 5;
 /** Collinear overlap longer than this is a crossing; touching ends are not. */
 const END = 4;
+/** A foreign line this close to an arrow label (x its fontSize) reads as the
+ * label's line (1.19: 12.5 px at 20 px flagged, 19.9 px clean). */
+const NEAR = 0.75;
 
 type Shape = "rect" | "ellipse" | "diamond";
 interface Solid {
@@ -417,7 +420,13 @@ export function lint(scene: NeutralScene): LintHit[] {
     const first = ps[0];
     const last = ps.at(-1);
     if (!first || !last) continue;
-    const touches = (s: Solid) => gap(s, first) < TOL || gap(s, last) < TOL;
+    // An end on the outline; an unbound end deep inside a shape is drawn
+    // across its border (1.19: a legend box reset to 100x100).
+    const touches = (s: Solid) =>
+      [first, last].some((e) => {
+        const g = gap(s, e);
+        return g < TOL && g > -BIND_GAP;
+      });
 
     // arrow-through-node: through a leaf that is not an endpoint's.
     for (const s of leaves) {
@@ -434,12 +443,19 @@ export function lint(scene: NeutralScene): LintHit[] {
     }
 
     // arrow-through-label: through another line's label or a free text it
-    // does not point at.
+    // does not point at. An arrow label also claims a NEAR margin.
     for (const l of labels) {
       if (l.owner.id === line.id) continue;
       if (l.owner.type !== "line" && l.owner.type !== "text") continue;
       if (distance(l.box, first) < 8 || distance(l.box, last) < 8) continue;
-      const inPts = inside(ps, { box: l.box, shape: "rect" });
+      const m = l.owner.type === "line" ? NEAR * (l.fontSize ?? 0) : 0;
+      const b = box(
+        l.box.x - m,
+        l.box.y - m,
+        right(l.box) + m,
+        bottom(l.box) + m,
+      );
+      const inPts = inside(ps, { box: b, shape: "rect" });
       if (inPts.length) {
         hit(
           "arrow-through-label",
@@ -496,6 +512,41 @@ export function lint(scene: NeutralScene): LintHit[] {
       }
     }
   }
+
+  // unlabelled-node: arrows bind to a shape that shows no label (a legend
+  // swatch has no arrows; free text inside it counts as its label).
+  for (const s of leaves) {
+    if (s.el.text || s.zone) continue;
+    if (!lines.some((l) => l.from === s.id || l.to === s.id)) continue;
+    if (labels.some((l) => !l.bound && within(l.box, s.box))) continue;
+    hit(
+      "unlabelled-node",
+      [s.id],
+      s.box,
+      `Give ${s.id} its label: resend it in full (id, type, size, style, label)`,
+    );
+  }
+
+  // arrowhead-overlap: two arrows into one shape whose heads (assumed at the
+  // last point) land closer than a head's length.
+  lines.forEach((a, i) => {
+    for (const b of lines.slice(i + 1)) {
+      const [p, q] = [a.points.at(-1), b.points.at(-1)];
+      if (!p || !q || a.to === undefined || a.to !== b.to) continue;
+      if (Math.hypot(p.x - q.x, p.y - q.y) >= HEAD) continue;
+      hit(
+        "arrowhead-overlap",
+        [a.id, b.id, a.to],
+        box(
+          Math.min(p.x, q.x) - END,
+          Math.min(p.y, q.y) - END,
+          Math.max(p.x, q.x) + END,
+          Math.max(p.y, q.y) + END,
+        ),
+        `Spread where ${a.id} and ${b.id} land on ${a.to} (≥ 40px apart), or move a source shape`,
+      );
+    }
+  });
 
   // crossing (info)
   lines.forEach((a, i) => {

@@ -1,0 +1,76 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final.png",
+  "source": "eval/phase-1/ride-hailing/defects.json (rev 2)",
+  "note": "Rev 2: frames replaced by dashed rectangles.",
+  "defects": [
+    {
+      "id": "p1rh-04",
+      "rule": "arrow-through-label",
+      "ids": ["notif-apns", "s7#label"],
+      "description": "The \"7 GEOSEARCH\" label sits 12 px under the notif-apns line and reads as its label.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 4; final.png"
+    },
+    {
+      "id": "p1rh-10",
+      "rule": "arrowhead-overlap",
+      "ids": ["a-trip", "a-pay", "kafka"],
+      "description": "The async arrowheads from Trip and Payment land on Kafka's top edge under 25 px apart and tangle into one.",
+      "reported": false,
+      "fixedInFinal": false,
+      "source": "final.png"
+    },
+    {
+      "id": "p1rh-08",
+      "rule": "crossing",
+      "ids": ["s7", "notif-apns"],
+      "description": "Arrow 7 (location->redis) crosses notification->APNs.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "final.png"
+    },
+    {
+      "id": "p1rh-09",
+      "rule": "crossing",
+      "ids": ["pay-stripe", "trip-pg"],
+      "description": "trip->postgres crosses payment->stripe.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "final.png"
+    }
+  ],
+  "cleanRegions": [
+    {
+      "name": "edge",
+      "ids": [
+        "rider",
+        "gateway",
+        "auth",
+        "driver",
+        "s1",
+        "s2",
+        "edge-zone",
+        "edge-h"
+      ]
+    },
+    {
+      "name": "legend",
+      "ids": [
+        "legend-zone",
+        "legend-h",
+        "lg-sync",
+        "lg-sync-t",
+        "lg-async",
+        "lg-async-t",
+        "lg-store",
+        "lg-store-t"
+      ]
+    },
+    {
+      "name": "title",
+      "ids": ["title"]
+    }
+  ]
+}

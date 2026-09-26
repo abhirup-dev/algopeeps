@@ -280,3 +280,56 @@ test("allow suppresses one rule on one element; the hit is still returned", () =
   });
   expect(run(n)[0]?.suppressed).toBe("clipped on purpose");
 });
+
+test("arrow-through-label: a line within 0.75 fontSize of an arrow label", () => {
+  // ab's label (14 px) ink ends at y 36: 8 px below is on it, 12 px is clear.
+  const near = line("near", [p(200, 44), p(320, 44)]);
+  const far = line("far", [p(200, 48), p(320, 48)]);
+  expect(only("arrow-through-label", a, b, ab, near, far)).toEqual([
+    ["near", "ab#label"],
+  ]);
+});
+
+test("arrow-through-node: an unbound end deep inside a shape crosses its border", () => {
+  // A legend box reset to 100x100: the swatch arrow starts 50 px inside.
+  const box = node("lz", at(0, 200, 100, 100));
+  const deep = line("deep", [p(50, 250), p(130, 250)]);
+  const edge = line("edge", [p(101, 280), p(180, 280)]);
+  expect(only("arrow-through-node", box, deep, edge)).toEqual([["deep", "lz"]]);
+});
+
+test("unlabelled-node: arrows bind to a shape with no label", () => {
+  const blank = node("blank", at(360, 200, 100, 100));
+  const swatch = node("swatch", at(0, 200, 60, 30));
+  const noted = node("noted", at(600, 200, 100, 100));
+  const note: SceneElement = {
+    type: "text",
+    id: "note",
+    text: { text: "N", box: at(645, 240, 10, 16) },
+  };
+  const toBlank = line("x", [p(80, 30), p(410, 195)], {
+    from: "a",
+    to: "blank",
+  });
+  const toNoted = line("y", [p(80, 30), p(650, 195)], {
+    from: "a",
+    to: "noted",
+  });
+  expect(
+    only("unlabelled-node", a, blank, swatch, noted, note, toBlank, toNoted),
+  ).toEqual([["blank"]]);
+});
+
+test("arrowhead-overlap: two heads into one shape under a head length apart", () => {
+  const into = (id: string, x: number) =>
+    line(id, [p(x, -200), p(x, -5)], { to: "a" });
+  expect(
+    only(
+      "arrowhead-overlap",
+      a,
+      into("h1", 60),
+      into("h2", 78),
+      into("h3", 120),
+    ),
+  ).toEqual([["h1", "h2", "a"]]);
+});
