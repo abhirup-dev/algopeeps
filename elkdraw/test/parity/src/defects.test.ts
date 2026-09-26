@@ -93,5 +93,22 @@ for (const name of ["yct", "batch"]) {
       r.ids.filter((id) => open.has(id)).map((id) => `${r.name}:${id}`),
     );
     expect(clash).toEqual([]);
+
+    // A hit that matches an unfixed defect must not also match a fixed one:
+    // same rule, fixed ids a subset of the unfixed ids.
+    const code = (d: z.infer<typeof defect>) => d.rule ?? d.ruleGap;
+    const ambiguous = m.defects
+      .filter((f) => f.fixedInFinal)
+      .flatMap((f) =>
+        m.defects
+          .filter(
+            (u) =>
+              !u.fixedInFinal &&
+              code(u) === code(f) &&
+              f.ids.every((id) => u.ids.includes(id)),
+          )
+          .map((u) => `${f.id}~${u.id}`),
+      );
+    expect(ambiguous).toEqual([]);
   });
 }

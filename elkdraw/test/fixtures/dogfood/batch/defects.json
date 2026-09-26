@@ -64,19 +64,32 @@
       "note": "Fixed in the last apply by moving Location to y=680."
     },
     {
-      "id": "batch-07",
+      "id": "batch-07a",
       "rule": "text-wrapped",
-      "ids": [
-        "postgres-label",
-        "kafka-label",
-        "warehouse-label",
-        "redis-label"
-      ],
-      "description": "First batch: every store label wraps inside its 200 px ellipse.",
-      "source": "transcript (first-pass review)",
-      "reported": true,
+      "ids": ["postgres-label"],
+      "description": "First batch: \"Postgres (trips)\" wraps inside its 200 px ellipse.",
+      "source": "transcript (first-pass review), not in report",
+      "reported": false,
       "fixedInFinal": true,
-      "note": "Fixed in fix1 by widening the ellipses to 260 px; only warehouse-label still wraps (batch-12). Not in the report's text, only in the tester's own review."
+      "note": "Fixed in fix1 by widening the ellipses to 260 px. warehouse-label wrapped too and still does (batch-12)."
+    },
+    {
+      "id": "batch-07b",
+      "rule": "text-wrapped",
+      "ids": ["kafka-label"],
+      "description": "First batch: \"Kafka event bus\" wraps inside its 200 px ellipse.",
+      "source": "transcript (first-pass review), not in report",
+      "reported": false,
+      "fixedInFinal": true
+    },
+    {
+      "id": "batch-07c",
+      "rule": "text-wrapped",
+      "ids": ["redis-label"],
+      "description": "First batch: \"Redis geo-index\" wraps inside its 200 px ellipse.",
+      "source": "transcript (first-pass review), not in report",
+      "reported": false,
+      "fixedInFinal": true
     },
     {
       "id": "batch-08",

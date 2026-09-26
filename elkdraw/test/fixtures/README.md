@@ -53,17 +53,21 @@ measured boxes, as the design says.
 }
 ```
 
-- **Acceptance for lint:** every defect with `fixedInFinal: false` and a `rule`
-  is flagged with (at least) its `ids`; no defect with `fixedInFinal: true` is
-  flagged.
+- **Acceptance for lint:** a hit matches a defect when it has the same rule
+  and its ids include all of the defect's `ids`. Every defect with
+  `fixedInFinal: false` and a `rule` must be matched; no defect with
+  `fixedInFinal: true` may be. The schema test guarantees no hit can match
+  both (a fixed entry's ids are never a subset of an unfixed entry's ids under
+  the same rule).
 - **Clean regions:** a lint hit whose ids all belong to one region's `ids` is a
   false positive. `bbox` (scene coordinates, 10 px padding) is for `look` and
   humans; the ids are the contract. Regions include the legends (unbound arrows
   on purpose), Stripe/APNs (outside every zone by design), zone titles, and
   elements that were defects earlier and are clean now.
-- **`reported: false`:** hits visible in `final.png` that the testers did not
-  list (store labels wrapping, labels touching arrowheads, one corner graze).
-  They are listed so lint does not look like it has false positives.
+- **`reported: false`:** not in the report text: hits visible in `final.png`
+  that the testers did not list, and three first-pass wraps (batch-07a-c) that
+  only the batch tester's transcript mentions. The final-PNG hits are store labels wrapping, labels touching arrowheads and
+  two corner grazes or crossings; they are listed so lint does not look like it has false positives.
 - **Rule gaps:** two reported defects fit no v0 rule. `arrow-through-label` (an
   arrow drawn over another arrow's label: yct-08, yct-12) and
   `label-on-own-arrowhead` (a label running into its own arrowhead: batch-10,
@@ -77,7 +81,7 @@ measured boxes, as the design says.
 | Scene | Defects | Reported | Not reported | Unfixed | Rule gaps | Unmapped |
 | ----- | ------- | -------- | ------------ | ------- | --------- | -------- |
 | yct   | 23      | 13       | 10           | 14      | 6         | 1        |
-| batch | 15      | 12       | 3            | 8       | 4         | 4        |
+| batch | 17      | 11       | 6            | 8       | 4         | 4        |
 
 Not in any fixture: the Mermaid-path scene (batch report §2.6, cleared before
 the rebuild), and round 2 and 3 defects (Analytics over Postgres after the
