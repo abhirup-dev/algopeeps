@@ -14,6 +14,7 @@ import {
   type LintHit,
   type NeutralScene,
   place,
+  type SceneElement,
   type SkeletonElement,
   skeletonErrors,
 } from "@elkdraw/core";
@@ -31,6 +32,7 @@ import {
   type LookResult,
   pad,
   type Scene,
+  targetBox,
 } from "@elkdraw/core/engine";
 import { type ExcalidrawScene, readScene } from "@elkdraw/backend-excalidraw";
 import {
@@ -67,8 +69,96 @@ const intersects = (a: Box, b: Box) =>
   a.y < b.y + b.height &&
   b.y < a.y + a.height;
 
+/** `box` is fully contained inside `region`. */
+const within = (box: Box, region: Box) =>
+  box.x >= region.x &&
+  box.y >= region.y &&
+  box.x + box.width <= region.x + region.width &&
+  box.y + box.height <= region.y + region.height;
+
 /** `x#label` belongs to `x`. */
 const ownerOf = (id: string) => id.replace(/#label$/, "");
+
+const SCOPE = /^(?:frame:(.+)|near:(.+),r=(\d+(?:\.\d+)?))$/;
+
+/** `lint`'s and `describe`'s shared `scope` grammar: `all`, `frame:<id>` or
+ * `near:<id>,r=<px>`, resolved against whatever boxes the caller has (rendered
+ * for lint, stored for describe). Returns a predicate, or undefined for "all". */
+function scopeMatch(
+  tool: ToolName,
+  scope: string | undefined,
+  boxOf: (id: string) => Box | undefined,
+): ((box: Box) => boolean) | undefined {
+  if (!scope || scope === "all") return undefined;
+  const m = SCOPE.exec(scope);
+  const id = m?.[1] ?? m?.[2];
+  const box = id === undefined ? undefined : boxOf(id);
+  if (!box)
+    throw invalid(tool, [
+      `scope: "${scope}" is not all, frame:<id> or near:<id>,r=<px> with an existing id`,
+    ]);
+  const region = pad(box, Number(m?.[3] ?? 0));
+  return (b: Box) => intersects(b, region);
+}
+
+/** A `SceneElement`'s own box: stored, not rendered (`describe`, `query`). */
+function elementBox(e: SceneElement): Box {
+  switch (e.type) {
+    case "box":
+    case "zone":
+      return e.box;
+    case "text":
+      return e.text.box;
+    case "line": {
+      const xs = e.points.map((p) => p.x);
+      const ys = e.points.map((p) => p.y);
+      const x = Math.min(...xs);
+      const y = Math.min(...ys);
+      return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+    }
+  }
+}
+
+const fmtBox = (b: Box) =>
+  `(${String(Math.round(b.x))},${String(Math.round(b.y))},${String(Math.round(b.width))},${String(Math.round(b.height))})`;
+
+/** One line per element: id, kind, label, rounded box; arrows read
+ * `id: from -> to "label"`. Pure over `NeutralScene` (no I/O), so it is unit
+ * tested directly against the yct fixture. */
+export function describeText(scene: NeutralScene): string {
+  const label = (e: SceneElement) =>
+    e.text ? ` ${JSON.stringify(e.text.text)}` : "";
+  const lineOf = (e: SceneElement): string => {
+    if (e.type === "line" && e.from && e.to)
+      return `${e.id}: ${e.from} -> ${e.to}${label(e)}`;
+    if (e.type === "line")
+      return `${e.id}: line${label(e)} ${fmtBox(elementBox(e))}`;
+    if (e.type === "text") return `${e.id}: text${label(e)}`;
+    if (e.type === "zone") return `${e.id}: zone${label(e)} ${fmtBox(e.box)}`;
+    return `${e.id}: ${e.shape ?? "box"}${label(e)} ${fmtBox(e.box)}`;
+  };
+  const zones = scene.elements.filter((e) => e.type === "zone");
+  const zoneIds = new Set(zones.map((z) => z.id));
+  const byZone = new Map<string, SceneElement[]>();
+  const loose: SceneElement[] = [];
+  for (const e of scene.elements) {
+    if (e.type === "zone") continue;
+    // A dangling `zone` (its frame was deleted) reads as loose, not dropped.
+    if (e.zone === undefined || !zoneIds.has(e.zone)) {
+      loose.push(e);
+      continue;
+    }
+    const bucket = byZone.get(e.zone) ?? [];
+    bucket.push(e);
+    byZone.set(e.zone, bucket);
+  }
+  const lines: string[] = loose.map(lineOf);
+  for (const z of zones) {
+    lines.push(lineOf(z));
+    for (const e of byZone.get(z.id) ?? []) lines.push(`  ${lineOf(e)}`);
+  }
+  return lines.join("\n");
+}
 
 /** How many times apply retries when a human edit lands mid-conversion. */
 const APPLY_ATTEMPTS = 3;
@@ -184,17 +274,8 @@ export function phase1Handlers(ctx: ToolContext): Partial<Handlers> {
         h.ids.some((id) => want.has(id) || want.has(ownerOf(id))),
       );
     }
-    if (scope && scope !== "all") {
-      const m = /^(?:frame:(.+)|near:(.+),r=(\d+(?:\.\d+)?))$/.exec(scope);
-      const id = m?.[1] ?? m?.[2];
-      const box = id === undefined ? undefined : boxes[id];
-      if (!box)
-        throw invalid("lint", [
-          `scope: "${scope}" is not all, frame:<id> or near:<id>,r=<px> with an existing id`,
-        ]);
-      const region = pad(box, Number(m?.[3] ?? 0));
-      hits = hits.filter((h) => intersects(h.bbox, region));
-    }
+    const match = scopeMatch("lint", scope, (id) => boxes[id]);
+    if (match) hits = hits.filter((h) => match(h.bbox));
     return { rev, hits };
   }
 
@@ -278,6 +359,132 @@ export function phase1Handlers(ctx: ToolContext): Partial<Handlers> {
     return diff(a, b);
   }
 
+  /** Stored (unmeasured) scene, for the read-only tools that never need the
+   * sidecar: `get`, `describe`, `query`. */
+  const storedScene = async (): Promise<{
+    rev: number;
+    scene: NeutralScene;
+  }> => {
+    const { rev, elements } = ctx.scene();
+    return { rev, scene: await readScene(asScene(elements)) };
+  };
+
+  async function getTool({ id }: ToolInput<"get">) {
+    const { rev, scene } = await storedScene();
+    const element = scene.elements.find((e) => e.id === id);
+    if (!element)
+      throw invalid("get", [`id: no element "${id}" on the canvas`]);
+    return { rev, element };
+  }
+
+  async function describeTool({ scope }: ToolInput<"describe">) {
+    const { rev, scene } = await storedScene();
+    const byId = new Map(scene.elements.map((e) => [e.id, e]));
+    const match = scopeMatch("describe", scope, (id) => {
+      const e = byId.get(id);
+      return e && elementBox(e);
+    });
+    const elements = match
+      ? scene.elements.filter((e) => match(elementBox(e)))
+      : scene.elements;
+    return { rev, text: describeText({ elements }) };
+  }
+
+  async function queryTool({ type, ids, bbox, limit }: ToolInput<"query">) {
+    const { rev, scene } = await storedScene();
+    let elements = scene.elements;
+    if (type)
+      elements = elements.filter(
+        (e) => e.type === type || (e.type === "box" && e.shape === type),
+      );
+    if (ids) {
+      const want = new Set(ids);
+      elements = elements.filter((e) => want.has(e.id));
+    }
+    if (bbox) elements = elements.filter((e) => within(elementBox(e), bbox));
+    const truncated = limit !== undefined && elements.length > limit;
+    if (limit !== undefined) elements = elements.slice(0, limit);
+    return { rev, elements, truncated };
+  }
+
+  async function screenshotTool(input: ToolInput<"screenshot">) {
+    if (input.format === "svg")
+      throw invalid("screenshot", [
+        "format: svg is not supported yet; use png (the sidecar only rasters)",
+      ]);
+    const { rev, elements } = ctx.scene();
+    const renderer = await ctx.renderer();
+    const boxes = await renderer.measure(elements);
+    const ids = elements.map((e) => e.id).filter((id) => boxes[id]);
+    if (ids.length === 0) throw invalid("screenshot", ["the canvas is empty"]);
+    const bbox = targetBox(boxes, ids);
+    const scale = clampScale(bbox, input.maxPx);
+    const png = await renderer.snap(bbox, scale);
+    const path =
+      input.out ??
+      join(
+        tmpdir(),
+        "elkdraw",
+        `${ctx.status().session}-screenshot-r${String(rev)}-${String(Date.now())}.png`,
+      );
+    mkdirSync(dirname(path), { recursive: true });
+    await Bun.write(path, png);
+    return {
+      path,
+      format: "png" as const,
+      width: Math.round(bbox.width * scale),
+      height: Math.round(bbox.height * scale),
+    };
+  }
+
+  function clearTool(_input: ToolInput<"clear">) {
+    const { elements } = ctx.scene();
+    const ids = elements.map((e) => e.id);
+    const rev = ids.length ? ctx.apply("agent", [], ids) : ctx.scene().rev;
+    return { rev, deleted: ids.length };
+  }
+
+  /** Named snapshots, by rev: not on-disk (the store's file format stays
+   * untouched), so they do not survive a server restart.
+   * ponytail: in-memory only; a snapshots.json file if that matters later. */
+  const snapshots = new Map<string, { rev: number; time: string }>();
+
+  function snapshotTool({ action, name }: ToolInput<"snapshot">) {
+    if (action === "save") {
+      snapshots.set(name ?? "", {
+        rev: ctx.scene().rev,
+        time: new Date().toISOString(),
+      });
+    } else if (action === "restore") {
+      const snap = name === undefined ? undefined : snapshots.get(name);
+      if (!snap)
+        throw invalid("snapshot", [`name: no snapshot "${String(name)}"`]);
+      const before = new Map(ctx.scene().elements.map((e) => [e.id, e]));
+      const target = storedAt("snapshot", snap.rev);
+      const targetIds = new Set(target.map((e) => e.id));
+      const upserts: Element[] = [];
+      for (const el of target) {
+        const cur = before.get(el.id);
+        if (cur?.version === el.version) continue;
+        upserts.push({
+          ...el,
+          version: Math.max(cur?.version ?? -1, el.version) + 1,
+        });
+      }
+      const deletes = [...before.keys()].filter((id) => !targetIds.has(id));
+      if (upserts.length || deletes.length)
+        ctx.apply("agent", upserts, deletes);
+    }
+    return {
+      rev: ctx.scene().rev,
+      snapshots: [...snapshots.entries()].map(([n, s]) => ({
+        name: n,
+        rev: s.rev,
+        time: s.time,
+      })),
+    };
+  }
+
   return {
     apply: (input) => serial(() => write("apply", input)),
     add: (input) => serial(() => write("add", input)),
@@ -286,5 +493,11 @@ export function phase1Handlers(ctx: ToolContext): Partial<Handlers> {
     look: (input) => serial(() => lookTool(input)),
     changes: (input) => serial(() => changesTool(input)),
     diff: (input) => serial(() => diffTool(input)),
+    get: (input) => serial(() => getTool(input)),
+    describe: (input) => serial(() => describeTool(input)),
+    query: (input) => serial(() => queryTool(input)),
+    screenshot: (input) => serial(() => screenshotTool(input)),
+    snapshot: (input) => serial(() => Promise.resolve(snapshotTool(input))),
+    clear: (input) => serial(() => Promise.resolve(clearTool(input))),
   };
 }

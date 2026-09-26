@@ -23,22 +23,22 @@ The canvas URL comes from `--url`, else `ELKDRAW_URL`, else `http://127.0.0.1:$P
 
 Results are JSON on stdout, always. Diagnostics on stderr. Exit codes: 0 ok, 1 error (the server answered non-2xx; body on stderr), 2 usage or invalid input (nothing was sent), 3 server unreachable. Every command takes `--input <json>` or `--input -` (stdin) for its whole input object; flags override it. A command whose reply is `{"error": {"code": "NOT_IMPLEMENTED", ...}}` is not built on this server yet; see "not available" rows below.
 
-| Task                                  | Command                                                                                                                          |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Start / stop / inspect server         | `start --no-open`, `stop`, `status`                                                                                              |
-| Create or update elements (batch)     | `apply --input - < scene.json` — `{"elements":[...],"place":[...],"prune":true}`                                                 |
-| Delete / relabel by id                | `apply --patches '[{"op":"delete","id":"a"},{"op":"set","id":"b","label":"New"}]'`                                               |
-| Create only (fails on an existing id) | `add --input - < elements.json` — `{"elements":[...]}`                                                                           |
-| Check input without writing           | `validate --input - < scene.json` (reads the canvas to resolve references), or `apply --dry-run` (also returns lints)            |
-| Read one / query many                 | not available — keep `scene.json` as the source of truth; `look --target <id>` gives one id's rendered box                       |
-| Understand the scene                  | not available — read `scene.json`, or `changes`/`diff` for what moved since your last apply                                      |
-| Check the scene                       | `lint [--scope all\|frame:<id>\|near:<id>,r=<px>] [--ids a,b]` → hits with code, ids, bbox, hint                                 |
-| See part of the scene                 | `look --target <id>[,<id>] [--r 150] [--marks]` → cropped PNG path + rendered boxes                                              |
-| See the whole scene                   | not available — `look --target x,y,w,h --max-px n` over the diagram's full bounds                                                |
-| What changed                          | `changes [--since <rev>]` (who changed what), `diff [--from <rev>] [--to <rev>]` (changes, lint added/fixed, and a `delta` line) |
-| Scene files                           | not available — `scene.json` is the file; commit it directly                                                                     |
-| Snapshots                             | not available — commit `scene.json` to git before risky changes instead                                                          |
-| Wipe canvas                           | not available — `apply --patches` with a `delete` per known id                                                                   |
+| Task                                  | Command                                                                                                                                                     |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Start / stop / inspect server         | `start --no-open`, `stop`, `status`                                                                                                                         |
+| Create or update elements (batch)     | `apply --input - < scene.json` — `{"elements":[...],"place":[...],"prune":true}`                                                                            |
+| Delete / relabel by id                | `apply --patches '[{"op":"delete","id":"a"},{"op":"set","id":"b","label":"New"}]'`                                                                          |
+| Create only (fails on an existing id) | `add --input - < elements.json` — `{"elements":[...]}`                                                                                                      |
+| Check input without writing           | `validate --input - < scene.json` (reads the canvas to resolve references), or `apply --dry-run` (also returns lints)                                       |
+| Read one / query many                 | `get --id <id>` → `{rev, element}`; `query [--type t] [--ids a,b] [--bbox '{"x":0,"y":0,"width":9,"height":9}'] [--limit n]` → `{rev, elements, truncated}` |
+| Understand the scene                  | `describe [--scope all\|frame:<id>\|near:<id>,r=<px>]` → `{rev, text}`, one line per element, grouped by zone (arrows read `id: from -> to "label"`)        |
+| Check the scene                       | `lint [--scope all\|frame:<id>\|near:<id>,r=<px>] [--ids a,b]` → hits with code, ids, bbox, hint                                                            |
+| See part of the scene                 | `look --target <id>[,<id>] [--r 150] [--marks]` → cropped PNG path + rendered boxes                                                                         |
+| See the whole scene                   | `screenshot [--format png] [--out path] [--max-px n]` → the full canvas, rendered headlessly (no browser tab needed)                                        |
+| What changed                          | `changes [--since <rev>]` (who changed what), `diff [--from <rev>] [--to <rev>]` (changes, lint added/fixed, and a `delta` line)                            |
+| Scene files                           | not available — `export`/`import`/`share` are unimplemented; `scene.json` is the file; commit it directly                                                   |
+| Snapshots                             | `snapshot --action save --name <name>` / `--action list` / `--action restore --name <name>` — restore is a normal write, so it shows up in `changes`        |
+| Wipe canvas                           | `clear --yes` → `{rev, deleted}` (deletes everything in one write; snapshot first if you might want it back)                                                |
 
 ### Element Format (CLI and MCP)
 
@@ -249,7 +249,7 @@ Arrows are straight lines between the edges of the shapes they bind. The reliabl
 
 Pairing `scene.json` with `lint` and `look` is what makes this skill powerful.
 
-- **`scene.json`** → your own file: element IDs, types, positions, labels, connections. It is the only "what's on the canvas" you get — there is no `describe` to ask the server instead.
+- **`scene.json`** → your own file: element IDs, types, positions, labels, connections. Keep it as the source of truth for what you intend even though `describe`/`query`/`get` can also read the live canvas.
 - **`lint`** → the defects, with ids and a hint each. Use it to know _what is wrong_ without looking at anything.
 - **`look`** → a cropped PNG around ids, plus their rendered boxes. Use it for _visual quality verification_ of one spot — it shows exactly what the user sees there. Add `--marks` to get each id's crop-pixel centre back in the reply (for your own bookkeeping; nothing is drawn on the PNG). The CLI prints the saved file path; read/view that file.
 
@@ -260,14 +260,14 @@ apply scene.json
   → lints: text-overflow [auth-svc#label] → set auth-svc width 220 in the file → apply
   → lints: node-overlap [auth-svc, rate-limiter] → look --target auth-svc,rate-limiter --r 150
     → "rate-limiter sits 20px into auth-svc" → rightOf rate-limiter of auth-svc gap 60 → apply
-  → lints: [] → look at the whole diagram → "all checks pass"
+  → lints: [] → screenshot the whole diagram → "all checks pass"
   → proceed
 ```
 
 ## Workflow: Refine an Existing Diagram
 
-1. `changes` to see what the human did since your last apply (lines like `{"author":"human","op":"moved","ids":["kafka"],"detail":{"dx":120,"dy":0}}`, no `author`/`time` on `diff`'s `changes`). `apply` writes exactly what you send, so a human's move is lost if you re-apply an old position: copy their changes into your file first (`look --target <id>` for the new box).
-2. No file (a diagram you didn't draw)? There is no `describe` or `query` to ask the server for the current scene — you need the `scene.json` a prior turn wrote, or `changes --since 0` for the full history of adds and moves.
+1. `changes` to see what the human did since your last apply (lines like `{"author":"human","op":"moved","ids":["kafka"],"detail":{"dx":120,"dy":0}}`, no `author`/`time` on `diff`'s `changes`). `apply` writes exactly what you send, so a human's move is lost if you re-apply an old position: copy their changes into your file first (`get --id <id>` for the new box).
+2. No file (a diagram you didn't draw)? `describe` gives a compact text scene (ids, labels, boxes, arrows, grouped by zone) and `query`/`get` fetch elements by type, id or bounding box — read the live canvas directly instead of reconstructing it from `changes --since 0`.
 3. Identify elements by `id` or label text (not by x/y coordinates — they change).
 4. Edit the file and re-apply it; `--if-rev <rev>` (the `rev` from `changes`) fails instead of overwriting if the canvas moved on meanwhile. Delete with a `delete` patch, or set `"prune": true` so ids you removed from the file are deleted (only elements you created; human-drawn elements are never pruned). **Bound arrows re-route automatically when you move or resize their endpoints** — no need to delete and recreate them.
 5. Read the reply's lints; `look` to confirm the change looks right. `diff` shows what changed since your last turn (no author/time), the lint hits it added or fixed, and a one-line `delta` summary (e.g. `+1 node-overlap, -1 crossing`).
@@ -279,7 +279,7 @@ Not supported: `apply` rejects `text`. Translate the Mermaid nodes and edges int
 
 ## Workflow: File I/O
 
-Not available: `export`, `import` and `share` are all unimplemented on this server. `scene.json` — the file you write and re-apply — is the only artifact; commit it to the repo directly.
+Not available: `export`, `import` and `share` are all unimplemented on this server. `scene.json` — the file you write and re-apply — is the only artifact; commit it to the repo directly. `screenshot` renders the whole canvas headlessly to a PNG (`--out`, `--max-px`) when you need a picture rather than a file — use `look` for a crop around specific ids.
 
 ### Obsidian vaults
 
@@ -287,7 +287,7 @@ Not available: there is no `--format obsidian` export yet. Commit `scene.json` a
 
 ## Workflow: Snapshots
 
-Not available: `snapshot` is unimplemented. Commit `scene.json` to git before risky changes, and `git checkout` it (then re-`apply`) to roll back.
+`snapshot --action save --name <name>` records the current rev under that name; `--action list` lists every saved name with its rev and time; `--action restore --name <name>` writes the canvas back to that rev. Restore is a normal write (like `apply`), so it bumps the rev and shows up in `changes` — it does not rewind history, it adds to it. Snapshot names live only in the running server's memory: they do not survive a restart, so still commit `scene.json` to git before a risky change if you need it to outlast the session.
 
 ## Workflow: Duplication
 
@@ -297,11 +297,11 @@ No duplicate command: copy the elements in `scene.json` with new ids and place t
 
 - **Exit code 3 (server unreachable)?** The server is not running at that URL. Run `start --no-open`, or fix `--url` / `ELKDRAW_URL`. For an `https://….elkdraw.localhost` URL, set `NODE_EXTRA_CA_CERTS=~/.portless/ca.pem`.
 - **Exit code 2 (invalid input)?** Nothing was sent. stderr names the path and the problem (`elements[3].text: unknown key; use label.text`); fix that field. `validate` checks a file the same way, reading the canvas to resolve references, without writing.
-- **Exit code 1 with `"code": "NOT_IMPLEMENTED"`?** That tool or option is not available on this server; stderr includes its input schema. `describe`, `get`, `query`, `screenshot`, `export`, `snapshot`, `clear` and `wait` are all in this state today — use another route from this skill.
+- **Exit code 1 with `"code": "NOT_IMPLEMENTED"`?** That tool or option is not available on this server; stderr includes its input schema. Only `export` and `wait` are still in this state — use another route from this skill (`screenshot` for a picture, `changes`/`diff` instead of `wait`).
 - **Exit code 1 with a rev mismatch?** Someone changed the canvas after the `--if-rev` you gave. Run `changes`, fold the edits into your file, apply again.
-- **Elements not appearing?** `look --target <id>` finds one wherever it is and errors by name if it truly isn't on the canvas.
+- **Elements not appearing?** `get --id <id>` (or `look --target <id>` for the rendered box) finds one wherever it is and errors by name if it truly isn't on the canvas.
 - **Arrow not connecting?** `dangling-endpoint` names it: either the bound id is missing, or the bound end sits more than 15px off its shape. Resend the element (or its `start`/`end`) so it snaps again.
-- **Canvas in a bad state?** Delete the elements you added with `apply --patches` (`delete` per id), then re-apply `scene.json`.
+- **Canvas in a bad state?** `snapshot --action restore --name <name>` if you saved one before the change; otherwise delete the elements you added with `apply --patches` (`delete` per id), or `clear --yes` and re-apply `scene.json` from scratch.
 - **A defect lint can't see?** `look` at it, fix it, and mention it to the user: it is a missing lint rule.
 
 ---

@@ -696,3 +696,68 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   from its (batch) children, which no longer include the pre-existing ones.
   Untested; give frames an explicit box when their children are all
   pre-existing.
+
+### 1.10c Read/admin tools: get, describe, query, screenshot, snapshot, clear (2026-09-26)
+
+- All six real now, in `phase1Handlers` (`adapters/server/src/tools.ts`),
+  wired through the same `serial` queue as the rest of Phase 1. `get`,
+  `describe`, `query` read the stored (unmeasured) scene via `readScene`,
+  same as `changes` — no sidecar, no browser tab. `screenshot` and `clear`
+  are the only two of the six that touch the sidecar/store respectively.
+- `describeText(scene: NeutralScene): string` (exported, pure, unit tested
+  directly): one line per element, `id: kind "label" (x,y,w,h)` (box rounded);
+  a bound line with both ends resolved reads `id: from -> to "label"`
+  (matches the bead's own example). Grouped by zone: loose elements first,
+  then each zone's own line followed by its members indented two spaces.
+  yct fixture (76 raw Excalidraw elements, 50 after folding bound labels):
+  1864 bytes, well under the 4 KB acceptance.
+- `describe`'s `scope` and `lint`'s `scope` shared one regex and predicate
+  (`scopeMatch`, pulled out of `lintTool`) — same grammar (`all`,
+  `frame:<id>`, `near:<id>,r=<px>`), but resolved against different boxes:
+  rendered (`renderer.measure`) for `lint`, stored (`elementBox`, the
+  element's own `box`/points-bounds/`text.box`) for `describe`.
+- `query`'s `type` matches the neutral kind (`box`/`zone`/`line`/`text`) or,
+  for a `box`, its `shape` (so `--type rectangle` finds Excalidraw
+  rectangles, not just neutral `box`es) — yctimlin's skill examples use the
+  Excalidraw type name, not the neutral one. `bbox` keeps elements whose own
+  box is fully inside it (containment, not intersection, per the schema's
+  "inside this box").
+- `screenshot`: unions every element's measured box (`targetBox` from
+  `core/look.ts`, same helper `look` uses for its target union), then
+  `clampScale`, then one `renderer.snap`. An empty canvas or `format: "svg"`
+  both reject `INVALID_INPUT` — the sidecar only rasters; no SVG path exists
+  yet. Verified in `tools.e2e.ts` against the real sidecar's PNG IHDR
+  width/height (bytes 16/20, big-endian), which the fake renderer's 4-byte
+  stub can't check.
+- `snapshot`: names live in an in-memory `Map<name, {rev, time}>` inside
+  `phase1Handlers`'s closure, not on disk — the store's `events.jsonl` format
+  is untouched, per the bead. `restore` diffs the target rev's elements
+  (`ctx.sceneAt`) against the live scene and writes the delta through
+  `ctx.apply("agent", upserts, deletes)`: one normal write, so it bumps the
+  rev and shows up in `changes`/`diff`, same as any other agent apply. The
+  one trap: `Store.apply` only accepts an upsert whose `version` is strictly
+  greater than the stored one, so a restored element's version is bumped to
+  `max(current, snapshot) + 1`, not written back as-is (unit test round-trips
+  through `describe`'s text form, which ignores `version`). Names do not
+  survive a server restart; commit `scene.json` if that matters (skill).
+- `clear`: deletes every id currently in the store's scene map (which never
+  holds `isDeleted` elements — the store removes deleted ids outright), in
+  one `ctx.apply`. `deleted` counts raw Excalidraw elements (e.g. a labeled
+  rectangle is 2: the shape and its bound text), not neutral scene elements.
+- Tests: `tools.test.ts` gained a describe-fixture-size test (plus a
+  dangling-zone unit test for `describeText`), a REST test for all six, a
+  snapshot-restore round-trip test, and one CLI-vs-MCP identity test per
+  tool. `get`/`describe`/`query`/`clear` compare replies as-is; `screenshot`
+  passes the same explicit `out` to both servers so the path matches too;
+  `snapshot` masks only `time` (wall-clock, so the two saves can't agree).
+  `tools.e2e.ts` gained a `screenshot` step. Every CLI example in this task's
+  skill edits was run against a dev server started with an isolated
+  `ELKDRAW_DATA_DIR` (a scratch `mktemp -d`), then stopped with
+  `POST /api/shutdown` (not a `dev.sh` SIGTERM — 1.10's log has the orphan
+  gotcha for that path).
+- `SURFACE.md`, `skill/SKILL.md`, `skill/references/cheatsheet.md` and
+  `skill/MAINTAINERS.md` updated: only `export` (Phase 2 Mermaid) and `wait`
+  are still `NOT_IMPLEMENTED`. Headings/structure unchanged in both skill
+  files (checked with `grep '^#'` before/after against
+  `~/.claude/skills/excalidraw-skill`).
+- Needs from others: none. Nothing found outside `Owns:`.
