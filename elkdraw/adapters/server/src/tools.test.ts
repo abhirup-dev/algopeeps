@@ -10,12 +10,14 @@ import {
   parseJson,
   type SkeletonElement,
 } from "@elkdraw/core";
+import { type ExcalidrawScene, readScene } from "@elkdraw/backend-excalidraw";
 import {
   Client,
   StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { z } from "zod";
 import { type Renderer, startServer } from "./index.ts";
+import { describeText } from "./tools.ts";
 
 const CLI = join(import.meta.dir, "../../cli/src/main.ts");
 
@@ -256,4 +258,214 @@ test("add fails on an existing id; bad input names the path", async () => {
     status: 400,
     body: { error: { code: "INVALID_INPUT" } },
   });
+});
+
+test("describe(yct) is compact and under 4 KB", async () => {
+  const file = join(
+    import.meta.dir,
+    "../../../test/fixtures/dogfood/yct/scene.excalidraw",
+  );
+  const excalidraw = (await Bun.file(file).json()) as ExcalidrawScene;
+  const scene = await readScene(excalidraw);
+  const text = describeText(scene);
+  expect(Buffer.byteLength(text)).toBeLessThan(4096);
+  // The bead's own example shape: "<id>: <from> -> <to> \"<label>\"".
+  expect(text).toContain('a3: auth -> trip "3 create trip"');
+});
+
+test("get, describe, query, screenshot, snapshot, clear over REST", async () => {
+  const { url } = start();
+  await post(url, "apply", scene);
+
+  const get = await post(url, "get", { id: "a" });
+  expect(get.body).toMatchObject({
+    rev: 1,
+    element: { id: "a", type: "box", box: { x: 0, y: 0 } },
+  });
+  expect((await post(url, "get", { id: "nope" })).status).toBe(400);
+
+  const describe = await post(url, "describe", {});
+  expect(describe.body).toMatchObject({ rev: 1 });
+  expect((describe.body as { text: string }).text).toContain("a: rectangle");
+
+  const query = await post(url, "query", { type: "rectangle" });
+  expect(query.body).toMatchObject({
+    rev: 1,
+    truncated: false,
+    elements: [{ id: "a" }, { id: "b" }],
+  });
+  const limited = await post(url, "query", { type: "rectangle", limit: 1 });
+  expect(limited.body).toMatchObject({ truncated: true });
+  expect((limited.body as { elements: unknown[] }).elements).toHaveLength(1);
+
+  const out = join(tempDir(), "screenshot.png");
+  const screenshot = await post(url, "screenshot", { out });
+  expect(screenshot.body).toMatchObject({ path: out, format: "png" });
+  expect(await Bun.file(out).exists()).toBe(true);
+
+  const save = await post(url, "snapshot", { action: "save", name: "s1" });
+  expect(save.body).toMatchObject({
+    rev: 1,
+    snapshots: [{ name: "s1", rev: 1 }],
+  });
+  expect((await post(url, "snapshot", { action: "list" })).body).toEqual(
+    save.body,
+  );
+  expect(
+    (await post(url, "snapshot", { action: "restore", name: "nope" })).status,
+  ).toBe(400);
+
+  const clear = await post(url, "clear", { yes: true });
+  expect(clear.body).toEqual({ rev: 2, deleted: 2 });
+  expect((await post(url, "get", { id: "a" })).status).toBe(400);
+});
+
+test("snapshot restore round-trips a scene, as one apply-like write", async () => {
+  const { url } = start();
+  await post(url, "apply", scene); // rev 1: a, b
+  await post(url, "snapshot", { action: "save", name: "before" });
+  const before = await post(url, "describe", {});
+
+  // Move b and delete... nothing to delete here, but change b's box.
+  await post(url, "apply", {
+    elements: [{ id: "b", type: "rectangle", x: 500, y: 500 }],
+  });
+  await post(url, "add", {
+    elements: [{ id: "c", type: "rectangle", x: 0, y: 0 }],
+  });
+  const changed = await post(url, "describe", {});
+  expect(changed.body).not.toEqual(before.body);
+
+  const restore = await post(url, "snapshot", {
+    action: "restore",
+    name: "before",
+  });
+  expect((restore.body as { rev: number }).rev).toBeGreaterThan(3);
+  const after = await post(url, "describe", {});
+  // Same scene, in neutral form: rev moved on (restore is its own write).
+  expect((after.body as { text: string }).text).toEqual(
+    (before.body as { text: string }).text,
+  );
+  // Visible in the change feed, per the bead: restore is one apply-like write.
+  const changes = await post(url, "changes", { since: 0 });
+  const ops = (changes.body as { lines: { op: string }[] }).lines.map(
+    (l) => l.op,
+  );
+  expect(ops).toContain("applied");
+});
+
+const cliOnly: { name: string; args: Record<string, unknown> }[] = [
+  { name: "get", args: { id: "a" } },
+  { name: "describe", args: {} },
+  { name: "query", args: { type: "rectangle" } },
+  { name: "clear", args: { yes: true } },
+];
+
+for (const { name, args } of cliOnly) {
+  test(`cli and MCP ${name} replies are identical`, async () => {
+    const viaCli = start();
+    await post(viaCli.url, "apply", scene);
+    const cli = Bun.spawn(
+      ["bun", CLI, "--url", viaCli.url, name, "--input", "-"],
+      { stdin: new Blob([JSON.stringify(args)]), stdout: "pipe" },
+    );
+    const cliReply = parseJson(
+      z.record(z.string(), z.unknown()),
+      await new Response(cli.stdout).text(),
+    );
+    expect(await cli.exited).toBe(0);
+
+    const viaMcp = start();
+    await post(viaMcp.url, "apply", scene);
+    const client = new Client({ name: "test", version: "0.0.0" });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(`${viaMcp.url}/mcp`)),
+    );
+    try {
+      const mcp = await client.callTool({ name, arguments: args });
+      expect(mcp.isError).toBeFalsy();
+      expect(mcp.structuredContent).toEqual(cliReply);
+    } finally {
+      await client.close();
+    }
+  });
+}
+
+test("cli and MCP screenshot replies are identical (same explicit out)", async () => {
+  const cliOut = join(tempDir(), "cli-screenshot.png");
+  const mcpOut = join(tempDir(), "mcp-screenshot.png");
+
+  const viaCli = start();
+  await post(viaCli.url, "apply", scene);
+  const cli = Bun.spawn(
+    ["bun", CLI, "--url", viaCli.url, "screenshot", "--input", "-"],
+    { stdin: new Blob([JSON.stringify({ out: cliOut })]), stdout: "pipe" },
+  );
+  const cliReply = parseJson(
+    z.record(z.string(), z.unknown()),
+    await new Response(cli.stdout).text(),
+  );
+  expect(await cli.exited).toBe(0);
+
+  const viaMcp = start();
+  await post(viaMcp.url, "apply", scene);
+  const client = new Client({ name: "test", version: "0.0.0" });
+  await client.connect(
+    new StreamableHTTPClientTransport(new URL(`${viaMcp.url}/mcp`)),
+  );
+  try {
+    const mcp = await client.callTool({
+      name: "screenshot",
+      arguments: { out: mcpOut },
+    });
+    expect(mcp.isError).toBeFalsy();
+    // `path` is the one field that must differ (each got its own explicit out).
+    const { path: cliPath, ...cliRest } = cliReply;
+    const mcpStruct = mcp.structuredContent as Record<string, unknown>;
+    const { path: mcpPath, ...mcpRest } = mcpStruct;
+    expect(cliPath).toBe(cliOut);
+    expect(mcpPath).toBe(mcpOut);
+    expect(mcpRest).toEqual(cliRest);
+  } finally {
+    await client.close();
+  }
+});
+
+test("cli and MCP snapshot replies are identical (time masked)", async () => {
+  const maskTime = (body: unknown) => {
+    const b = body as { snapshots: { time: string }[] };
+    return { ...b, snapshots: b.snapshots.map((s) => ({ ...s, time: "*" })) };
+  };
+
+  const viaCli = start();
+  await post(viaCli.url, "apply", scene);
+  const cli = Bun.spawn(
+    ["bun", CLI, "--url", viaCli.url, "snapshot", "--input", "-"],
+    {
+      stdin: new Blob([JSON.stringify({ action: "save", name: "s1" })]),
+      stdout: "pipe",
+    },
+  );
+  const cliReply = parseJson(
+    z.record(z.string(), z.unknown()),
+    await new Response(cli.stdout).text(),
+  );
+  expect(await cli.exited).toBe(0);
+
+  const viaMcp = start();
+  await post(viaMcp.url, "apply", scene);
+  const client = new Client({ name: "test", version: "0.0.0" });
+  await client.connect(
+    new StreamableHTTPClientTransport(new URL(`${viaMcp.url}/mcp`)),
+  );
+  try {
+    const mcp = await client.callTool({
+      name: "snapshot",
+      arguments: { action: "save", name: "s1" },
+    });
+    expect(mcp.isError).toBeFalsy();
+    expect(maskTime(mcp.structuredContent)).toEqual(maskTime(cliReply));
+  } finally {
+    await client.close();
+  }
 });

@@ -149,4 +149,23 @@ test("draft -> apply -> lint -> look -> fix", async () => {
   const d = await rest("diff", {}, defs.diff.output);
   expect(d.lints.fixed.map((h) => h.code)).toContain("node-overlap");
   expect(d.delta).toContain("-1 node-overlap");
+
+  // screenshot: the whole canvas, real PNG, capped by maxPx (IHDR width/height,
+  // big-endian at bytes 16 and 20 -- the fake renderer's 4-byte PNG can't
+  // check this, only the real sidecar can.
+  const shotOut = join(dir, "screenshot.png");
+  const shot = await rest(
+    "screenshot",
+    { out: shotOut, maxPx: 300 },
+    defs.screenshot.output,
+  );
+  expect(shot.path).toBe(shotOut);
+  const shotPng = new Uint8Array(await Bun.file(shotOut).arrayBuffer());
+  const shotView = new DataView(shotPng.buffer);
+  const ihdrWidth = shotView.getUint32(16);
+  const ihdrHeight = shotView.getUint32(20);
+  expect(ihdrWidth).toBe(shot.width);
+  expect(ihdrHeight).toBe(shot.height);
+  expect(ihdrWidth).toBeLessThanOrEqual(300);
+  expect(ihdrHeight).toBeLessThanOrEqual(300);
 }, 30_000);

@@ -12,10 +12,11 @@ meaning carries over, so the two run side by side (`:3000` for yctimlin,
 
 ## Tools
 
-16 tools. `apply`, `add`, `validate`, `lint`, `look`, `diff` and `changes` are
-real, over the engines in `@elkdraw/core/engine` (besides `status`). The rest
-(`get`, `describe`, `query`, `screenshot`, `export`, `snapshot`, `clear`,
-`wait`) reject with `NOT_IMPLEMENTED` and echo their input JSON Schema.
+16 tools. `apply`, `add`, `validate`, `lint`, `look`, `diff`, `changes`, `get`,
+`describe`, `query`, `screenshot`, `snapshot` and `clear` are real, over the
+engines in `@elkdraw/core/engine` (besides `status`). Only `export` (Mermaid,
+Phase 2) and `wait` still reject with `NOT_IMPLEMENTED` and echo their input
+JSON Schema.
 
 | Tool         | Input (JSON Schema via `z.toJSONSchema`)                                                                                        | Output                                                                   |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -51,10 +52,17 @@ frame `children` and patch ids that aren't in the input itself.
 it talks to. `status` is both a tool (so a host learns which server, branch and
 canvas URL it is on) and the CLI command, which reads `GET /api/status`.
 
-As of 1.10, `status`, `add`, `apply`, `validate`, `lint`, `look`, `diff` and
-`changes` are real. `get`, `describe`, `query`, `screenshot`, `export`,
-`snapshot`, `clear` and `wait` still reject with `NOT_IMPLEMENTED` and echo
-their input JSON Schema.
+As of 1.10c, every tool except `export` and `wait` is real. `describe`'s
+`scope` and `query`'s `bbox` filter over the element's own stored box (no
+render pass, so no browser tab): a box/zone's `box`, a line's point bounds, a
+text's `text.box`. `screenshot` renders headlessly via the sidecar (`look`'s
+`snap`, unioned over every element's measured box); `format: "svg"` is not
+supported yet and rejects `INVALID_INPUT`. `snapshot` names are kept in
+memory only (rev + timestamp; the store's on-disk event format is untouched),
+so they do not survive a server restart; `restore` writes the target rev's
+elements back through the normal `apply` write path (bumping the store's rev
+and appearing in `changes`), never rewinding the log itself. `clear` deletes
+every element currently on the canvas in that one write.
 
 Transports:
 
@@ -112,6 +120,10 @@ Phase 0 design (`.mmd` text, `{create, update, delete}`). As built (1.10),
 `## Tools` above); `.mmd` text is not accepted (see NOTES.md 1.10, "Mermaid
 Conversion" in the skill).
 
+Note (1.10c): `get`, `query`, `describe`, `screenshot`, `snapshot` and `clear`
+above are now real, per their rows in `## Tools`. Only `export` (still
+Phase 2 Mermaid) and `wait` remain `NOT_IMPLEMENTED`.
+
 ### CLI verbs
 
 | yctimlin                       | `elkdraw`                                             | Kind    | Note                                                                 |
@@ -144,8 +156,12 @@ just names.
 
 Note (1.11): `get`, `query`, `describe`, `screenshot`, `export`, `snapshot`
 and `clear` above are listed as `same`, but as built (1.10) every one of them
-still replies `NOT_IMPLEMENTED` (`## Tools` above); only `add`, `apply`,
-`validate`, `lint`, `look`, `diff` and `changes` (besides `status`) are real.
+still replied `NOT_IMPLEMENTED` (`## Tools` above); only `add`, `apply`,
+`validate`, `lint`, `look`, `diff` and `changes` (besides `status`) were real.
+
+Note (1.10c): `get`, `query`, `describe`, `screenshot`, `snapshot` and `clear`
+are now real too. Only `export` (Mermaid, Phase 2) is still
+`NOT_IMPLEMENTED`.
 
 ## CLI
 

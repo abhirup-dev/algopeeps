@@ -35,7 +35,16 @@ Flags come from each tool's input schema: booleans are `--flag`, numbers `--flag
 
 ### Scene
 
-Not available on this server: `describe`, `get`, `query`, `screenshot`, `export`, `snapshot`, `clear`. Each still has a CLI command and MCP tool (so they show up in `help` and a host's tool list) but every call replies `{"error": {"code": "NOT_IMPLEMENTED", ...}}`, exit 1. `scene.json` is the only source of truth; `look` and `lint` are the only rendered views; `apply --patches` (`delete` per id) is the only way to remove elements.
+| Command                                                             | Description                                                                                                                                                       |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get --id <id>`                                                     | `{rev, element}`; `INVALID_INPUT` if the id is not on the canvas                                                                                                  |
+| `describe [--scope all\|frame:<id>\|near:<id>,r=<px>]`              | `{rev, text}`: one line per element (id, kind, label, rounded box), grouped by zone; arrows read `id: from -> to "label"`. Reads the stored scene, no render pass |
+| `query [--type t] [--ids a,b] [--bbox '{...}'] [--limit n]`         | `{rev, elements, truncated}`: `type` matches the neutral kind (`box`/`zone`/`line`/`text`) or a box's `shape` (e.g. `rectangle`); `bbox` keeps elements inside it |
+| `screenshot [--format png] [--out f.png] [--max-px n]`              | `{path, format, width, height}`: the whole canvas, headless, via the sidecar. `format: svg` is not supported yet (`INVALID_INPUT`). For a crop, use `look`        |
+| `snapshot --action save --name <n>` / `list` / `restore --name <n>` | `{rev, snapshots: [{name, rev, time}]}`. Restore is a normal write (bumps rev, shows in `changes`); names live in server memory only, not on disk                 |
+| `clear --yes`                                                       | `{rev, deleted}`: deletes every element on the canvas in one write. `snapshot save` first if you might want it back                                               |
+
+`export`, `import` and `share` are still unimplemented (`NOT_IMPLEMENTED`, exit 1); `scene.json` and `apply` are the only way to move a whole diagram in or out.
 
 ### Perception
 
@@ -49,7 +58,7 @@ Not available on this server: `describe`, `get`, `query`, `screenshot`, `export`
 
 ### Not available
 
-`describe`, `get`, `query`, `screenshot`, `export`, `snapshot`, `clear`, `wait`: `NOT_IMPLEMENTED` on this server (see Scene above). `arrange` (align, distribute, group, lock, duplicate), `import`, `mermaid`, `share`, `install-skill`: no tool at all — use placement ops and re-apply your file instead.
+`export`, `wait`: `NOT_IMPLEMENTED` on this server (see Scene above). `arrange` (align, distribute, group, lock, duplicate), `import`, `mermaid`, `share`, `install-skill`: no tool at all — use placement ops and re-apply your file instead.
 
 ## MCP Tools
 
@@ -65,12 +74,18 @@ Names are namespaced by the host (`mcp__elkdraw__apply` in Claude Code, `elkdraw
 
 ### Scene Awareness (Iterative Refinement)
 
-| Tool      | Description                                                          | Required params                                   |
-| --------- | -------------------------------------------------------------------- | ------------------------------------------------- |
-| `lint`    | Rendered lint hits with ids, bbox and hint                           | (optional) `scope`, `ids`                         |
-| `look`    | Cropped PNG around ids + rendered boxes                              | `target`, (optional) `r`, `marks`, `maxPx`, `out` |
-| `changes` | Change feed since a rev                                              | (optional) `since`                                |
-| `diff`    | Changes (no author/time) between two revs, lint added/fixed, `delta` | (optional) `from`, `to`                           |
+| Tool         | Description                                                          | Required params                                   |
+| ------------ | -------------------------------------------------------------------- | ------------------------------------------------- |
+| `lint`       | Rendered lint hits with ids, bbox and hint                           | (optional) `scope`, `ids`                         |
+| `look`       | Cropped PNG around ids + rendered boxes                              | `target`, (optional) `r`, `marks`, `maxPx`, `out` |
+| `changes`    | Change feed since a rev                                              | (optional) `since`                                |
+| `diff`       | Changes (no author/time) between two revs, lint added/fixed, `delta` | (optional) `from`, `to`                           |
+| `get`        | One element, in the neutral scene form                               | `id`                                              |
+| `describe`   | Compact text scene, grouped by zone                                  | (optional) `scope`                                |
+| `query`      | Elements by type, ids or bounding box                                | (optional) `type`, `ids`, `bbox`, `limit`         |
+| `screenshot` | Headless PNG of the whole canvas                                     | (optional) `format`, `out`, `maxPx`               |
+| `snapshot`   | Save, list or restore named canvas snapshots (restore is a write)    | `action`; `name` for `save`/`restore`             |
+| `clear`      | Delete every element in one write                                    | `yes: true`                                       |
 
 ### State
 
@@ -80,7 +95,7 @@ Names are namespaced by the host (`mcp__elkdraw__apply` in Claude Code, `elkdraw
 
 ### Not implemented (present in the tool list, reply `NOT_IMPLEMENTED`)
 
-`get`, `query`, `describe`, `screenshot`, `export`, `snapshot`, `clear`, `wait`.
+`export`, `wait`.
 
 Notes:
 
