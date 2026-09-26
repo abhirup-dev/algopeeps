@@ -870,6 +870,7 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   every bound end within 5 px outside pricing's new outline, w1's waypoint
   unchanged. It fails on the base (`updated` 1). `skill/SKILL.md:49` ("follow
   them when they move") is now true for apply and place; no wording change.
+
 ### 1.19 Lint gaps from the Phase 1 eval (2026-09-26)
 
 - Fixtures: `test/fixtures/eval-p1/{rh-r1,rh-r2,rh-r4,rh-r8,rh-r9,bst-r1}`,
