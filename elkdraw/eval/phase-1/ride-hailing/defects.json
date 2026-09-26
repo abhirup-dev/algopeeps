@@ -1,0 +1,146 @@
+{
+  "scene": "scene.json",
+  "png": "final.png",
+  "report": "tester-report.md",
+  "note": "By-eye manifest of this run's final PNG (rev 9) plus the defects the tester reported fixing during the session. scene.json is `query --limit 1000` (export is NOT_IMPLEMENTED); final.png is `screenshot --max-px 2400`.",
+  "defects": [
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["s3", "core"],
+      "description": "First apply: zones as frames; the server put every arrow in its end shape's frame and Excalidraw clipped them. Labels \"3 create trip\" and \"7 GEOSEARCH\" vanished; pay-stripe, notif-apns, apns-driver cut at the frame edge.",
+      "source": "tester-report §1 defect 1, §2.1",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Lint fired outside-zone with a wrong hint (take s3 out of its children; it never was in children). Fixed by replacing frames with dashed rectangles."
+    },
+    {
+      "id": "p1rh-02",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["s1", "s2", "s4", "s5", "s6"],
+      "description": "First apply: five numbered labels sat on their own arrowheads at 140 px column gaps.",
+      "source": "tester-report §1 defect 2",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Lint found it. Fixed by widening gaps to 200 px. The skill says 120 px+ is enough."
+    },
+    {
+      "id": "p1rh-03",
+      "ruleGap": "text-wrapped does not fire for labels inside ellipses",
+      "ids": ["kafka", "postgres", "analytics"],
+      "description": "Ellipse labels wrapped: \"Kafka event / bus\", \"Postgres / (trips)\", \"Analytics / warehouse\".",
+      "source": "tester-report §1 defect 3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Seen by eye only. Fixed by widening ellipses to 260-300 px."
+    },
+    {
+      "id": "p1rh-04",
+      "ruleGap": "arrow-through-label does not fire for an arrow line under another arrow's label",
+      "ids": ["s7", "notif-apns"],
+      "description": "The \"7 GEOSEARCH\" label sat on the notif-apns line.",
+      "source": "tester-report §1 defect 4",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Seen by eye only. Fixed by moving the Data zone down 80 px."
+    },
+    {
+      "id": "p1rh-05",
+      "ruleGap": "no rule for an element reset to defaults (size, style) by a partial upsert",
+      "ids": ["legend-zone", "lg-sync", "lg-async"],
+      "description": "rev 4: a partial upsert reset legend-zone to 100x100 default stroke and dropped legend arrows' colour and dash; an unbound legend arrow then ran across the box border.",
+      "source": "tester-report §1 defect 5, §2.3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Lint clean at rev 4. Fixed by resending the whole legend."
+    },
+    {
+      "id": "p1rh-06",
+      "ruleGap": "no rule for a labelled shape that lost its label",
+      "ids": ["pricing"],
+      "description": "rev 6: a place-only leftOf op turned Pricing into a blank 100x100 transparent box with no label.",
+      "source": "tester-report §1 defect 6, §2.4",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "No lint hit. Fixed by resending Pricing in full."
+    },
+    {
+      "id": "p1rh-07",
+      "rule": "dangling-endpoint",
+      "ids": ["s7", "redis"],
+      "description": "rev 3: moving the four Data ellipses left 7 bound arrows off their shapes (s7 end 84 px off redis); rev 6 the same for s4, s5 after moving Pricing.",
+      "source": "tester-report §2.2",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Lint found it. Bound arrows do not re-route on move through apply or place, contrary to SKILL.md."
+    },
+    {
+      "id": "p1rh-08",
+      "rule": "crossing",
+      "ids": ["s7", "notif-apns"],
+      "description": "Arrow 7 (location->redis) crosses notification->APNs.",
+      "source": "final.png, lint.json",
+      "reported": true,
+      "fixedInFinal": false,
+      "note": "info severity, flagged."
+    },
+    {
+      "id": "p1rh-09",
+      "rule": "crossing",
+      "ids": ["pay-stripe", "trip-pg"],
+      "description": "trip->postgres crosses payment->stripe.",
+      "source": "final.png, lint.json",
+      "reported": true,
+      "fixedInFinal": false,
+      "note": "info severity, flagged."
+    },
+    {
+      "id": "p1rh-10",
+      "ruleGap": "no rule for arrowheads of different arrows overlapping at a shared target",
+      "ids": ["a-trip", "a-pay", "kafka"],
+      "description": "The async arrowheads from Trip and Payment land on Kafka's top edge about 15 px apart and overlap into one tangle.",
+      "source": "final.png; look --target kafka --r 120",
+      "reported": false,
+      "fixedInFinal": false,
+      "note": "The one missed defect for the section 17.4 count."
+    }
+  ],
+  "cleanRegions": [
+    {
+      "name": "edge",
+      "ids": [
+        "rider",
+        "gateway",
+        "auth",
+        "driver",
+        "s1",
+        "s2",
+        "edge-zone",
+        "edge-h"
+      ]
+    },
+    {
+      "name": "legend",
+      "ids": [
+        "legend-zone",
+        "legend-h",
+        "lg-sync",
+        "lg-sync-t",
+        "lg-async",
+        "lg-async-t",
+        "lg-store",
+        "lg-store-t"
+      ]
+    },
+    {
+      "name": "title",
+      "ids": ["title"]
+    }
+  ],
+  "toolDefects": [
+    {
+      "description": "Whole-canvas screenshot crops the bottom of the scene: legend-zone's bottom edge (y 1380) is cut in both the tester's rev-9 screenshot (1800 px) and screenshot --max-px 2400. look --target legend-zone shows it intact.",
+      "source": "final.png vs look crop"
+    }
+  ]
+}

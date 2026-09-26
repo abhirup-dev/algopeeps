@@ -1,0 +1,129 @@
+{
+  "scene": "scene.json",
+  "png": "final.png",
+  "report": "tester-answer.md",
+  "note": "By-eye manifest of this run's final PNG (rev 2) plus what the tester fixed. scene.json is `query --limit 1000`; final.png is `screenshot` (955x699 is the natural size; --max-px 2400 does not upscale).",
+  "defects": [
+    {
+      "id": "p1bst-01",
+      "ruleGap": "no rule for a text drawn away from its stored alignment",
+      "ids": [
+        "i0",
+        "i1",
+        "i2",
+        "i3",
+        "i4",
+        "i5",
+        "i6",
+        "i7",
+        "i8",
+        "i9",
+        "i10",
+        "i11",
+        "i12",
+        "i13",
+        "i14",
+        "t-lo",
+        "t-hi"
+      ],
+      "description": "rev 1: the 15 index labels and the lo/hi labels rendered about 16 px left of their column centres: width and textAlign center were ignored.",
+      "source": "tester-answer (3); transcript look at rev 1",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Same defect as the dogfood (test/fixtures/dogfood/bst unmapped). Fixed with 17 Edits to scene.json and one apply."
+    },
+    {
+      "id": "p1bst-02",
+      "ruleGap": "rendering style: hand-drawn roughness doubles a long thin line",
+      "ids": ["e8-4"],
+      "description": "The 8->4 edge renders as two visibly separate strokes near node 4; no other edge does.",
+      "source": "final.png; look 0,40,560,220",
+      "reported": false,
+      "fixedInFinal": false,
+      "note": "Cosmetic; counted as the one missed defect (BST limit is 1)."
+    }
+  ],
+  "cleanRegions": [
+    {
+      "name": "tree",
+      "ids": [
+        "n1",
+        "n2",
+        "n3",
+        "n4",
+        "n5",
+        "n6",
+        "n7",
+        "n8",
+        "n9",
+        "n10",
+        "n11",
+        "n12",
+        "n13",
+        "n14",
+        "n15",
+        "e8-12",
+        "e4-2",
+        "e4-6",
+        "e12-10",
+        "e12-14",
+        "e2-1",
+        "e2-3",
+        "e6-5",
+        "e6-7",
+        "e10-9",
+        "e10-11",
+        "e14-13",
+        "e14-15"
+      ],
+      "note": "Search path 8->12->10->11 orange with arrowheads; other edges grey, no heads. Columns align within 0.5 px (tester's look boxes)."
+    },
+    {
+      "name": "array",
+      "ids": [
+        "c0",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "c5",
+        "c6",
+        "c7",
+        "c8",
+        "c9",
+        "c10",
+        "c11",
+        "c12",
+        "c13",
+        "c14",
+        "i0",
+        "i1",
+        "i2",
+        "i3",
+        "i4",
+        "i5",
+        "i6",
+        "i7",
+        "i8",
+        "i9",
+        "i10",
+        "i11",
+        "i12",
+        "i13",
+        "i14"
+      ]
+    },
+    {
+      "name": "pointers",
+      "ids": ["p-lo", "p-hi", "t-lo", "t-hi"]
+    },
+    {
+      "name": "title",
+      "ids": ["title"]
+    },
+    {
+      "name": "caption",
+      "ids": ["caption"]
+    }
+  ]
+}
