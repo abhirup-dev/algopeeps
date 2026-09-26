@@ -175,3 +175,20 @@ later tasks should not need `bun add`.
   Lint verified with scratch files: app, mcp and cli importing it error;
   server and backends/excalidraw pass. `app/dist` after `vite build` has no
   elkjs (grep for `elkjs`, `elk-worker`, `org.eclipse.elk`: 0 files).
+
+### 1.11 Agent guide and skill (2026-09-26)
+
+- `skill/SKILL.md` + `skill/references/cheatsheet.md` replace the Phase 0
+  draft. They copy yctimlin's `excalidraw-skill` section order and wording
+  (heading diff: only additions, Placement Helpers and The Loop) so the 1.14
+  audit varies the tools only. The design guide ships in the cheatsheet; there
+  is no guide tool.
+- Written for the Phase 1 surface as designed, not as built: `apply
+{elements, place, patches, prune, dryRun, ifRev}`, `validate`, `look.boxes`,
+  placement/asset ops. `skill/MAINTAINERS.md` (unlinked, so agents never read
+  it) maps each part to the task it waits on; update it when a task lands.
+- Element format assumed native `ExcalidrawElementSkeleton` (`label.text`,
+  `start.id`), with yctimlin's `text` / `startElementId` rejected. If 1.1
+  decides otherwise, fix the Element Format section and the examples.
+- Not run: the acceptance (fresh Opus completes ride-hailing from the skill);
+  it needs 1.2, 1.5, 1.7, 1.9, 1.10.
