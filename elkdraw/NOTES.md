@@ -1084,6 +1084,7 @@ el.width)/2` for centre, `s.x + s.width - el.width` for right. The element's
   right-aligned box and a frame given `x:0,y:0`. All three fail on the base
   (verified: `84` vs the expected `100`, frame `x:10` vs `0`, `100` vs the
   expected right edge `150`).
+
 ### 1.21 snap draws scenes with frames ~20 px low (algopeeps-4c0.24)
 
 - Root cause (1.17's "Found, not fixed"): `snap` (`app/src/headless.ts`)
