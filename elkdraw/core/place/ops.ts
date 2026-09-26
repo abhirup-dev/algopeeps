@@ -1,37 +1,23 @@
-// Placement ops: row, column, grid, rightOf/leftOf/below/above (cheatsheet.md
-// "Placement Helpers"). Pure functions: given elements (x/y ignored, width/
-// height read) and an ordered list of ops, return elements with x/y
-// overwritten for the ids each op names. Ops run in order, each reading the
-// positions/sizes left by the ones before it, so `rightOf` etc. can target an
-// id a `row`/`grid` op placed earlier in the same list.
+// The placer: matches `ApplyDeps["place"]` in core/apply/apply.ts exactly.
+// Runs `ops` in order over `elements` (the batch apply is about to write),
+// reading anchors from `scene` (what is already on the canvas) when an op
+// names an id apply didn't just give it. Layout ops (row/column/grid/rel)
+// move ids; asset ops (array/linkedList/tree/stack/table/hashMap) generate
+// whole structures. An id in `elements` that matches a generated id
+// overrides the fields it gives (cheatsheet line 123) — its position is
+// still the generator's, like every other place op overwrites x/y.
+import type { Element } from "../src/contracts/index.ts";
 import type { SkeletonElement } from "../skeleton/schema.ts";
-
-export interface RowOp {
-  op: "row";
-  ids: readonly string[];
-  at: readonly [number, number];
-  gap: number;
-}
-export interface ColumnOp {
-  op: "column";
-  ids: readonly string[];
-  at: readonly [number, number];
-  gap: number;
-}
-export interface GridOp {
-  op: "grid";
-  ids: readonly string[];
-  cols: number;
-  at: readonly [number, number];
-  gap: readonly [number, number];
-}
-export interface RelOp {
-  op: "rightOf" | "leftOf" | "below" | "above";
-  id: string;
-  of: string;
-  gap: number;
-}
-export type PlaceOp = RowOp | ColumnOp | GridOp | RelOp;
+import type { PlaceOp } from "./schema.ts";
+import {
+  array,
+  hashMap,
+  linkedList,
+  type PositionedSkeletonElement,
+  stack,
+  table,
+  tree,
+} from "./assets.ts";
 
 interface Box {
   x: number;
@@ -44,140 +30,205 @@ interface Box {
 // child-derived); default to a 100x100 box so row/column/grid/rel ops still
 // have something to center against. Widen if a task needs real arrow sizing.
 const DEFAULT_SIZE = 100;
-const sizeOf = (el: SkeletonElement): { width: number; height: number } => ({
-  width: el.width ?? DEFAULT_SIZE,
-  height: el.height ?? DEFAULT_SIZE,
+
+const numberField = (e: Element, key: string): number | undefined => {
+  const v = (e as unknown as Record<string, unknown>)[key];
+  return typeof v === "number" ? v : undefined;
+};
+
+const sceneBox = (e: Element): Box => ({
+  x: numberField(e, "x") ?? 0,
+  y: numberField(e, "y") ?? 0,
+  width: numberField(e, "width") ?? DEFAULT_SIZE,
+  height: numberField(e, "height") ?? DEFAULT_SIZE,
 });
 
-function requireEl(
-  byId: Map<string, SkeletonElement>,
-  id: string,
-): SkeletonElement {
-  const el = byId.get(id);
-  if (!el) throw new Error(`place: unknown id "${id}"`);
-  return el;
-}
+const skeletonBox = (e: SkeletonElement): Box => ({
+  x: e.x ?? 0,
+  y: e.y ?? 0,
+  width: e.width ?? DEFAULT_SIZE,
+  height: e.height ?? DEFAULT_SIZE,
+});
 
-function boxOf(byId: Map<string, SkeletonElement>, id: string): Box {
-  const el = requireEl(byId, id);
-  const { width, height } = sizeOf(el);
-  // ponytail: only `frame` elements have optional x/y (sized from children);
-  // treat an unset one as 0 rather than widening every caller's type.
-  return { x: el.x ?? 0, y: el.y ?? 0, width, height };
-}
+// The scene-fallback path (repositioning an id apply didn't give us): only
+// types whose skeleton needs nothing beyond id/x/y (no required label,
+// text or children) can be rebuilt from just a type name.
+type RepositionableType =
+  "rectangle" | "ellipse" | "diamond" | "arrow" | "line";
+const REPOSITIONABLE: readonly RepositionableType[] = [
+  "rectangle",
+  "ellipse",
+  "diamond",
+  "arrow",
+  "line",
+];
+const isRepositionable = (t: unknown): t is RepositionableType =>
+  typeof t === "string" && (REPOSITIONABLE as readonly string[]).includes(t);
 
-function setPos(
-  byId: Map<string, SkeletonElement>,
+/** A minimal, schema-valid skeleton element: just enough to move it. */
+function bareSkeleton(
+  type: RepositionableType,
   id: string,
   x: number,
   y: number,
-): void {
-  byId.set(id, { ...requireEl(byId, id), x, y });
-}
-
-function applyOne(byId: Map<string, SkeletonElement>, op: PlaceOp): void {
-  switch (op.op) {
-    case "row": {
-      const [atX, atY] = op.at;
-      const maxHeight = Math.max(
-        ...op.ids.map((id) => sizeOf(requireEl(byId, id)).height),
-      );
-      const centerY = atY + maxHeight / 2;
-      let x = atX;
-      for (const id of op.ids) {
-        const { width, height } = sizeOf(requireEl(byId, id));
-        setPos(byId, id, x, centerY - height / 2);
-        x += width + op.gap;
-      }
-      break;
-    }
-    case "column": {
-      const [atX, atY] = op.at;
-      const maxWidth = Math.max(
-        ...op.ids.map((id) => sizeOf(requireEl(byId, id)).width),
-      );
-      const centerX = atX + maxWidth / 2;
-      let y = atY;
-      for (const id of op.ids) {
-        const { width, height } = sizeOf(requireEl(byId, id));
-        setPos(byId, id, centerX - width / 2, y);
-        y += height + op.gap;
-      }
-      break;
-    }
-    case "grid": {
-      const [atX, atY] = op.at;
-      const [gapX, gapY] = op.gap;
-      const sizes = op.ids.map((id) => sizeOf(requireEl(byId, id)));
-      const cellWidth = Math.max(...sizes.map((s) => s.width));
-      const cellHeight = Math.max(...sizes.map((s) => s.height));
-      op.ids.forEach((id, i) => {
-        const row = Math.floor(i / op.cols);
-        const col = i % op.cols;
-        setPos(
-          byId,
-          id,
-          atX + col * (cellWidth + gapX),
-          atY + row * (cellHeight + gapY),
-        );
-      });
-      break;
-    }
-    case "rightOf": {
-      const of = boxOf(byId, op.of);
-      const { height } = sizeOf(requireEl(byId, op.id));
-      setPos(
-        byId,
-        op.id,
-        of.x + of.width + op.gap,
-        of.y + of.height / 2 - height / 2,
-      );
-      break;
-    }
-    case "leftOf": {
-      const of = boxOf(byId, op.of);
-      const { width, height } = sizeOf(requireEl(byId, op.id));
-      setPos(
-        byId,
-        op.id,
-        of.x - op.gap - width,
-        of.y + of.height / 2 - height / 2,
-      );
-      break;
-    }
-    case "below": {
-      const of = boxOf(byId, op.of);
-      const { width } = sizeOf(requireEl(byId, op.id));
-      setPos(
-        byId,
-        op.id,
-        of.x + of.width / 2 - width / 2,
-        of.y + of.height + op.gap,
-      );
-      break;
-    }
-    case "above": {
-      const of = boxOf(byId, op.of);
-      const { width, height } = sizeOf(requireEl(byId, op.id));
-      setPos(
-        byId,
-        op.id,
-        of.x + of.width / 2 - width / 2,
-        of.y - op.gap - height,
-      );
-      break;
-    }
+): SkeletonElement {
+  switch (type) {
+    case "rectangle":
+      return { type, id, x, y };
+    case "ellipse":
+      return { type, id, x, y };
+    case "diamond":
+      return { type, id, x, y };
+    case "arrow":
+      return { type, id, x, y };
+    case "line":
+      return { type, id, x, y };
   }
 }
 
-/** Runs `ops` in order over `elements`; returns a new array, same order, with
- * x/y overwritten for every id an op named. Elements not named by any op are
- * returned unchanged. */
+/** Runs `ops` in order over `elements`; returns the elements to send to
+ * `convert`: every input element (repositioned as ops require), plus
+ * whatever asset ops generated, in each one's original/first-seen order. */
 export function place(
-  elements: readonly SkeletonElement[],
+  elements: SkeletonElement[],
   ops: readonly PlaceOp[],
+  scene: readonly Element[],
 ): SkeletonElement[] {
-  const byId = new Map(elements.map((el) => [el.id, el]));
-  for (const op of ops) applyOne(byId, op);
-  return elements.map((el) => byId.get(el.id) ?? el);
+  const overrides = new Map(elements.map((e) => [e.id, e]));
+  const out = new Map(overrides);
+  const order = elements.map((e) => e.id);
+  const sceneById = new Map(scene.map((e) => [e.id, e]));
+
+  const boxOf = (id: string): Box => {
+    const sk = out.get(id);
+    if (sk) return skeletonBox(sk);
+    const sc = sceneById.get(id);
+    if (sc) return sceneBox(sc);
+    throw new Error(`place: unknown id "${id}"`);
+  };
+
+  const setPos = (id: string, x: number, y: number): void => {
+    const existing = out.get(id);
+    if (existing) {
+      out.set(id, { ...existing, x, y });
+      return;
+    }
+    const sc = sceneById.get(id);
+    if (!sc || !isRepositionable(sc.type))
+      throw new Error(`place: unknown id "${id}"`);
+    out.set(id, bareSkeleton(sc.type, id, x, y));
+    order.push(id);
+  };
+
+  /** Adds (or merges an override onto) a generated asset element. */
+  const put = (el: PositionedSkeletonElement): void => {
+    const override = overrides.get(el.id);
+    // The override's own x/y are dummy placeholders (same convention as
+    // every other place op): the generator's layout always wins.
+    const merged: SkeletonElement = override
+      ? { ...el, ...override, x: el.x, y: el.y }
+      : el;
+    if (!out.has(el.id)) order.push(el.id);
+    out.set(el.id, merged);
+  };
+
+  for (const op of ops) {
+    switch (op.op) {
+      case "row": {
+        const [atX, atY] = op.at;
+        const maxHeight = Math.max(...op.ids.map((id) => boxOf(id).height));
+        const centerY = atY + maxHeight / 2;
+        let x = atX;
+        for (const id of op.ids) {
+          const { width, height } = boxOf(id);
+          setPos(id, x, centerY - height / 2);
+          x += width + op.gap;
+        }
+        break;
+      }
+      case "column": {
+        const [atX, atY] = op.at;
+        const maxWidth = Math.max(...op.ids.map((id) => boxOf(id).width));
+        const centerX = atX + maxWidth / 2;
+        let y = atY;
+        for (const id of op.ids) {
+          const { width, height } = boxOf(id);
+          setPos(id, centerX - width / 2, y);
+          y += height + op.gap;
+        }
+        break;
+      }
+      case "grid": {
+        const [atX, atY] = op.at;
+        const [gapX, gapY] = op.gap;
+        const sizes = op.ids.map((id) => boxOf(id));
+        const cellWidth = Math.max(...sizes.map((s) => s.width));
+        const cellHeight = Math.max(...sizes.map((s) => s.height));
+        op.ids.forEach((id, i) => {
+          const row = Math.floor(i / op.cols);
+          const col = i % op.cols;
+          setPos(
+            id,
+            atX + col * (cellWidth + gapX),
+            atY + row * (cellHeight + gapY),
+          );
+        });
+        break;
+      }
+      case "rightOf": {
+        const of = boxOf(op.of);
+        const { height } = boxOf(op.id);
+        setPos(
+          op.id,
+          of.x + of.width + op.gap,
+          of.y + of.height / 2 - height / 2,
+        );
+        break;
+      }
+      case "leftOf": {
+        const of = boxOf(op.of);
+        const { width, height } = boxOf(op.id);
+        setPos(op.id, of.x - op.gap - width, of.y + of.height / 2 - height / 2);
+        break;
+      }
+      case "below": {
+        const of = boxOf(op.of);
+        const { width } = boxOf(op.id);
+        setPos(
+          op.id,
+          of.x + of.width / 2 - width / 2,
+          of.y + of.height + op.gap,
+        );
+        break;
+      }
+      case "above": {
+        const of = boxOf(op.of);
+        const { width, height } = boxOf(op.id);
+        setPos(op.id, of.x + of.width / 2 - width / 2, of.y - op.gap - height);
+        break;
+      }
+      case "array":
+        for (const el of array(op.id, op.values, op.at)) put(el);
+        break;
+      case "linkedList":
+        for (const el of linkedList(op.id, op.values, op.at)) put(el);
+        break;
+      case "tree":
+        for (const el of tree(op.id, op.keys, op.at)) put(el);
+        break;
+      case "stack":
+        for (const el of stack(op.id, op.frames, op.at)) put(el);
+        break;
+      case "table":
+        for (const el of table(op.id, op.rows, op.at)) put(el);
+        break;
+      case "hashMap":
+        for (const el of hashMap(op.id, op.buckets, op.entries, op.at)) put(el);
+        break;
+    }
+  }
+
+  return order
+    .map((id) => out.get(id))
+    .filter((e): e is SkeletonElement => e !== undefined);
 }

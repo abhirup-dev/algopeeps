@@ -48,7 +48,7 @@ describe("asset generators validate under 1.1's skeleton schema", () => {
     const y = (id: string): number => {
       const el = els.find((e) => e.id === id);
       if (!el) throw new Error(id);
-      return el.y ?? 0;
+      return el.y;
     };
     expect(y("s-2")).toBeLessThan(y("s-1"));
     expect(y("s-1")).toBeLessThan(y("s-0"));

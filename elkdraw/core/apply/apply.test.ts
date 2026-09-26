@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { Element } from "../src/contracts/index.ts";
+import { place } from "../place/index.ts";
 import type { SkeletonElement } from "../skeleton/schema.ts";
 import { add, apply, type ApplyDeps, type Scene } from "./apply.ts";
 
@@ -207,10 +208,47 @@ test("errors: ifRev, unknown patch id, add on an existing id, place without plac
     "already exists",
   );
   expect(
-    bad(apply(scene, { elements: file, place: [{ op: "row" }] }, deps))[0],
+    bad(
+      apply(
+        scene,
+        {
+          elements: file,
+          place: [{ op: "row", ids: ["api", "db"], at: [0, 0], gap: 20 }],
+        },
+        deps,
+      ),
+    )[0],
   ).toContain("task 1.9");
   expect(bad(apply(scene, {}, deps))[0]).toContain("one of elements");
   expect(bad(apply(scene, { elements: [box("a"), box("a")] }, deps))).toEqual([
     'elements[1].id: duplicate id "a"',
   ]);
+});
+
+test("place (task 1.9): a tree + below pointer through apply", () => {
+  const withPlace: ApplyDeps = { ...deps, place };
+  const { r } = step(
+    empty,
+    {
+      place: [
+        { op: "tree", id: "t", keys: [8, 4, 12], at: [0, 0] },
+        {
+          op: "below",
+          id: "lo",
+          of: "t-8",
+          gap: 20,
+        },
+      ],
+      elements: [{ type: "text", id: "lo", x: 0, y: 0, text: "lo" }],
+    },
+    withPlace,
+  );
+  expect(r.reply.created.sort()).toEqual(
+    ["t-8", "t-4", "t-12", "t-8-4", "t-8-12", "lo"].sort(),
+  );
+  const byId = new Map(r.upserts.map((e) => [e.id, e]));
+  const root = byId.get("t-8");
+  const lo = byId.get("lo");
+  expect(root?.["x"]).toBeTypeOf("number");
+  expect(lo?.["y"]).toBeGreaterThan(Number(root?.["y"]));
 });

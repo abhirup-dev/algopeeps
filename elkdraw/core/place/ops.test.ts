@@ -22,6 +22,7 @@ describe("place", () => {
     const els = place(
       [box("a", 100, 40), box("b", 60, 80)],
       [{ op: "row", ids: ["a", "b"], at: [100, 200], gap: 20 }],
+      [],
     );
     expect(pos(els, "a")).toEqual({ x: 100, y: 220 }); // centreY 240, height 40
     expect(pos(els, "b")).toEqual({ x: 220, y: 200 }); // 100+100+20, centreY 240, height 80
@@ -31,6 +32,7 @@ describe("place", () => {
     const els = place(
       [box("a", 100, 40), box("b", 60, 40)],
       [{ op: "column", ids: ["a", "b"], at: [0, 0], gap: 10 }],
+      [],
     );
     expect(pos(els, "a")).toEqual({ x: 0, y: 0 });
     expect(pos(els, "b")).toEqual({ x: 20, y: 50 }); // centreX 50, width 60 -> x=20
@@ -48,6 +50,7 @@ describe("place", () => {
           gap: [10, 20],
         },
       ],
+      [],
     );
     expect(pos(els, "a")).toEqual({ x: 0, y: 0 });
     expect(pos(els, "b")).toEqual({ x: 50, y: 0 });
@@ -62,6 +65,7 @@ describe("place", () => {
         { op: "rightOf", id: "b", of: "a", gap: 30 },
         { op: "below", id: "c", of: "a", gap: 10 },
       ],
+      [],
     );
     expect(pos(els, "b")).toEqual({ x: 130, y: 10 }); // a: x0 w100 h40, centre y20, b h20 -> y10
     expect(pos(els, "c")).toEqual({ x: 25, y: 50 }); // a centre x50, c w50 -> x25; below a: y0+40+10

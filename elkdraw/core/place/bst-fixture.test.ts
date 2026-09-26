@@ -10,7 +10,6 @@ import { describe, expect, test } from "bun:test";
 import { z } from "zod";
 import { parseJson } from "../src/json.ts";
 import { place } from "./ops.ts";
-import { array, tree } from "./assets.ts";
 import { validateSkeleton, type SkeletonElement } from "../skeleton/schema.ts";
 
 const INSERT_ORDER = [8, 4, 12, 2, 6, 10, 14, 1, 3, 5, 7, 9, 11, 13, 15];
@@ -55,18 +54,22 @@ describe("BST + array fixture, rebuilt from placement ops", () => {
       text: "hi",
     };
 
-    const treeEls = tree("t", INSERT_ORDER, treeAt);
-    const arrayEls = array("arr", IN_ORDER_ARRAY, arrayAt);
-    const elements = [...treeEls, ...arrayEls, loLabel, hiLabel];
-
     // lo/hi point at the cells for keys 8 and 11 (the search path's lo/hi
     // bounds in the fixture caption): "lo = 8, hi = 11".
     const loCellIndex = IN_ORDER_ARRAY.indexOf(8);
     const hiCellIndex = IN_ORDER_ARRAY.indexOf(11);
-    return place(elements, [
-      { op: "below", id: "lo", of: `arr-${String(loCellIndex)}`, gap: 30 },
-      { op: "below", id: "hi", of: `arr-${String(hiCellIndex)}`, gap: 30 },
-    ]);
+    // The whole fixture, as ops: asset ops (tree, array) sit in the same
+    // `place` list as layout ops (below), matching the cheatsheet.
+    return place(
+      [loLabel, hiLabel],
+      [
+        { op: "tree", id: "t", keys: INSERT_ORDER, at: treeAt },
+        { op: "array", id: "arr", values: IN_ORDER_ARRAY, at: arrayAt },
+        { op: "below", id: "lo", of: `arr-${String(loCellIndex)}`, gap: 30 },
+        { op: "below", id: "hi", of: `arr-${String(hiCellIndex)}`, gap: 30 },
+      ],
+      [],
+    );
   })();
 
   test("stays under the 15-op budget", () => {

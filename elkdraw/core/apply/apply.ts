@@ -15,11 +15,16 @@ import {
   type LintHit,
   SetPatch,
 } from "../src/contracts/index.ts";
+import { PlaceOp } from "../place/index.ts";
 import {
   SkeletonElement,
   skeletonErrors,
   validateSkeleton,
 } from "../skeleton/schema.ts";
+
+// Re-exported so `@elkdraw/core/engine` (core/src/engine/index.ts) keeps
+// PlaceOp at its existing seam; the schema and runner live in core/place.
+export { PlaceOp };
 
 /** P1 patches: `delete` (bound arrows and labels go too) and `set` label. */
 export const ApplyPatch = z.discriminatedUnion("op", [
@@ -27,10 +32,6 @@ export const ApplyPatch = z.discriminatedUnion("op", [
   SetPatch.pick({ op: true, id: true }).extend({ label: z.string().min(1) }),
 ]);
 export type ApplyPatch = z.infer<typeof ApplyPatch>;
-
-/** A placement op; its schema and runner belong to task 1.9 (core/place). */
-export const PlaceOp = z.looseObject({ op: z.string().min(1) });
-export type PlaceOp = z.infer<typeof PlaceOp>;
 
 export const ApplyInput = z
   .strictObject({

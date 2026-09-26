@@ -6,6 +6,13 @@ import type { SkeletonElement } from "../skeleton/schema.ts";
 
 type Cell = string | number;
 
+/** Every non-`frame` skeleton element has required x/y; asset generators
+ * never emit frames, so their output is always fully positioned. */
+export type PositionedSkeletonElement = Extract<
+  SkeletonElement,
+  { x: number; y: number }
+>;
+
 // ponytail: ids are lowercase-only (SkeletonId); non-numeric keys/values are
 // slugged for the id but the original string is kept as the label.
 const slug = (s: string): string =>
@@ -22,7 +29,7 @@ const rect = (
   width: number,
   height: number,
   text: string,
-): SkeletonElement => ({
+): PositionedSkeletonElement => ({
   type: "rectangle",
   id,
   x,
@@ -39,7 +46,7 @@ const text = (
   width: number,
   height: number,
   value: string,
-): SkeletonElement => ({
+): PositionedSkeletonElement => ({
   type: "text",
   id,
   x,
@@ -50,7 +57,11 @@ const text = (
   textAlign: "center",
 });
 
-const arrow = (id: string, start: string, end: string): SkeletonElement => ({
+const arrow = (
+  id: string,
+  start: string,
+  end: string,
+): PositionedSkeletonElement => ({
   type: "arrow",
   id,
   x: 0,
@@ -65,11 +76,11 @@ export function array(
   id: string,
   values: readonly Cell[],
   at: readonly [number, number],
-): SkeletonElement[] {
+): PositionedSkeletonElement[] {
   const [atX, atY] = at;
   const cellWidth = 60;
   const cellHeight = 40;
-  const out: SkeletonElement[] = [];
+  const out: PositionedSkeletonElement[] = [];
   values.forEach((value, i) => {
     const x = atX + i * cellWidth;
     out.push(
@@ -95,12 +106,12 @@ export function linkedList(
   id: string,
   values: readonly Cell[],
   at: readonly [number, number],
-): SkeletonElement[] {
+): PositionedSkeletonElement[] {
   const [atX, atY] = at;
   const nodeWidth = 100;
   const nodeHeight = 60;
   const gap = 60;
-  const out: SkeletonElement[] = [];
+  const out: PositionedSkeletonElement[] = [];
   values.forEach((value, i) => {
     out.push(
       rect(
@@ -142,7 +153,7 @@ export function tree(
   id: string,
   keys: readonly number[],
   at: readonly [number, number],
-): SkeletonElement[] {
+): PositionedSkeletonElement[] {
   const [atX, atY] = at;
   const nodeSize = 44;
   const xSpacing = 60;
@@ -150,7 +161,7 @@ export function tree(
   let root: TreeNode | undefined;
   for (const key of keys) root = insertBst(root, key);
 
-  const out: SkeletonElement[] = [];
+  const out: PositionedSkeletonElement[] = [];
   let index = 0;
   const visit = (node: TreeNode | undefined, depth: number): void => {
     if (!node) return;
@@ -188,7 +199,7 @@ export function stack(
   id: string,
   frames: readonly string[],
   at: readonly [number, number],
-): SkeletonElement[] {
+): PositionedSkeletonElement[] {
   const [atX, atY] = at;
   const width = 160;
   const height = 40;
@@ -210,11 +221,11 @@ export function table(
   id: string,
   rows: readonly (readonly Cell[])[],
   at: readonly [number, number],
-): SkeletonElement[] {
+): PositionedSkeletonElement[] {
   const [atX, atY] = at;
   const cellWidth = 100;
   const cellHeight = 40;
-  const out: SkeletonElement[] = [];
+  const out: PositionedSkeletonElement[] = [];
   rows.forEach((row, r) => {
     row.forEach((value, c) => {
       out.push(
@@ -240,7 +251,7 @@ export function hashMap(
   buckets: number,
   entries: readonly (readonly [string, string])[],
   at: readonly [number, number],
-): SkeletonElement[] {
+): PositionedSkeletonElement[] {
   const [atX, atY] = at;
   const bucketWidth = 80;
   const bucketHeight = 40;
@@ -248,7 +259,7 @@ export function hashMap(
   const entryHeight = 40;
   const entryGap = 10;
 
-  const out: SkeletonElement[] = [];
+  const out: PositionedSkeletonElement[] = [];
   for (let b = 0; b < buckets; b += 1) {
     out.push(
       rect(

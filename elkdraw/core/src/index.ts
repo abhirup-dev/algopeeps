@@ -16,9 +16,5 @@ export {
   stack,
   table,
   hashMap,
-  type PlaceOp,
-  type RowOp,
-  type ColumnOp,
-  type GridOp,
-  type RelOp,
+  PlaceOp,
 } from "../place/index.ts";

@@ -283,32 +283,54 @@ later tasks should not need `bun add`.
 
 ### 1.9 Placement helpers: row, column, grid, assets (2026-09-26)
 
-- `core/place/ops.ts`: pure `place(elements, ops)` for `row`/`column`/`grid`/
-  `rightOf`/`leftOf`/`below`/`above` (cheatsheet's op shapes exactly). Ops run
-  in order over a working id→element map, so a later op can target an id an
-  earlier op just placed. Missing `width`/`height` (arrows, lines, frames)
-  default to 100x100 so every op still has something to center against.
-- `core/place/assets.ts`: `array`, `linkedList`, `tree`, `stack`, `table`,
-  `hashMap`, each a pure function to a whole `SkeletonElement[]`, ids exactly
-  as the cheatsheet promises (`arr-0`, `arr-0-idx`, `ll-0-1`, `t-8`, `t-8-4`,
-  `s-0`, `tb-r0c0`, `h-0`, `h-<key>`). `tree` inserts `keys` as a BST (first
-  write wins on a duplicate key) and lays out by in-order index (x) and depth
-  (y) — this reproduces the dogfood `bst-first` fixture's tree geometry
-  exactly (44px nodes, 60px x-step, 90px level gap), verified against the
-  fixture file in `bst-fixture.test.ts`. `hashMap` buckets by sum-of-char-codes
-  mod `buckets`; non-alnum keys get a slugged id, original string kept as the
-  label.
+- `core/place/schema.ts`: `PlaceOp`, a strict `z.discriminatedUnion("op", …)`
+  covering `row`/`column`/`grid`/`rightOf`/`leftOf`/`below`/`above` _and_ the
+  asset ops (`array`/`linkedList`/`tree`/`stack`/`table`/`hashMap`) in one
+  union, per the cheatsheet ("Placement and Asset Ops" puts them together).
+  Every member is a `strictObject`, so a bad shape or unknown key fails with
+  its path (same pattern as `core/skeleton/schema.ts`). `PlaceOp` is both the
+  schema and the derived TS type (`z.infer`).
+- `core/place/ops.ts`: `place(elements, ops, scene)` matches `ApplyDeps.place`
+  in `core/apply/apply.ts` exactly. Layout ops read/write a working id→element
+  map seeded from `elements`; `of`/row-column-grid `ids` may also name an
+  element already on the canvas (`scene`, read-only reference — the wire
+  `Element` shape, so its box comes from its raw `x`/`y`/`width`/`height`
+  fields, defaulted). Asset ops call into `assets.ts` and append what they
+  generate; an id in `elements` matching a generated id overrides the fields
+  it gives, position excepted — like every op, the generator's x/y always
+  wins (cheatsheet line 123). Repositioning an id apply didn't give us (found
+  only in `scene`) works for the five element types with no other required
+  field (`rectangle`/`ellipse`/`diamond`/`arrow`/`line`); `text` and `frame`
+  need content this path doesn't have, so they're left alone.
+- `core/place/assets.ts`: unchanged generators, ids exactly as the cheatsheet
+  promises (`arr-0`, `arr-0-idx`, `ll-0-1`, `t-8`, `t-8-4`, `s-0`, `tb-r0c0`,
+  `h-0`, `h-<key>`). Return type narrowed to `PositionedSkeletonElement`
+  (`Extract<SkeletonElement, {x:number;y:number}>`) since no asset ever emits
+  a frame — this is what lets the override-merge in `ops.ts` keep x/y typed
+  as `number`, not `number | undefined`, under `exactOptionalPropertyTypes`.
+  `tree` inserts `keys` as a BST (first write wins on a duplicate key) and
+  lays out by in-order index (x) and depth (y) — reproduces the dogfood
+  `bst-first` fixture's tree geometry exactly (44px nodes, 60px x-step, 90px
+  level gap), verified against the fixture file in `bst-fixture.test.ts`.
+  `hashMap` buckets by sum-of-char-codes mod `buckets`; non-alnum keys get a
+  slugged id, original string kept as the label.
 - Every asset's output is asserted against `validateSkeleton` in
-  `assets.test.ts`. `bst-fixture.test.ts` rebuilds the BST+array fixture in 4
-  ops (`tree`, `array`, two `below` for lo/hi pointers) — well under the
-  15-op acceptance bar — and checks structure/rough positions, not bytes.
+  `assets.test.ts`. `bst-fixture.test.ts` drives `tree`, `array` and two
+  `below` ops through one `place()` call (4 ops total, well under the 15-op
+  acceptance bar) and checks structure/rough positions, not bytes.
 - `core/tsconfig.json` include gained `place` (same pattern as `skeleton`);
-  `core/src/index.ts` re-exports `place`/asset functions and the `PlaceOp`
-  variant types additively.
-- Not wired into `apply`/the server: this task's `Owns:` is `core/place/**`
-  only. Whoever owns the `apply` tool (placement + asset ops in its input)
-  wires these in; nothing here assumes a caller shape beyond "array of
-  `SkeletonElement` in, array out".
+  `core/src/index.ts` re-exports `place`/asset functions/`PlaceOp` additively.
+- Wired into `core/apply/apply.ts` (small authorized edit): its local loose
+  `PlaceOp` is gone, replaced by an import from `core/place`, re-exported from
+  the same spot so `@elkdraw/core/engine` (`core/src/engine/index.ts`) needs
+  no change beyond that one import line. Added
+  `apply.test.ts`'s `"place (task 1.9): a tree + below pointer through apply"`
+  (passes `place` as `deps.place`) and widened the existing
+  `"place without placer"` case's input to a schema-valid `row` op — a bare
+  `{op:"row"}` used to reach the "task 1.9" not-available error via the old
+  loose schema; now it fails validation first, so the test needed real
+  `ids`/`at`/`gap` to still exercise that path.
+
 ### 1.2 Apply for skeleton (2026-09-26)
 
 - `core/apply/apply.ts`, exported from `@elkdraw/core/engine`: `apply(scene,
