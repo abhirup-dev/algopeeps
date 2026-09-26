@@ -5,6 +5,6 @@
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
-  "include": ["src", "skeleton"],
+  "include": ["src", "skeleton", "apply"],
   "references": []
 }
