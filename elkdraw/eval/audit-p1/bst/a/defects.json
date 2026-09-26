@@ -1,0 +1,43 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final-own.png",
+  "report": "result.json (chat answer)",
+  "note": "Side A (yctimlin mcp-excalidraw-server 2.0.0). By-eye manifest of final-own.png, checked against sidecar.png (render.js --paint --drop-index). The final is clean: every node over its cell, path 8-12-10-11 highlighted in nodes and edges, lo/hi at indices 8 and 11, caption present. Listed defects are session incidents (fixedInFinal true) and export faults that do not show in final-own.png.",
+  "defects": [
+    {
+      "id": "a-bst-01",
+      "ruleGap": "free text textAlign center rendered left-aligned",
+      "ids": ["i0"],
+      "description": "Index labels sent as 56 px wide centred text were stored centred but drawn left-aligned in shot1 (the same stored-vs-rendered fault elkdraw fixed in 1.20).",
+      "source": "transcript L67-L79; chat answer (3)",
+      "reported": true,
+      "fixedInFinal": true
+    },
+    {
+      "id": "a-bst-02",
+      "ruleGap": "label in a transparent-stroke container is invisible",
+      "ids": ["ix0"],
+      "description": "Workaround: each index label as the label of a transparent rectangle. All 17 labels (0-14, lo, hi) took the container's transparent strokeColor and vanished in shot2; no warning.",
+      "source": "transcript L79-L94; chat answer (3)",
+      "reported": true,
+      "fixedInFinal": true
+    },
+    {
+      "id": "a-bst-03",
+      "ruleGap": "text-wrapped: two-digit keys in 44 px circles",
+      "ids": ["n12", "n10"],
+      "description": "Keys 12 and 10 wrapped to two lines in shot1 (labels paint at Excalifont 20 whatever fontSize the shape asked for); fixed by growing the circles to 52 px.",
+      "source": "transcript L67-L86; chat answer (1)",
+      "reported": true,
+      "fixedInFinal": true
+    }
+  ],
+  "cleanRegions": [],
+  "unmapped": [
+    {
+      "description": "The export records endArrowhead \"arrow\" on the 14 tree edges the tester sent with endArrowhead null (final-own.png shows plain lines), roundness type 3 on rectangles drawn sharp, and fractional indices such as \"a10\" and \"a80\" that Excalidraw rejects (\"invalid order key\"; render.js needs --drop-index). sidecar.png therefore shows arrowheads and rounded cells that the tester's canvas does not.",
+      "source": "scene.excalidraw vs final-own.png; transcript tool inputs",
+      "reason": "yctimlin export is not the painted scene; no lint rule depends on it here"
+    }
+  ]
+}

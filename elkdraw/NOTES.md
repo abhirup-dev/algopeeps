@@ -1146,3 +1146,24 @@ el.width)/2` for centre, `s.x + s.width - el.width` for right. The element's
   1.18's workaround (no per-caller corner markers), so they get this fix for
   free; their own `test:e2e` (`backends/excalidraw`, `test/parity`) still
   green, no snapshot changes needed.
+
+### 1.14 Head-to-head audit: yctimlin vs elkdraw (2026-09-26)
+
+- Report: `eval/audit-p1/audit.md`. Same harness as 1.12, one run per side
+  per task, both sides at once. elkdraw vs yctimlin: tokens 54265 vs 62852
+  (ride-hailing), 30262 vs 41032 (BST); calls about even. Our lint on the
+  ride-hailing finals: yctimlin 7 errors + 3 info (all real, tester saw 4),
+  elkdraw 0 + 1. Ranked fixes are proposals only; the user reviews first.
+- Top findings for elkdraw: a label in a transparent-stroke box is invisible
+  and lint passes it (both sides hit it on BST); `screenshot --out` with a
+  relative path writes into the server's cwd (both B runs; it wrote into
+  this worktree's root and `canvas/`); `arrowhead-overlap` still misses
+  heads 25-30 px apart; frame titles unreadable and not sizable.
+- Gotchas: yctimlin's export is not what it paints (labels paint
+  Excalifont 20 whatever the shape asks, `font-probe.png`; `endArrowhead:
+null` exported as `"arrow"`; `roundness` added; invalid fractional indices
+  like `a80` that make our sidecar throw, so `render.js --drop-index`).
+  yctimlin `apply` runs create, update, delete in that order. Its CLI
+  auto-starts a server on `EXPRESS_SERVER_URL` (default :3000, taken here):
+  always set it. Helper scripts in `eval/audit-p1/` are `.js` (outside the
+  eval tsconfig) and use `node:fs`, not the `Bun` global (eslint `no-undef`).

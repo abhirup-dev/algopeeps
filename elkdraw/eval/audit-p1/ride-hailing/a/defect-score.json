@@ -1,0 +1,17 @@
+{
+  "found": [
+    "a-rh-01",
+    "a-rh-02",
+    "a-rh-03",
+    "a-rh-04",
+    "a-rh-05",
+    "a-rh-06",
+    "a-rh-07",
+    "a-rh-08",
+    "a-rh-09",
+    "a-rh-10"
+  ],
+  "missed": [],
+  "flaggedFixed": [],
+  "cleanRegionHits": 0
+}

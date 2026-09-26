@@ -1,0 +1,71 @@
+## Canvas Description
+Total elements: 65
+Types: ellipse(15), arrow(16), text(19), rectangle(15)
+Bounding box: (80, 54) to (980, 635) = 900x581
+
+### Elements (top-to-bottom, left-to-right):
+  [e8-4] arrow | at (496, 92) | stroke: #868e96
+  [n8] ellipse | at (502, 54) | size 52x52 | label: "8" | bg: #ffc9c9 | stroke: #e03131
+  [e8-12] arrow | at (560, 92) | stroke: #e03131
+  [n4] ellipse | at (262, 144) | size 52x52 | label: "4" | bg: #e7f5ff | stroke: #1971c2
+  [n12] ellipse | at (742, 144) | size 52x52 | label: "12" | bg: #ffc9c9 | stroke: #e03131
+  [e4-2] arrow | at (261, 190) | stroke: #868e96
+  [e4-6] arrow | at (315, 190) | stroke: #868e96
+  [e12-10] arrow | at (741, 190) | stroke: #e03131
+  [e12-14] arrow | at (795, 190) | stroke: #868e96
+  [n2] ellipse | at (142, 234) | size 52x52 | label: "2" | bg: #e7f5ff | stroke: #1971c2
+  [n6] ellipse | at (382, 234) | size 52x52 | label: "6" | bg: #e7f5ff | stroke: #1971c2
+  [n10] ellipse | at (622, 234) | size 52x52 | label: "10" | bg: #ffc9c9 | stroke: #e03131
+  [n14] ellipse | at (862, 234) | size 52x52 | label: "14" | bg: #e7f5ff | stroke: #1971c2
+  [e2-1] arrow | at (149, 288) | stroke: #868e96
+  [e2-3] arrow | at (187, 288) | stroke: #868e96
+  [e6-5] arrow | at (389, 288) | stroke: #868e96
+  [e6-7] arrow | at (427, 288) | stroke: #868e96
+  [e10-9] arrow | at (629, 288) | stroke: #868e96
+  [e10-11] arrow | at (667, 288) | stroke: #e03131
+  [e14-13] arrow | at (869, 288) | stroke: #868e96
+  [e14-15] arrow | at (907, 288) | stroke: #868e96
+  [n1] ellipse | at (82, 324) | size 52x52 | label: "1" | bg: #e7f5ff | stroke: #1971c2
+  [n3] ellipse | at (202, 324) | size 52x52 | label: "3" | bg: #e7f5ff | stroke: #1971c2
+  [n5] ellipse | at (322, 324) | size 52x52 | label: "5" | bg: #e7f5ff | stroke: #1971c2
+  [n7] ellipse | at (442, 324) | size 52x52 | label: "7" | bg: #e7f5ff | stroke: #1971c2
+  [n9] ellipse | at (562, 324) | size 52x52 | label: "9" | bg: #e7f5ff | stroke: #1971c2
+  [n11] ellipse | at (682, 324) | size 52x52 | label: "11" | bg: #ffc9c9 | stroke: #e03131
+  [n13] ellipse | at (802, 324) | size 52x52 | label: "13" | bg: #e7f5ff | stroke: #1971c2
+  [n15] ellipse | at (922, 324) | size 52x52 | label: "15" | bg: #e7f5ff | stroke: #1971c2
+  [arr-title] text | at (80, 412) | size 300x20 | text: "in-order array A[0..14]" | stroke: #495057
+  [c0] rectangle | at (80, 440) | size 56x44 | label: "1" | bg: #f8f9fa | stroke: #495057
+  [c1] rectangle | at (140, 440) | size 56x44 | label: "2" | bg: #f8f9fa | stroke: #495057
+  [c2] rectangle | at (200, 440) | size 56x44 | label: "3" | bg: #f8f9fa | stroke: #495057
+  [c3] rectangle | at (260, 440) | size 56x44 | label: "4" | bg: #f8f9fa | stroke: #495057
+  [c4] rectangle | at (320, 440) | size 56x44 | label: "5" | bg: #f8f9fa | stroke: #495057
+  [c5] rectangle | at (380, 440) | size 56x44 | label: "6" | bg: #f8f9fa | stroke: #495057
+  [c6] rectangle | at (440, 440) | size 56x44 | label: "7" | bg: #f8f9fa | stroke: #495057
+  [c7] rectangle | at (500, 440) | size 56x44 | label: "8" | bg: #f8f9fa | stroke: #495057
+  [c8] rectangle | at (560, 440) | size 56x44 | label: "9" | bg: #f8f9fa | stroke: #495057
+  [c9] rectangle | at (620, 440) | size 56x44 | label: "10" | bg: #f8f9fa | stroke: #495057
+  [c10] rectangle | at (680, 440) | size 56x44 | label: "11" | bg: #ffc9c9 | stroke: #e03131
+  [c11] rectangle | at (740, 440) | size 56x44 | label: "12" | bg: #f8f9fa | stroke: #495057
+  [c12] rectangle | at (800, 440) | size 56x44 | label: "13" | bg: #f8f9fa | stroke: #495057
+  [c13] rectangle | at (860, 440) | size 56x44 | label: "14" | bg: #f8f9fa | stroke: #495057
+  [c14] rectangle | at (920, 440) | size 56x44 | label: "15" | bg: #f8f9fa | stroke: #495057
+  [j0] text | at (104, 490) | text: "0" | stroke: #868e96
+  [j1] text | at (164, 490) | text: "1" | stroke: #868e96
+  [j2] text | at (224, 490) | text: "2" | stroke: #868e96
+  [j3] text | at (284, 490) | text: "3" | stroke: #868e96
+  [j4] text | at (344, 490) | text: "4" | stroke: #868e96
+  [j5] text | at (404, 490) | text: "5" | stroke: #868e96
+  [j6] text | at (464, 490) | text: "6" | stroke: #868e96
+  [j7] text | at (524, 490) | text: "7" | stroke: #868e96
+  [j8] text | at (584, 490) | text: "8" | stroke: #2f9e44
+  [j9] text | at (644, 490) | text: "9" | stroke: #868e96
+  [j10] text | at (700, 490) | text: "10" | stroke: #868e96
+  [j11] text | at (760, 490) | text: "11" | stroke: #f08c00
+  [j12] text | at (820, 490) | text: "12" | stroke: #868e96
+  [j13] text | at (880, 490) | text: "13" | stroke: #868e96
+  [j14] text | at (940, 490) | text: "14" | stroke: #868e96
+  [u-lo] text | at (581, 574) | text: "lo" | stroke: #2f9e44
+  [p-lo] arrow | at (588, 570) | stroke: #2f9e44
+  [u-hi] text | at (761, 574) | text: "hi" | stroke: #f08c00
+  [p-hi] arrow | at (768, 570) | stroke: #f08c00
+  [caption] text | at (80, 615) | size 900x20 | text: "Search for 11 in the BST: 8 → 12 → 10 → 11 (red path). Each node is drawn above its in-order index; lo = 8, hi = 11." | stroke: #212529

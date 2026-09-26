@@ -1,0 +1,75 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final-own.png",
+  "report": "dogfood-elkdraw.md",
+  "note": "Side B (elkdraw, abhirup/canvas @ 2204821). By-eye manifest of final-own.png (screenshot --max-px 2400 after the run); sidecar.png (render.js over the stored wire scene, no paint) draws the same. Label ids are lint's <owner>#label. Session incidents are listed with fixedInFinal true.",
+  "defects": [
+    {
+      "id": "b-rh-01",
+      "rule": "crossing",
+      "ids": ["trip-pg", "surge-kafka"],
+      "description": "Trip -> Postgres crosses Surge -> Kafka inside Core.",
+      "source": "final-own.png; lint (info)",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "b-rh-02",
+      "rule": "arrowhead-overlap",
+      "ids": ["trip-kafka", "surge-kafka"],
+      "description": "The Trip and Surge async arrowheads land about 25-30 px apart on Kafka's top edge and read as one pile (the 1.12 p1rh-10 shape, closer spacing).",
+      "source": "final-own.png; report §4",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "b-rh-03",
+      "ruleGap": "frame names render at about 11 px grey, too small to read; fontSize on a frame is rejected",
+      "ids": ["edge", "core", "data", "legend"],
+      "description": "Zone titles Edge / Core services / Data / Legend are the smallest text on the canvas; the brief asks for readable text and labelled zones.",
+      "source": "final-own.png; report §1 checklist, transcript L113-L115",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "b-rh-04",
+      "ruleGap": "tool: --input takes JSON or -, not a path",
+      "ids": ["title"],
+      "description": "apply --input /tmp/.../scene.json failed locally with 'JSON Parse error: Unrecognized token /' (after its Write outside cwd was denied).",
+      "source": "transcript L51-L57; report §2.6",
+      "reported": true,
+      "fixedInFinal": true
+    },
+    {
+      "id": "b-rh-05",
+      "ruleGap": "tool: screenshot --out resolves against the server's cwd",
+      "ids": ["title"],
+      "description": "screenshot --out canvas/docs/dogfood-elkdraw.png replied path canvas/docs/dogfood-elkdraw.png, but no file existed there relative to the tester; an absolute --out worked.",
+      "source": "transcript L163-L194; report §2.6",
+      "reported": true,
+      "fixedInFinal": true
+    },
+    {
+      "id": "b-rh-06",
+      "ruleGap": "tool: moving a frame does not move its children",
+      "ids": ["legend"],
+      "description": "A dry-run moving only the legend frame returned 5 outside-zone errors; the tester resent the frame and all 5 children with shifted y.",
+      "source": "transcript L118-L128; report §2.4",
+      "reported": true,
+      "fixedInFinal": true
+    }
+  ],
+  "cleanRegions": [],
+  "unmapped": [
+    {
+      "description": "Data frame is about 60% empty; Stripe and the legend sit far left of the flow.",
+      "source": "final-own.png; report §2.2",
+      "reason": "layout taste, not a defect"
+    },
+    {
+      "description": "6 nearby draws as two strokes (rough style).",
+      "source": "final-own.png",
+      "reason": "cosmetic, hand-drawn roughness"
+    }
+  ]
+}
