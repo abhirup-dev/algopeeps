@@ -1,7 +1,8 @@
 // `apply` and `add` for skeleton input (design §3.3): upsert by id onto the
 // current scene, pure and synchronous, so the server can check `ifRev` and
 // write with no await between. Returns the delta for Store.apply, the next
-// scene and the terse reply; elements are never echoed.
+// scene and the terse reply; elements are never echoed. An existing id is
+// patched, not replaced: fields the input leaves out keep their stored value.
 //
 // Agent elements carry `customData.origin = "generated"`; everything else is
 // human and is never pruned. Bound label text gets the derived id
@@ -15,7 +16,7 @@ import {
   type LintHit,
   SetPatch,
 } from "../src/contracts/index.ts";
-import { PlaceOp } from "../place/index.ts";
+import { mergeStored, PlaceOp } from "../place/index.ts";
 import {
   SkeletonElement,
   skeletonErrors,
@@ -224,6 +225,13 @@ function run(
       return fail("place: placement ops are not available yet (task 1.9)");
     skeletons = deps.place(skeletons, input.place, scene.elements);
   }
+  // An existing id is patched: its skeleton (as given, placed or generated)
+  // over the stored one, so size, style, label and customData survive a
+  // partial resend. After place, so an asset op's new output still wins.
+  skeletons = skeletons.map((s) => {
+    const prev = live.get(s.id);
+    return prev ? mergeStored(s, prev, scene.elements) : s;
+  });
   const inputIds = new Set(skeletons.map((s) => s.id));
   const converted = skeletons.length
     ? deps.convert(skeletons.map(compile), scene.elements)

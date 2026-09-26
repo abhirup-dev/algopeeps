@@ -794,3 +794,50 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   - It claims arrows re-route on move, which they don't.
   - It says `clear` is both unimplemented and available.
   - Its 120 px gap advice still gets `label-on-own-arrowhead` at 140 px.
+
+### 1.15 Apply patches, not replaces (2026-09-26)
+
+- Root cause of p1rh-05 and p1rh-06: the converter fills every field a
+  skeleton leaves out with Excalidraw defaults (100x100, `#1e1e1e`, solid,
+  default points), and `run()` replaced the stored element with that output.
+  A place op on a canvas-only id built a bare `{type,id,x,y}` skeleton; the
+  "stored label whose container was re-sent without it is gone" rule then
+  dropped `pricing#label`.
+- Fix, one helper used at both entry points: `core/place/stored.ts`.
+  `fromStored(el, scene)` rebuilds a skeleton from a stored wire element. It
+  keeps each field only if the type's skeleton schema accepts it, so no
+  wire-only field leaks into convert. It rebuilds `label` from the live
+  `<id>#label` text, `start`/`end` from bindings to live ids, and a frame's
+  `children` from live `frameId`s. `mergeStored(given, el, scene)` puts the
+  given fields over that; `label` merges one level deep and `customData`
+  is replaced whole when given. A type change still replaces the element.
+  `apply.run` merges every skeleton with a live id _after_ `deps.place`, so
+  an asset op's regenerated cells (new label, size) beat the stored copy.
+  `place`'s `boxOf` falls back to the stored width/height when a given
+  skeleton omits them, so a partial upsert is placed by its real size. `place`'s canvas-only
+  fallback now uses `fromStored` plus the new x/y (text is movable now; it
+  used to fail with "unknown id").
+- Deliberate limits (`ponytail:` in code):
+  - A bound arrow's stored points are not backfilled. The router redraws
+    it between its ends, so waypoints on a bound arrow re-sent without
+    `points` are lost.
+  - Text `width`/`height` are backfilled only when `autoResize: false`.
+  - `place` on a canvas-only frame is refused with a clear error. Moving a
+    frame leaves its children behind, and the converter throws
+    `Bound element with id <child>#label doesn't exist` when a frame's
+    stored children carry labels (`app/src/headless.ts` anchor path from
+    1.10b). A full frame re-send with labelled stored children hits the
+    same bug on the base.
+- Removing a label: send a delete patch on `<id>#label`. Re-sending the
+  container without `label` now keeps it. A later partial upsert does not
+  bring a deleted label back (tested). `place` ignores deleted elements as
+  anchors now.
+- Tests: `apply.test.ts` "p1rh-05 …" and "p1rh-06 …" replay the
+  transcript's inputs (line 87 seed; lines 107, 120 and 151) through a fake
+  converter that fills Excalidraw's defaults. Both failed before the fix.
+  More tests cover an asset op re-run with a style override on a cell, a
+  partial upsert combined with a place op, and deleting a label.
+  They were also replayed through the CLI against the real sidecar on the
+  dev server: size, stroke, dash, font and label all survived.
+- Not in scope: `s4`/`s5` still lint `dangling-endpoint` after Pricing
+  moves, because bound arrows do not re-route (1.16).

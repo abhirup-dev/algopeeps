@@ -252,3 +252,276 @@ test("place (task 1.9): a tree + below pointer through apply", () => {
   expect(root?.["x"]).toBeTypeOf("number");
   expect(lo?.["y"]).toBeGreaterThan(Number(root?.["y"]));
 });
+
+// 1.15: the ride-hailing eval (eval/phase-1/ride-hailing/transcript.jsonl).
+// Excalidraw's converter fills every field a skeleton leaves out, so an
+// upsert that is not merged first comes back as a default box or arrow.
+const withDefaults: ApplyDeps["convert"] = (skeletons, scene) => {
+  const r = convert(skeletons, scene);
+  const linear = (t: string) => t === "arrow" || t === "line";
+  return {
+    ...r,
+    elements: r.elements.map((e) =>
+      e["containerId"] !== undefined
+        ? e
+        : {
+            width: 100,
+            height: 100,
+            strokeColor: "#1e1e1e",
+            backgroundColor: "transparent",
+            fillStyle: "solid",
+            strokeStyle: "solid",
+            ...(linear(e.type)
+              ? {
+                  points: [
+                    [0, 0],
+                    [100, 0],
+                  ],
+                }
+              : {}),
+            ...(e.type === "text" ? { fontSize: 20 } : {}),
+            ...e,
+          },
+    ),
+  };
+};
+const rh: ApplyDeps = { convert: withDefaults, place };
+
+/** Rev 2 of the transcript (line 87): the legend and two core services. */
+const rideHailing = () =>
+  step(
+    { rev: 0, elements: [] },
+    {
+      elements: [
+        {
+          id: "pricing",
+          type: "rectangle",
+          x: 900,
+          y: 400,
+          width: 200,
+          height: 70,
+          fillStyle: "solid",
+          backgroundColor: "#a5d8ff",
+          strokeColor: "#1971c2",
+          label: { text: "Pricing service" },
+        },
+        {
+          id: "matching",
+          type: "rectangle",
+          x: 1300,
+          y: 400,
+          width: 200,
+          height: 70,
+          fillStyle: "solid",
+          backgroundColor: "#a5d8ff",
+          strokeColor: "#1971c2",
+          label: { text: "Matching service" },
+        },
+        {
+          id: "legend-zone",
+          type: "rectangle",
+          x: 40,
+          y: 1090,
+          width: 460,
+          height: 210,
+          strokeColor: "#868e96",
+        },
+        {
+          id: "legend-h",
+          type: "text",
+          x: 60,
+          y: 1098,
+          text: "Legend",
+          fontSize: 24,
+          strokeColor: "#868e96",
+        },
+        {
+          id: "lg-sync",
+          type: "arrow",
+          x: 100,
+          y: 1150,
+          points: [
+            [0, 0],
+            [120, 0],
+          ],
+          strokeColor: "#1971c2",
+        },
+        {
+          id: "lg-async",
+          type: "arrow",
+          x: 100,
+          y: 1200,
+          points: [
+            [0, 0],
+            [120, 0],
+          ],
+          strokeColor: "#e8590c",
+          strokeStyle: "dashed",
+        },
+      ],
+    },
+    rh,
+  ).scene;
+
+const byId = (s: Scene, id: string) => s.elements.find((e) => e.id === id);
+
+test("p1rh-05: a partial upsert merges over the stored element (rev 3, rev 4)", () => {
+  // Line 107: legend-zone re-sent with x/y only.
+  let scene = step(
+    rideHailing(),
+    { elements: [{ id: "legend-zone", type: "rectangle", x: 40, y: 1170 }] },
+    rh,
+  ).scene;
+  expect(byId(scene, "legend-zone")).toMatchObject({
+    x: 40,
+    y: 1170,
+    width: 460,
+    height: 210,
+    strokeColor: "#868e96",
+  });
+  // Line 120: the legend moved down with x/y (and text) only.
+  scene = step(
+    scene,
+    {
+      elements: [
+        { id: "legend-h", type: "text", x: 60, y: 1178, text: "Legend" },
+        { id: "lg-sync", type: "arrow", x: 100, y: 1230 },
+        { id: "lg-async", type: "arrow", x: 100, y: 1280 },
+      ],
+    },
+    rh,
+  ).scene;
+  expect(byId(scene, "legend-h")).toMatchObject({
+    y: 1178,
+    fontSize: 24,
+    strokeColor: "#868e96",
+  });
+  expect(byId(scene, "lg-sync")).toMatchObject({
+    y: 1230,
+    strokeColor: "#1971c2",
+    points: [
+      [0, 0],
+      [120, 0],
+    ],
+  });
+  expect(byId(scene, "lg-async")).toMatchObject({
+    y: 1280,
+    strokeColor: "#e8590c",
+    strokeStyle: "dashed",
+  });
+  // A given field still wins, and a label merges one level deep.
+  scene = step(
+    scene,
+    {
+      elements: [
+        {
+          id: "pricing",
+          type: "rectangle",
+          x: 900,
+          y: 400,
+          strokeColor: "#e03131",
+        },
+      ],
+    },
+    rh,
+  ).scene;
+  expect(byId(scene, "pricing")).toMatchObject({
+    width: 200,
+    height: 70,
+    strokeColor: "#e03131",
+    backgroundColor: "#a5d8ff",
+  });
+  expect(byId(scene, "pricing#label")?.["text"]).toBe("Pricing service");
+});
+
+test("p1rh-06: a place-only op moves a stored element and keeps the rest (rev 6)", () => {
+  const before = rideHailing();
+  // Line 151: apply --place '[{"op":"leftOf","id":"pricing","of":"matching","gap":160}]'
+  const { r, scene } = step(
+    before,
+    { place: [{ op: "leftOf", id: "pricing", of: "matching", gap: 160 }] },
+    rh,
+  );
+  expect(r.reply).toMatchObject({ created: [], deleted: [], updated: 1 });
+  expect(byId(scene, "pricing")).toMatchObject({
+    x: 1300 - 160 - 200,
+    y: 400,
+    width: 200,
+    height: 70,
+    fillStyle: "solid",
+    backgroundColor: "#a5d8ff",
+    strokeColor: "#1971c2",
+  });
+  expect(byId(scene, "pricing#label")).toMatchObject({
+    text: "Pricing service",
+    containerId: "pricing",
+  });
+  expect(byId(scene, "pricing")?.["boundElements"]).toContainEqual({
+    type: "text",
+    id: "pricing#label",
+  });
+  // Text is movable too (it used to be "unknown id"), font kept.
+  const moved = step(
+    before,
+    { place: [{ op: "below", id: "legend-h", of: "legend-zone", gap: 10 }] },
+    rh,
+  ).scene;
+  expect(byId(moved, "legend-h")).toMatchObject({
+    y: 1090 + 210 + 10,
+    fontSize: 24,
+    strokeColor: "#868e96",
+    text: "Legend",
+  });
+});
+
+test("1.15: re-running an asset op keeps the generator's output over the stored one", () => {
+  const seeded = step(
+    { rev: 0, elements: [] },
+    { place: [{ op: "array", id: "arr", values: [1, 3, 5], at: [0, 0] }] },
+    rh,
+  ).scene;
+  const scene = step(
+    seeded,
+    {
+      place: [{ op: "array", id: "arr", values: [2, 4, 6], at: [0, 0] }],
+      elements: [
+        {
+          id: "arr-0",
+          type: "rectangle",
+          x: 0,
+          y: 0,
+          backgroundColor: "#ffc9c9",
+        },
+      ],
+    },
+    rh,
+  ).scene;
+  expect(byId(scene, "arr-0")?.["backgroundColor"]).toBe("#ffc9c9");
+  expect(byId(scene, "arr-0#label")?.["text"]).toBe("2");
+});
+
+test("1.15: a partial upsert placed by an op uses its stored size", () => {
+  const { scene } = step(
+    rideHailing(),
+    {
+      elements: [{ id: "pricing", type: "rectangle", x: 0, y: 0 }],
+      place: [{ op: "leftOf", id: "pricing", of: "matching", gap: 160 }],
+    },
+    rh,
+  );
+  expect(byId(scene, "pricing")).toMatchObject({ x: 940, width: 200 });
+});
+
+test("1.15: deleting <id>#label removes a label; a later partial upsert keeps it gone", () => {
+  let scene = step(rideHailing(), {
+    patches: [{ op: "delete", id: "pricing#label" }],
+  }).scene;
+  expect(byId(scene, "pricing#label")).toBeUndefined();
+  scene = step(
+    scene,
+    { elements: [{ id: "pricing", type: "rectangle", x: 900, y: 420 }] },
+    rh,
+  ).scene;
+  expect(byId(scene, "pricing#label")).toBeUndefined();
+  expect(byId(scene, "pricing")?.["boundElements"]).toEqual([]);
+});

@@ -18,6 +18,7 @@ import {
   table,
   tree,
 } from "./assets.ts";
+import { fromStored } from "./stored.ts";
 
 interface Box {
   x: number;
@@ -43,48 +44,13 @@ const sceneBox = (e: Element): Box => ({
   height: numberField(e, "height") ?? DEFAULT_SIZE,
 });
 
-const skeletonBox = (e: SkeletonElement): Box => ({
+/** `stored`: the same id on the canvas, whose size a partial upsert keeps. */
+const skeletonBox = (e: SkeletonElement, stored?: Box): Box => ({
   x: e.x ?? 0,
   y: e.y ?? 0,
-  width: e.width ?? DEFAULT_SIZE,
-  height: e.height ?? DEFAULT_SIZE,
+  width: e.width ?? stored?.width ?? DEFAULT_SIZE,
+  height: e.height ?? stored?.height ?? DEFAULT_SIZE,
 });
-
-// The scene-fallback path (repositioning an id apply didn't give us): only
-// types whose skeleton needs nothing beyond id/x/y (no required label,
-// text or children) can be rebuilt from just a type name.
-type RepositionableType =
-  "rectangle" | "ellipse" | "diamond" | "arrow" | "line";
-const REPOSITIONABLE: readonly RepositionableType[] = [
-  "rectangle",
-  "ellipse",
-  "diamond",
-  "arrow",
-  "line",
-];
-const isRepositionable = (t: unknown): t is RepositionableType =>
-  typeof t === "string" && (REPOSITIONABLE as readonly string[]).includes(t);
-
-/** A minimal, schema-valid skeleton element: just enough to move it. */
-function bareSkeleton(
-  type: RepositionableType,
-  id: string,
-  x: number,
-  y: number,
-): SkeletonElement {
-  switch (type) {
-    case "rectangle":
-      return { type, id, x, y };
-    case "ellipse":
-      return { type, id, x, y };
-    case "diamond":
-      return { type, id, x, y };
-    case "arrow":
-      return { type, id, x, y };
-    case "line":
-      return { type, id, x, y };
-  }
-}
 
 /** Runs `ops` in order over `elements`; returns the elements to send to
  * `convert`: every input element (repositioned as ops require), plus
@@ -97,12 +63,14 @@ export function place(
   const overrides = new Map(elements.map((e) => [e.id, e]));
   const out = new Map(overrides);
   const order = elements.map((e) => e.id);
-  const sceneById = new Map(scene.map((e) => [e.id, e]));
+  const sceneById = new Map(
+    scene.filter((e) => e["isDeleted"] !== true).map((e) => [e.id, e]),
+  );
 
   const boxOf = (id: string): Box => {
     const sk = out.get(id);
-    if (sk) return skeletonBox(sk);
     const sc = sceneById.get(id);
+    if (sk) return skeletonBox(sk, sc && sceneBox(sc));
     if (sc) return sceneBox(sc);
     throw new Error(`place: unknown id "${id}"`);
   };
@@ -113,10 +81,15 @@ export function place(
       out.set(id, { ...existing, x, y });
       return;
     }
+    // An id only on the canvas moves as stored: everything but x/y is kept.
     const sc = sceneById.get(id);
-    if (!sc || !isRepositionable(sc.type))
-      throw new Error(`place: unknown id "${id}"`);
-    out.set(id, bareSkeleton(sc.type, id, x, y));
+    const stored = sc && fromStored(sc, scene);
+    if (!stored) throw new Error(`place: unknown id "${id}"`);
+    // ponytail: a frame moves without its children, and the converter
+    // cannot re-take stored labelled children yet; place them instead.
+    if (stored.type === "frame")
+      throw new Error(`place: "${id}" is a frame; place its children instead`);
+    out.set(id, { ...stored, x, y });
     order.push(id);
   };
 
