@@ -5,7 +5,7 @@
 ```
 core  <- backends/excalidraw, backends/fake, sidecar, adapters/mcp, app (types only)
 adapters/server <- core, backend-excalidraw, backend-fake, mcp
-adapters/cli    <- core, server
+adapters/cli    <- core, mcp (spawns server/src/main.ts by path; no import)
 test/parity, eval <- anything
 ```
 
@@ -39,31 +39,33 @@ has `createMcpHandler` (per-request handler factory) and
 
 New dependencies go through the orchestrator; do not run bun add on a task branch.
 
-| Package                                               | Where                         | Version  | Why                                                                           |
-| ----------------------------------------------------- | ----------------------------- | -------- | ----------------------------------------------------------------------------- |
-| zod                                                   | core, adapters/mcp, server    | ^4.6.5   | Schemas for IR, payloads and tool inputs; v4 has `z.toJSONSchema` (verified). |
-| elkjs                                                 | core                          | ^0.12.0  | ELK layout engine; ships `.d.ts` (`lib/main.d.ts`) for the IR types.          |
-| safe-stable-stringify                                 | core                          | ^2.5.0   | Deterministic JSON for the event log.                                         |
-| @modelcontextprotocol/server                          | adapters/mcp, adapters/server | 2.0.0    | MCP server SDK, same as canvas; peer `zod ^4.2.0`.                            |
-| @modelcontextprotocol/client (dev)                    | adapters/mcp, server, eval    | 2.0.0    | MCP client for tests and the eval harness.                                    |
-| commander                                             | adapters/cli                  | ^15.0.0  | CLI parsing.                                                                  |
-| @commander-js/extra-typings                           | adapters/cli                  | ^15.0.0  | Inferred option/argument types for commander.                                 |
-| react, react-dom                                      | app                           | ^19.3.0  | Browser canvas UI.                                                            |
-| @excalidraw/excalidraw                                | app, backends/excalidraw      | 0.18.1   | Canvas component (app) and scene/element types (backend); same as canvas/app. |
-| vite (dev)                                            | app                           | ^8.3.1   | App dev server and build; Vite 8 + Excalidraw 0.18.1 build verified.          |
-| @vitejs/plugin-react (dev)                            | app                           | ^6.1.1   | React transform for Vite 8 (its extra peers are optional).                    |
-| @types/react, @types/react-dom (dev)                  | app                           | ^19.3.0  | React types.                                                                  |
-| playwright (dev)                                      | sidecar, eval                 | 1.63.0   | Headless browser; matches the cached chromium-1243, so no browser download.   |
-| typescript (dev)                                      | root                          | ~6.0.3   | `tsc -b`; capped by typescript-eslint's peer range.                           |
-| eslint, @eslint/js (dev)                              | root                          | ^10.11.0 | Linter and its recommended JS rules.                                          |
-| typescript-eslint (dev)                               | root                          | ^8.70.1  | strictTypeChecked + stylisticTypeChecked.                                     |
-| eslint-config-prettier (dev)                          | root                          | ^10.1.8  | Turns off style rules that fight Prettier.                                    |
-| eslint-plugin-react-hooks (dev)                       | root                          | ^7.1.1   | Hooks and React Compiler rules for app/.                                      |
-| @eslint-community/eslint-plugin-eslint-comments (dev) | root                          | ^4.8.1   | Inline disables must carry a description; no blanket disables.                |
-| globals (dev)                                         | root                          | ^17.12.0 | Browser/node globals for ESLint.                                              |
-| prettier (dev)                                        | root                          | ^3.9.9   | The only formatter.                                                           |
-| @types/bun (dev)                                      | root                          | ^1.4.2   | Bun runtime and `bun:test` types.                                             |
-| @total-typescript/ts-reset (dev)                      | root                          | ^0.6.1   | `JSON.parse`/`Response.json()` return `unknown`; `.filter(Boolean)` narrows.  |
+| Package                                               | Where                                              | Version  | Why                                                                                              |
+| ----------------------------------------------------- | -------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| zod                                                   | core, adapters/mcp, server, cli; test/parity (dev) | ^4.6.5   | Schemas for IR, payloads and tool inputs; v4 has `z.toJSONSchema` (verified).                    |
+| elkjs                                                 | core                                               | ^0.12.0  | ELK layout engine; ships `.d.ts` (`lib/main.d.ts`) for the IR types.                             |
+| safe-stable-stringify                                 | core                                               | ^2.5.0   | Deterministic JSON for the event log.                                                            |
+| @modelcontextprotocol/server                          | adapters/mcp, adapters/server                      | 2.0.0    | MCP server SDK, same as canvas; peer `zod ^4.2.0`.                                               |
+| @modelcontextprotocol/client (dev)                    | adapters/mcp, server, eval                         | 2.0.0    | MCP client for tests and the eval harness.                                                       |
+| commander                                             | adapters/cli                                       | ^15.0.0  | CLI parsing.                                                                                     |
+| @commander-js/extra-typings                           | adapters/cli                                       | ^15.0.0  | Inferred option/argument types for commander.                                                    |
+| mermaid (dev)                                         | test/parity                                        | 11.17.2  | Parses the Mermaid fixtures in the parity suite; pinned to the `getData()` version (design §16). |
+| happy-dom (dev)                                       | test/parity                                        | ^20.14.5 | DOM `Window` so Mermaid's parser runs under `bun test`.                                          |
+| react, react-dom                                      | app                                                | ^19.3.0  | Browser canvas UI.                                                                               |
+| @excalidraw/excalidraw                                | app, backends/excalidraw                           | 0.18.1   | Canvas component (app) and scene/element types (backend); same as canvas/app.                    |
+| vite (dev)                                            | app                                                | ^8.3.1   | App dev server and build; Vite 8 + Excalidraw 0.18.1 build verified.                             |
+| @vitejs/plugin-react (dev)                            | app                                                | ^6.1.1   | React transform for Vite 8 (its extra peers are optional).                                       |
+| @types/react, @types/react-dom (dev)                  | app                                                | ^19.3.0  | React types.                                                                                     |
+| playwright (dev)                                      | sidecar, eval                                      | 1.63.0   | Headless browser; matches the cached chromium-1243, so no browser download.                      |
+| typescript (dev)                                      | root                                               | ~6.0.3   | `tsc -b`; capped by typescript-eslint's peer range.                                              |
+| eslint, @eslint/js (dev)                              | root                                               | ^10.11.0 | Linter and its recommended JS rules.                                                             |
+| typescript-eslint (dev)                               | root                                               | ^8.70.1  | strictTypeChecked + stylisticTypeChecked.                                                        |
+| eslint-config-prettier (dev)                          | root                                               | ^10.1.8  | Turns off style rules that fight Prettier.                                                       |
+| eslint-plugin-react-hooks (dev)                       | root                                               | ^7.1.1   | Hooks and React Compiler rules for app/.                                                         |
+| @eslint-community/eslint-plugin-eslint-comments (dev) | root                                               | ^4.8.1   | Inline disables must carry a description; no blanket disables.                                   |
+| globals (dev)                                         | root                                               | ^17.12.0 | Browser/node globals for ESLint.                                                                 |
+| prettier (dev)                                        | root                                               | ^3.9.9   | The only formatter.                                                                              |
+| @types/bun (dev)                                      | root                                               | ^1.4.2   | Bun runtime and `bun:test` types.                                                                |
+| @total-typescript/ts-reset (dev)                      | root                                               | ^0.6.1   | `JSON.parse`/`Response.json()` return `unknown`; `.filter(Boolean)` narrows.                     |
 
 ## Sidecar
 

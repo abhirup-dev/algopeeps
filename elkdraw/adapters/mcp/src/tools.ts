@@ -28,6 +28,17 @@ const Skeleton = z.looseObject({
   id: Id.optional(),
 });
 
+/** `GET /api/status` (SURFACE.md). */
+export const ServerStatus = z.strictObject({
+  port: z.int().positive(),
+  url: z.string().min(1),
+  branch: z.string(),
+  session: z.string(),
+  rev: Rev,
+  clients: z.int().nonnegative(),
+});
+export type ServerStatus = z.infer<typeof ServerStatus>;
+
 interface Def {
   description: string;
   input: z.ZodObject;
@@ -35,6 +46,12 @@ interface Def {
 }
 
 export const defs = {
+  status: {
+    description:
+      "Which server this is: port, canvas url, branch, session, rev, browser clients.",
+    input: z.strictObject({}),
+    output: ServerStatus,
+  },
   add: {
     description:
       "Create elements from Excalidraw skeletons. Replies with ids and lints, never elements.",
@@ -226,21 +243,12 @@ export const tools: readonly ToolDef[] = Object.entries(defs).map(
   ([name, def]) => ({ name: name as ToolName, ...def }),
 );
 
-/** `GET /api/status` (SURFACE.md). */
-export const ServerStatus = z.strictObject({
-  port: z.int().positive(),
-  url: z.string().min(1),
-  branch: z.string(),
-  session: z.string(),
-  rev: Rev,
-  clients: z.int().nonnegative(),
-});
-export type ServerStatus = z.infer<typeof ServerStatus>;
-
 export const ToolErrorCode = z.enum([
   "NOT_IMPLEMENTED",
   "INVALID_INPUT",
   "UNKNOWN_TOOL",
+  "UNREACHABLE",
+  "INTERNAL",
 ]);
 export type ToolErrorCode = z.infer<typeof ToolErrorCode>;
 
@@ -249,6 +257,9 @@ export const httpStatus: Record<ToolErrorCode, number> = {
   INVALID_INPUT: 400,
   UNKNOWN_TOOL: 404,
   NOT_IMPLEMENTED: 501,
+  /** Only raised client-side (stdio forwarding); never sent by the server. */
+  UNREACHABLE: 503,
+  INTERNAL: 500,
 };
 
 /** The `error` member of a failed `POST /api/tools/<name>` (SURFACE.md). */

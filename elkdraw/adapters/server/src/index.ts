@@ -5,7 +5,7 @@ export {
   type ToolContext,
   type Tools,
   defaultDataDir,
+  mcpTools,
   startServer,
 } from "./server.ts";
-export { placeholderTools } from "./placeholder.ts";
 export { EventLine, Store } from "./store.ts";

@@ -5,7 +5,6 @@ import {
   type Element,
   type FeedLine,
   type ServerMessage,
-  parseJson,
   safeParseJson,
 } from "@elkdraw/core";
 import {
@@ -16,20 +15,20 @@ import {
   localhostAllowedOrigins,
   originValidationResponse,
 } from "@modelcontextprotocol/server";
+import {
+  createMcpServer,
+  dispatch,
+  httpStatus,
+  type ServerStatus,
+  ToolError,
+  type ToolErrorBody,
+} from "@elkdraw/mcp";
 import { z } from "zod";
-import { placeholderTools } from "./placeholder.ts";
 import { type Applied, Store } from "./store.ts";
 
-export interface Status {
-  port: number;
-  url: string;
-  branch: string;
-  session: string;
-  rev: number;
-  clients: number;
-}
+export type Status = ServerStatus;
 
-/** What the tool layer (P0.3 `@elkdraw/mcp`) gets from the server. */
+/** What the tool layer (`@elkdraw/mcp`) gets from the server. */
 export interface ToolContext {
   status(): Status;
   scene(): { rev: number; elements: Element[] };
@@ -60,7 +59,7 @@ export interface ServerOptions {
   /** Session data lives in <dataDir>/<session>/. Default: ELKDRAW_DATA_DIR,
    * else ${XDG_DATA_HOME:-~/.local/share}/elkdraw. */
   dataDir?: string;
-  /** Default: placeholderTools (one `status` tool). */
+  /** Default: mcpTools (the @elkdraw/mcp tools). */
   tools?: (ctx: ToolContext) => Tools;
 }
 
@@ -68,6 +67,18 @@ export interface RunningServer {
   url: string;
   stop: () => Promise<void>;
 }
+
+/** The @elkdraw/mcp tools. Real: `status`; the rest are NOT_IMPLEMENTED stubs. */
+export function mcpTools(ctx: ToolContext): Tools {
+  const handlers = { status: () => Promise.resolve(ctx.status()) };
+  return {
+    createMcpServer: () => createMcpServer(handlers),
+    dispatch: (name, input) => dispatch(name, input, handlers),
+  };
+}
+
+const toolError = (body: ToolErrorBody) =>
+  Response.json({ error: body }, { status: httpStatus[body.code] });
 
 const SESSION = /^[\w.-]+$/;
 const TOPIC = "scene";
@@ -177,7 +188,7 @@ export function startServer(options: ServerOptions): RunningServer {
       return applied.rev;
     },
   };
-  const tools = (options.tools ?? placeholderTools)(ctx);
+  const tools = (options.tools ?? mcpTools)(ctx);
 
   const stop = async () => {
     await mcp.close();
@@ -193,14 +204,21 @@ export function startServer(options: ServerOptions): RunningServer {
     }
     const tool = /^\/api\/tools\/([\w.-]+)$/.exec(pathname)?.[1];
     if (tool && req.method === "POST") {
+      const text = await req.text();
+      const input = text ? safeParseJson(z.unknown(), text) : undefined;
+      if (input && !input.ok) {
+        return toolError({
+          code: "INVALID_INPUT",
+          message: `body is not JSON: ${input.error.message}`,
+          tool,
+        });
+      }
       try {
-        const text = await req.text();
-        const input = text ? parseJson(z.unknown(), text) : {};
-        return Response.json(await tools.dispatch(tool, input));
+        return Response.json(await tools.dispatch(tool, input?.value ?? {}));
       } catch (error) {
-        // ponytail: every failure is a 400; split out 404/500 once SURFACE.md names them.
+        if (error instanceof ToolError) return toolError(error.body);
         const message = error instanceof Error ? error.message : String(error);
-        return Response.json({ error: message }, { status: 400 });
+        return toolError({ code: "INTERNAL", message, tool });
       }
     }
     return Response.json({ error: "not found" }, { status: 404 });

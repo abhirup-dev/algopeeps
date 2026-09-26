@@ -10,6 +10,7 @@ import {
 } from "./tools.ts";
 
 export * from "./tools.ts";
+export { baseUrl, restHandlers } from "./rest.ts";
 
 export type Handlers = {
   [K in ToolName]: (input: ToolInput<K>) => Promise<ToolOutput<K>>;
@@ -31,7 +32,44 @@ export const inputJsonSchema = (def: ToolDef): Record<string, unknown> => ({
 
 const byName = new Map(tools.map((def) => [def.name, def]));
 
-const stub = (name: ToolName) => (): Promise<never> =>
+function defOf(name: ToolName): ToolDef {
+  const def = byName.get(name);
+  if (def === undefined) throw new Error(`unregistered tool ${name}`);
+  return def;
+}
+
+/**
+ * One handler per tool from a single untyped function. Its results are
+ * checked against each tool's output schema when the tool runs.
+ */
+export function handlersFrom(
+  call: (name: ToolName, input: unknown) => Promise<unknown>,
+): Handlers {
+  const h =
+    <K extends ToolName>(name: K) =>
+    (input: ToolInput<K>) =>
+      call(name, input) as Promise<ToolOutput<K>>;
+  return {
+    status: h("status"),
+    add: h("add"),
+    apply: h("apply"),
+    get: h("get"),
+    describe: h("describe"),
+    query: h("query"),
+    screenshot: h("screenshot"),
+    export: h("export"),
+    snapshot: h("snapshot"),
+    clear: h("clear"),
+    lint: h("lint"),
+    look: h("look"),
+    diff: h("diff"),
+    changes: h("changes"),
+    wait: h("wait"),
+  };
+}
+
+/** Every tool rejects with NOT_IMPLEMENTED, echoing its input JSON Schema. */
+export const stubHandlers: Handlers = handlersFrom((name) =>
   Promise.reject(
     new ToolError({
       code: "NOT_IMPLEMENTED",
@@ -39,31 +77,8 @@ const stub = (name: ToolName) => (): Promise<never> =>
       tool: name,
       inputSchema: inputJsonSchema(defOf(name)),
     }),
-  );
-
-function defOf(name: ToolName): ToolDef {
-  const def = byName.get(name);
-  if (def === undefined) throw new Error(`unregistered tool ${name}`);
-  return def;
-}
-
-/** Every tool rejects with NOT_IMPLEMENTED, echoing its input JSON Schema. */
-export const stubHandlers: Handlers = {
-  add: stub("add"),
-  apply: stub("apply"),
-  get: stub("get"),
-  describe: stub("describe"),
-  query: stub("query"),
-  screenshot: stub("screenshot"),
-  export: stub("export"),
-  snapshot: stub("snapshot"),
-  clear: stub("clear"),
-  lint: stub("lint"),
-  look: stub("look"),
-  diff: stub("diff"),
-  changes: stub("changes"),
-  wait: stub("wait"),
-};
+  ),
+);
 
 /** Handlers keyed by name, with the per-tool input types erased. */
 type Erased = Record<ToolName, (input: never) => Promise<unknown>>;
