@@ -1,7 +1,8 @@
 // Phase 0 exit smoke (P0.14). Run with `bun run --cwd elkdraw smoke:p0`.
 // Creates a second worktree on a scratch branch, runs `check` in both, starts
 // `dev` in both through portless, then per URL: the MCP client lists tools and
-// calls `status` (names the branch) and `lint` (NOT_IMPLEMENTED), the CLI
+// calls `status` (names the branch), `export --format mmd` (NOT_IMPLEMENTED)
+// and `lint` (real since 1.10), the CLI
 // `status` names the branch, and Chromium screenshots the canvas with its
 // branch pill. Servers, browser, worktree and branch go away on every exit.
 import { mkdirSync } from "node:fs";
@@ -107,14 +108,27 @@ async function smokeUrl(url: string, branch: string, browser: Browser) {
     const mcpStatus = Status.parse(viaMcp.structuredContent);
     if (mcpStatus.branch !== branch)
       fail(`MCP status branch ${mcpStatus.branch}, want ${branch}`);
+    const stub = await client.callTool({
+      name: "export",
+      arguments: { format: "mmd" },
+    });
+    if (
+      stub.isError !== true ||
+      !JSON.stringify(stub.content).includes("NOT_IMPLEMENTED")
+    )
+      fail(
+        `MCP export mmd did not reply NOT_IMPLEMENTED: ${JSON.stringify(stub)}`,
+      );
     const lint = await client.callTool({ name: "lint", arguments: {} });
     if (
-      lint.isError !== true ||
-      !JSON.stringify(lint.content).includes("NOT_IMPLEMENTED")
+      lint.isError === true ||
+      !z
+        .object({ hits: z.array(z.unknown()) })
+        .safeParse(lint.structuredContent).success
     )
-      fail(`MCP lint did not reply NOT_IMPLEMENTED: ${JSON.stringify(lint)}`);
+      fail(`MCP lint did not reply hits: ${JSON.stringify(lint)}`);
     log(
-      `${url}: MCP ${String(tools.length)} tools, status.branch=${branch}, lint NOT_IMPLEMENTED`,
+      `${url}: MCP ${String(tools.length)} tools, status.branch=${branch}, export mmd NOT_IMPLEMENTED, lint ok`,
     );
   } finally {
     await client.close();

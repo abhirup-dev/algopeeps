@@ -1,0 +1,149 @@
+// End to end with the real sidecar (needs app/dist; `bun run test:e2e`):
+// draft -> apply -> lint -> look -> fix over REST and MCP, never reading
+// elements back.
+import { afterAll, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import type { LintHit } from "@elkdraw/core";
+import { ApplyReply, parseJson } from "@elkdraw/core";
+import {
+  Client,
+  StreamableHTTPClientTransport,
+} from "@modelcontextprotocol/client";
+import { defs } from "@elkdraw/mcp";
+import { z } from "zod";
+import { startServer } from "./index.ts";
+
+const dir = mkdtempSync(join(tmpdir(), "elkdraw-tools-e2e-"));
+const server = startServer({
+  port: 0,
+  session: "e2e",
+  open: false,
+  appDir: resolve(import.meta.dir, "../../../app/dist"),
+  dataDir: dir,
+});
+const client = new Client({ name: "e2e", version: "0.0.0" });
+afterAll(async () => {
+  await client.close();
+  await server.stop();
+  rmSync(dir, { recursive: true, force: true });
+});
+
+async function rest<T extends z.ZodType>(tool: string, input: unknown, out: T) {
+  const res = await fetch(`${server.url}/api/tools/${tool}`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`${tool}: ${String(res.status)} ${text}`);
+  return parseJson(out, text);
+}
+
+const errors = (hits: readonly LintHit[]) =>
+  hits.filter((h) => h.severity === "error" && !h.suppressed);
+
+// The draft: "svc" is drawn on top of "lb" (node-overlap); the arrow to db
+// comes in a second batch, binding to boxes already on the canvas.
+const lb = {
+  id: "lb",
+  type: "rectangle",
+  x: 100,
+  y: 50,
+  width: 180,
+  height: 60,
+  label: { text: "Load Balancer" },
+};
+const svc = {
+  id: "svc",
+  type: "rectangle",
+  x: 150,
+  y: 80,
+  width: 160,
+  height: 60,
+  label: { text: "Web Server" },
+};
+const db = {
+  id: "db",
+  type: "ellipse",
+  x: 0,
+  y: 0,
+  width: 200,
+  height: 70,
+  label: { text: "PostgreSQL" },
+};
+const lbDb = {
+  id: "lb-db",
+  type: "arrow",
+  x: 0,
+  y: 0,
+  start: { id: "lb" },
+  end: { id: "db" },
+};
+const draft = {
+  elements: [lb, svc, db],
+  place: [{ op: "below", id: "db", of: "lb", gap: 140 }],
+};
+
+test("draft -> apply -> lint -> look -> fix", async () => {
+  // Draft over MCP.
+  await client.connect(
+    new StreamableHTTPClientTransport(new URL(`${server.url}/mcp`)),
+  );
+  const first = await client.callTool({ name: "apply", arguments: draft });
+  expect(first.isError).toBeFalsy();
+  const reply = ApplyReply.parse(first.structuredContent);
+  expect(reply.created).toEqual(["lb", "svc", "db"]);
+  expect(reply.measured).toBe(true);
+  const bad = errors(reply.lints);
+  const overlap = bad.find((h) => h.code === "node-overlap");
+  expect(overlap?.ids).toEqual(["lb", "svc"]);
+
+  // Arrow in its own batch, bound to boxes outside it.
+  const arrow = ApplyReply.parse(
+    await rest("apply", { elements: [lbDb] }, z.unknown()),
+  );
+  expect(arrow.created).toEqual(["lb-db"]);
+  expect(errors(arrow.lints).map((h) => h.code)).not.toContain(
+    "dangling-endpoint",
+  );
+
+  // lint on demand agrees with the reply.
+  const lint = await rest("lint", {}, defs.lint.output);
+  expect(errors(lint.hits).map((h) => h.code)).toContain("node-overlap");
+
+  // look at the hit ids: a small crop plus rendered boxes.
+  const out = join(dir, "look.png");
+  const look = await rest(
+    "look",
+    { target: overlap?.ids.join(",") ?? "lb", r: 150, out },
+    defs.look.output,
+  );
+  expect(look.path).toBe(out);
+  const png = new Uint8Array(await Bun.file(out).arrayBuffer());
+  const view = new DataView(png.buffer);
+  expect(view.getUint32(16)).toBeLessThanOrEqual(512);
+  expect(view.getUint32(20)).toBeLessThanOrEqual(384);
+  expect(Object.keys(look.boxes)).toEqual(overlap?.ids ?? []);
+
+  // Fix: move svc clear of lb; re-send the whole file with the arrow.
+  const fixed = ApplyReply.parse(
+    (
+      await client.callTool({
+        name: "apply",
+        arguments: {
+          elements: [lb, svc, db, lbDb],
+          place: [
+            ...draft.place,
+            { op: "rightOf", id: "svc", of: "lb", gap: 80 },
+          ],
+        },
+      })
+    ).structuredContent,
+  );
+  expect(errors(fixed.lints)).toEqual([]);
+
+  const d = await rest("diff", {}, defs.diff.output);
+  expect(d.lints.fixed.map((h) => h.code)).toContain("node-overlap");
+  expect(d.delta).toContain("-1 node-overlap");
+}, 30_000);

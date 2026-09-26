@@ -5,7 +5,7 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { Command } from "@commander-js/extra-typings";
-import { safeParseJson } from "@elkdraw/core";
+import { safeParseJson, skeletonErrors } from "@elkdraw/core";
 import {
   baseUrl,
   inputJsonSchema,
@@ -154,7 +154,8 @@ function addToolCommand(program: Command, def: ToolDef): void {
       if (opts[key] !== undefined) raw[key] = convert(prop, opts[key]);
     }
     const input = def.input.safeParse(raw);
-    if (!input.success) throw new CliExit(2, z.prettifyError(input.error));
+    if (!input.success)
+      throw new CliExit(2, skeletonErrors(input.error).join("\n"));
     await emit(
       await request(
         baseOf(program),

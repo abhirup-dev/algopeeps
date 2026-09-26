@@ -1,3 +1,4 @@
+import { skeletonErrors } from "@elkdraw/core";
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import {
@@ -53,6 +54,7 @@ export function handlersFrom(
     status: h("status"),
     add: h("add"),
     apply: h("apply"),
+    validate: h("validate"),
     get: h("get"),
     describe: h("describe"),
     query: h("query"),
@@ -113,7 +115,7 @@ export async function dispatch(
   if (!parsed.success) {
     throw new ToolError({
       code: "INVALID_INPUT",
-      message: z.prettifyError(parsed.error),
+      message: skeletonErrors(parsed.error).join("\n"),
       tool: name,
       inputSchema: inputJsonSchema(def),
     });

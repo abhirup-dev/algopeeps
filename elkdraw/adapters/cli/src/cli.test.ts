@@ -156,7 +156,7 @@ test("start spawns the real server; status, a 501 stub, stop", async () => {
     const s = await cliEnv(env, "status");
     expect(s.code).toBe(0);
     expect(s.stdout).toContain(`"url":"${url}"`);
-    const stub = await cliEnv(env, "lint");
+    const stub = await cliEnv(env, "export", "--format", "mmd");
     expect(stub.code).toBe(1);
     expect(stub.stderr).toContain("NOT_IMPLEMENTED");
   } finally {

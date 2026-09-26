@@ -17,5 +17,8 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.0.0"
+  },
+  "scripts": {
+    "test:e2e": "bun run --cwd ../../app build && bun test ./src/tools.e2e.ts"
   }
 }
