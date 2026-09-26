@@ -37,6 +37,10 @@ const defect = z
     envOnly: z
       .strictObject({ reason: z.string().min(1), evidence: z.string() })
       .optional(),
+    // Open but not drawn in final.png either: the measured gap, not flagged.
+    notDrawn: z
+      .strictObject({ reason: z.string().min(1), evidence: z.string() })
+      .optional(),
   })
   .refine((d) => (d.rule === undefined) !== (d.ruleGap === undefined), {
     message: "exactly one of rule, ruleGap",
@@ -76,15 +80,23 @@ const manifest = z.strictObject({
 
 const scene = z.object({ elements: z.array(z.object({ id: z.string() })) });
 
-for (const name of ["yct", "batch", "bst", "bst-first"]) {
+for (const name of [
+  "yct",
+  "batch",
+  "bst",
+  "bst-first",
+  "yct-painted",
+  "batch-painted",
+  "bst-first-painted",
+]) {
   test(`${name}/defects.json is valid and references real elements`, async () => {
     const dir = `${dogfood}${name}/`;
     const m = parseJson(manifest, await Bun.file(`${dir}defects.json`).text());
     const s = parseJson(scene, await Bun.file(dir + m.scene).text());
     expect(await Bun.file(dir + m.png).exists()).toBe(true);
     for (const d of m.defects) {
-      if (d.envOnly) {
-        expect(await Bun.file(dir + d.envOnly.evidence).exists()).toBe(true);
+      for (const e of [d.envOnly, d.notDrawn]) {
+        if (e) expect(await Bun.file(dir + e.evidence).exists()).toBe(true);
       }
     }
 
