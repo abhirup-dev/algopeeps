@@ -233,6 +233,15 @@
       "source": "final.png, not in report",
       "reported": false,
       "fixedInFinal": false
+    },
+    {
+      "id": "yct-24",
+      "rule": "arrowhead-overlap",
+      "ids": ["e-trip", "e-surge", "kafka"],
+      "description": "Trip->Kafka (dashed) and Surge->Kafka arrowheads pile up together at Kafka's top-left edge.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
     }
   ],
   "cleanRegions": [

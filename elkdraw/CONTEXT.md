@@ -117,7 +117,12 @@ suppressed?}` in `lint.ts`. The §17.4 bar counts errors only.
 - **Lint codes** — `text-overflow`, `text-wrapped`, `label-on-node`,
   `label-on-label`, `label-on-border`, `arrow-through-node`, `node-overlap`,
   `dangling-endpoint`, `outside-zone`, `crossing` (info),
-  `arrow-through-label`, `label-on-own-arrowhead`.
+  `arrow-through-label`, `label-on-own-arrowhead`, `unlabelled-node`,
+  `arrowhead-overlap` (14 total).
+- **`unlabelled-node`** — A leaf with no label and no free text inside it,
+  with at least one arrow bound to it.
+- **`arrowhead-overlap`** — Two arrows into the same target whose last
+  points sit under `HEAD` (25 px) apart; ids `[a, b, target]`.
 - **Container / leaf** — Lint's split of boxes: a container is a zone or a
   box that fully holds another box (dashed zone rectangles, a legend); the
   rest are leaves (nodes). Labels on leaves are `label-on-node`, across a
@@ -213,7 +218,7 @@ suppressed?}` in `lint.ts`. The §17.4 bar counts errors only.
 | advance-width table              | measurement cache                  |
 | `customData.origin` as truth     | derived origin                     |
 | relative pins (`rightOf`)        | absolute `pin {kind, at}`          |
-| ten lint rules                   | twelve lint codes                  |
+| ten lint rules                   | 14 lint codes                      |
 | `skipped` in the reply           | `kept`                             |
 | steps 0–8                        | phases 0–5                         |
 | elkjs in a Node subprocess       | in-process Bun Web Worker          |

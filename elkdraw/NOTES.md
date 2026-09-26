@@ -1010,3 +1010,31 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   should update it to 200px+ to match the skill. `app/src/headless.ts`
   `snap()` has the same stored-vs-ink bounds gap this bug was really in;
   worth its own bead if `look` crops near a scene's extreme edge in the wild.
+### 1.19b Housekeeping: yct-17 pile-up, eval-p1 schema check, stale counts (2026-09-26)
+
+- `dogfood/yct` and `yct-painted` `defects.json`: added the Trip/Surge->Kafka
+  arrowhead pile-up (1.19's `EXTRA` yct-17) as a real manifest entry, id
+  `yct-24` — `yct-17` was already taken by the `text-wrapped` kafka-label
+  defect, so the id from 1.19's comment could not be reused. Confirmed by eye
+  in `final.png`: both dashed heads land on Kafka's top-left edge within a
+  few px. `lint.e2e.ts`'s `EXTRA`/`yct17` shim is deleted; `EXPECTED` counts
+  unchanged (they already counted the shim). README counts updated (yct 23->24
+  defects, 11->12 must-flag; yct-painted must-flag 14->15).
+- `test/parity/src/defects.test.ts` now also schema-checks
+  `test/fixtures/eval-p1/*` (six fixtures), reusing one `checkManifest`
+  helper with per-family flags (`dogfood`, `evidenceFiles`): eval-p1 repeats
+  a source defect's id across its per-hit entries (skip the unique-id and
+  clean-region-clash checks there) and its `notDrawn`/`envOnly` evidence can
+  be a description, not a file (skip the evidence-exists check). `rule` now
+  comes from `@elkdraw/core`'s `LintCode` (was a hand-duplicated 10-code
+  enum, stale since 1.15/1.19 added 4 more); `ruleGap` is now a free string,
+  since eval-p1's `wontFix` entries use a one-off sentence, not a fixed code.
+  `manifest`'s `report`/`unmapped` are optional and `source`/`note` added,
+  for eval-p1's shape; clean region `bbox` and defect `source` are optional
+  too (eval-p1 omits both in places).
+- `CONTEXT.md`: "twelve lint codes" -> "14"; added one-line terms for
+  `unlabelled-node` and `arrowhead-overlap` next to the `Lint codes` bullet.
+- Needs from others: `eval/src/score.test.ts` (not owned) hardcodes
+  `dogfood/yct`'s unfixed-defect count as 14; it is 15 now that yct-24 is a
+  real entry. One-line fix: `expect(s.missed).toHaveLength(14)` -> `(15)` at
+  `eval/src/score.test.ts:22`. `check` fails on this line until it lands.
