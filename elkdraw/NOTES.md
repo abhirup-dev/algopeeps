@@ -1039,6 +1039,7 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   `dogfood/yct`'s unfixed-defect count as 14; it is 15 now that yct-24 is a
   real entry. One-line fix: `expect(s.missed).toHaveLength(14)` -> `(15)` at
   `eval/src/score.test.ts:22`. `check` fails on this line until it lands.
+
 ### 1.20 Convert: centred/right text drifts from its requested box (2026-09-26)
 
 - Root cause of p1bst-01 (won't-fix in lint, 1.19): traced into
