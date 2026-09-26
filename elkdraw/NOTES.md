@@ -175,3 +175,20 @@ later tasks should not need `bun add`.
   Lint verified with scratch files: app, mcp and cli importing it error;
   server and backends/excalidraw pass. `app/dist` after `vite build` has no
   elkjs (grep for `elkjs`, `elk-worker`, `org.eclipse.elk`: 0 files).
+
+### 1.4 Neutral scene read (2026-09-26)
+
+- `readScene(scene, measure?)` in `backends/excalidraw/src/read/read.ts`,
+  async (ready for 1.0's `read?(): Promise<NeutralScene>`). Stored data only:
+  boxes from x/y/width/height, lines from absolute points with `from`/`to`
+  from bindings, bound text (node and arrow labels) folded into its container
+  as `text`, frames as zones, `customData` as raw `meta`, deleted skipped.
+  Output is validated with core `NeutralScene`.
+- Sidecar seam: optional `measure` (same shape as `Sidecar.measure`) replaces
+  stored text boxes by text id. Not wired: that is the adapter's job after 1.3.
+- Snapshots: `bun run --cwd elkdraw/backends/excalidraw update-snapshots`.
+- Choices: `shape` = `customData.shape` else the Excalidraw type; dashed →
+  `"8 8"`, dotted → `"1.5 6"` (emit must agree); `angle` and frame names ignored.
+- The package does not declare `zod`, so input is typed (Excalidraw element
+  types), not zod-parsed; output is. Owns says `read/**`; files live in
+  `src/read/` because the package tsconfig includes only `src`.
