@@ -25,3 +25,14 @@ export {
   type LookResult,
 } from "../../look.ts";
 export { labelId, lint } from "../../lint/lint.ts";
+export {
+  changes,
+  deltaText,
+  diff,
+  feed,
+  lintDelta,
+  MOVE_MIN,
+  type Change,
+  type Diff,
+  type LogEntry,
+} from "../../diff/diff.ts";

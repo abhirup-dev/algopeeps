@@ -491,3 +491,30 @@ boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
   `lint(await readScene(next, m))`. `m` must measure the whole scene
   (`sidecar.measure(scene.elements)`): readScene's `MeasureText` passes only
   `{id, type, text}`, which loses the container a label wraps in.
+
+### 1.8 Change feed and diff with lint delta (2026-09-26)
+
+- `core/diff/diff.ts`, exported from `@elkdraw/core/engine`: `diff(A, B)` →
+  `{changes, lints: {added, fixed}, delta}`; `changes(A, B)` (FeedLine minus
+  author/time); `lintDelta`, `deltaText`; `feed(since, log, sceneAt)` for
+  `changes --since`. `MOVE_MIN = 2` px (lint's `TOL`): smaller shifts are
+  jitter. Moves are grouped by shared (dx, dy), so a zone dragged with its
+  children is one line.
+- Lines with a bound end are never "moved" (their points follow the
+  endpoints); unbound lines move by their first point. Resizes and dragged
+  waypoints have no FeedLine op and are not reported.
+- Lint hits match on `code + ids`, never bbox (a moved defect is the same
+  defect), as a multiset. Suppressed hits stay in `lints` but not in `delta`.
+  `delta` names codes as is: `+1 node-overlap, -1 crossing`.
+- `feed` diffs each run of same-author deltas end to end, stamped with the
+  run's last time: a drag's many deltas become one move. Agent runs are one
+  `applied` line naming the ids touched.
+- `Store.sceneAt(rev)` replays from the last keyframe at or before `rev`
+  (skipping the delta that shares the keyframe's rev) without touching the
+  head; `Store.log(since)` lists `{rev, author, time}` per delta. On-disk
+  format unchanged. Both re-read `events.jsonl` per call.
+- 1.10 wiring: `sceneAt = (r) => readScene({elements: store.sceneAt(r)}, m)`;
+  `changes` = `feed(since, store.log(since), sceneAt)`; `diff --from --to` =
+  `diff(await sceneAt(from), await sceneAt(to))`. readScene drops
+  `isDeleted`, so browser deletes show as `removed`. R2 end to end is in
+  `adapters/server/src/store.test.ts`.
