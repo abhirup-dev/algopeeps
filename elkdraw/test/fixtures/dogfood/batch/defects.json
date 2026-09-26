@@ -119,7 +119,11 @@
       "source": "report §1 checklist",
       "reported": true,
       "fixedInFinal": false,
-      "note": "No v0 rule covers a label running into its own arrowhead."
+      "note": "No v0 rule covers a label running into its own arrowhead.",
+      "envOnly": {
+        "reason": "The tester's frontend painted bound labels in its own defaults, Excalifont 20 px: the server stores `label: {text}` with no font, and the exported file records Virgil (fontFamily 1) at 14 px. Our render leaves 26 px of line between the label and the arrowhead's base (tip 51 px from the label). Even at Excalifont 20 our render keeps 13 px, and final.png shows a short line there too: a near-miss, not flagged in either.",
+        "evidence": "evidence/batch-10.png"
+      }
     },
     {
       "id": "batch-11",
@@ -128,7 +132,11 @@
       "description": "\"2 verify token\" touches its own arrowhead.",
       "source": "report §1 checklist",
       "reported": true,
-      "fixedInFinal": false
+      "fixedInFinal": false,
+      "envOnly": {
+        "reason": "The tester's frontend painted bound labels in its own defaults, Excalifont 20 px: the server stores `label: {text}` with no font, and the exported file records Virgil (fontFamily 1) at 14 px. Our render leaves 8 px of line before the arrowhead's base (tip 33 px from the label). Re-measured at Excalifont 20 (tip 12.5 px away), lint flags it.",
+        "evidence": "evidence/batch-11.png"
+      }
     },
     {
       "id": "batch-12",
@@ -138,7 +146,11 @@
       "source": "report §1 checklist",
       "reported": true,
       "fixedInFinal": false,
-      "note": "The tester judged it acceptable; text-wrapped should still report it."
+      "note": "The tester judged it acceptable; text-wrapped should still report it.",
+      "envOnly": {
+        "reason": "The tester's frontend painted bound labels in its own defaults, Excalifont 20 px: the server stores `label: {text}` with no font, and the exported file records Virgil (fontFamily 1) at 16 px. Our render keeps \"Analytics warehouse\" on one line (ink 157.5x21.5). Re-measured at Excalifont 20, lint flags it.",
+        "evidence": "evidence/batch-12.png"
+      }
     },
     {
       "id": "batch-13",
@@ -156,7 +168,11 @@
       "description": "\"5 find driver\" touches its own arrowhead.",
       "source": "final.png, not in report",
       "reported": false,
-      "fixedInFinal": false
+      "fixedInFinal": false,
+      "envOnly": {
+        "reason": "The tester's frontend painted bound labels in its own defaults, Excalifont 20 px: the server stores `label: {text}` with no font, and the exported file records Virgil (fontFamily 1) at 14 px. Our render leaves 14 px of line before the arrowhead's base (tip 39 px from the label). Re-measured at Excalifont 20 (tip 21.5 px away), lint flags it.",
+        "evidence": "evidence/batch-14.png"
+      }
     },
     {
       "id": "batch-15",
@@ -165,7 +181,11 @@
       "description": "\"8 offer ride\" touches its own arrowhead.",
       "source": "final.png, not in report",
       "reported": false,
-      "fixedInFinal": false
+      "fixedInFinal": false,
+      "envOnly": {
+        "reason": "The tester's frontend painted bound labels in its own defaults, Excalifont 20 px: the server stores `label: {text}` with no font, and the exported file records Virgil (fontFamily 1) at 14 px. Our render leaves 14 px of line before the arrowhead's base (tip 39 px from the label). Re-measured at Excalifont 20 (tip 25 px away), lint flags it.",
+        "evidence": "evidence/batch-15.png"
+      }
     }
   ],
   "cleanRegions": [

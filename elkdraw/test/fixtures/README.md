@@ -66,19 +66,38 @@ measured boxes, as the design says.
     "source": "report §1 checklist", // report section, transcript, or final.png
     "reported": true,                // false = seen in final.png, not in the report
     "fixedInFinal": false,           // true = fixed during the session; still listed
-    "note": "optional history"
+    "note": "optional history",
+    "envOnly": { "reason": "…", "evidence": "evidence/batch-12.png" } // optional, see below
   }],
   "cleanRegions": [{ "name": "legend", "ids": […], "bbox": {x,y,width,height} }],
   "unmapped": [{ "description", "source", "reason" }]
 }
 ```
 
-- **Acceptance for lint:** a hit matches a defect when it has the same rule
-  and its ids include all of the defect's `ids`. Every defect with
-  `fixedInFinal: false` and a `rule` must be matched; no defect with
-  `fixedInFinal: true` may be. The schema test guarantees no hit can match
-  both (a fixed entry's ids are never a subset of an unfixed entry's ids under
-  the same rule).
+- **Acceptance for lint:** a hit matches a defect when its code is the
+  defect's `rule` (or `ruleGap`: lint 1.5 implements both gap codes) and its
+  ids include all of the defect's `ids`. Lint names bound text
+  `<owner>#label`; the test maps it to the fixtures' `<owner>-label`. Every
+  defect with `fixedInFinal: false` and no `envOnly` must be matched; no defect
+  with `fixedInFinal: true` may be; every hit must match some defect. The
+  schema test guarantees no hit can match both a fixed and an unfixed entry (a
+  fixed entry's ids are never a subset of an unfixed entry's ids under the same
+  rule). Checked by `test/parity/lint/lint.e2e.ts`
+  (`bun run --cwd elkdraw/test/parity test:e2e`): sidecar `measure`, then
+  `readScene`, then `lint`.
+- **`envOnly`:** the defect is in `final.png` but our renderer does not paint
+  it for the stored scene, so it is out of the must-flag set (lint may still
+  flag it). Ground truth is what our renderer paints: lint is right when it
+  flags that. `reason` says why the tester saw it; `evidence` is a composite
+  next to the manifest, `final.png` crop at 2x on the left, the sidecar's snap
+  of the same scene region at 2x on the right. The cause of the 10 today: the
+  testers' `mcp-excalidraw-server` stores labels as `label: {text}` with no
+  font (seen on the yct tester's live server; inferred for batch and bst from
+  the same software and the glyph size), so its frontend painted them in
+  Excalidraw's defaults (Excalifont 20 px), while the exported scene records
+  Virgil 16 (nodes) or 14 (arrow labels). Re-measured with bound labels at
+  Excalifont 20, lint flags 9 of the 10; batch-10 is a near-miss in both
+  renders.
 - **Clean regions:** a lint hit whose ids all belong to one region's `ids` is a
   false positive. `bbox` (scene coordinates, 10 px padding) is for `look` and
   humans; the ids are the contract. Regions include the legends (unbound arrows
@@ -91,19 +110,19 @@ measured boxes, as the design says.
 - **Rule gaps:** two reported defects fit no v0 rule. `arrow-through-label` (an
   arrow drawn over another arrow's label: yct-08, yct-12) and
   `label-on-own-arrowhead` (a label running into its own arrowhead: batch-10,
-  batch-11). Lint 1.6 either adds rules or accepts these as known misses.
+  batch-11). Lint 1.5 added both as rules under these codes.
 - **`fixedInFinal: true` ids** point at elements that still exist; their
   geometry in the final scene is the fixed one. The intermediate scenes were
   never committed, except the BST first add (`bst-first`).
 
 ### Counts
 
-| Scene     | Defects | Reported | Not reported | Unfixed | Rule gaps | Unmapped |
-| --------- | ------- | -------- | ------------ | ------- | --------- | -------- |
-| yct       | 23      | 13       | 10           | 14      | 6         | 1        |
-| batch     | 17      | 11       | 6            | 8       | 4         | 4        |
-| bst       | 2       | 2        | 0            | 0       | 0         | 1        |
-| bst-first | 2       | 2        | 0            | 2       | 0         | 1        |
+| Scene     | Defects | Reported | Not reported | Unfixed | Rule gaps | Unmapped | Env only | Must flag |
+| --------- | ------- | -------- | ------------ | ------- | --------- | -------- | -------- | --------- |
+| yct       | 23      | 13       | 10           | 14      | 6         | 1        | 3        | 11        |
+| batch     | 17      | 11       | 6            | 8       | 4         | 4        | 5        | 3         |
+| bst       | 2       | 2        | 0            | 0       | 0         | 1        | 0        | 0         |
+| bst-first | 2       | 2        | 0            | 2       | 0         | 1        | 2        | 0         |
 
 Not in any fixture: the Mermaid-path scene (batch report §2.6, cleared before
 the rebuild), and round 2 defects (Analytics over Postgres after the "human"

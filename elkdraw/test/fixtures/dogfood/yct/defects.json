@@ -120,7 +120,11 @@
       "source": "report §1 checklist",
       "reported": true,
       "fixedInFinal": false,
-      "note": "The report calls it \"Trip->Kafka crosses arrow 9\". In final.png the dashed line clears a9's own line but grazes its label, so it is mapped to the label."
+      "note": "The report calls it \"Trip->Kafka crosses arrow 9\". In final.png the dashed line clears a9's own line but grazes its label, so it is mapped to the label.",
+      "envOnly": {
+        "reason": "Our render of the file (Virgil 14 px label) leaves about 6 px between the dashed line and the label's ink; in final.png the larger Excalifont 20 label reaches the line. Re-measured with bound labels at Excalifont 20, lint flags it (arrow-through-label e-trip, a9#label).",
+        "evidence": "evidence/yct-12.png"
+      }
     },
     {
       "id": "yct-13",
@@ -147,7 +151,11 @@
       "description": "\"Postgres (trips)\" wraps to two lines inside its ellipse.",
       "source": "final.png, not in report",
       "reported": false,
-      "fixedInFinal": false
+      "fixedInFinal": false,
+      "envOnly": {
+        "reason": "The tester's frontend painted bound labels in its own defaults, Excalifont 20 px: the server stores `label: {text}` with no font, and the exported file records Virgil (fontFamily 1) at 16 px. Our render keeps \"Postgres (trips)\" on one line (ink 125.5x20). Re-measured at Excalifont 20, lint flags it.",
+        "evidence": "evidence/yct-15.png"
+      }
     },
     {
       "id": "yct-16",
@@ -156,7 +164,11 @@
       "description": "\"Redis geo-index\" wraps mid-word (\"geo-\" / \"index\").",
       "source": "final.png, not in report",
       "reported": false,
-      "fixedInFinal": false
+      "fixedInFinal": false,
+      "envOnly": {
+        "reason": "The tester's frontend painted bound labels in its own defaults, Excalifont 20 px: the server stores `label: {text}` with no font, and the exported file records Virgil (fontFamily 1) at 16 px. Our render keeps \"Redis geo-index\" on one line (ink 120.5x20). Re-measured at Excalifont 20, lint flags it.",
+        "evidence": "evidence/yct-16.png"
+      }
     },
     {
       "id": "yct-17",
