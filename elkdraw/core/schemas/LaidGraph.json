@@ -1,0 +1,771 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "x": {
+      "type": "number"
+    },
+    "y": {
+      "type": "number"
+    },
+    "width": {
+      "type": "number"
+    },
+    "height": {
+      "type": "number"
+    },
+    "layoutOptions": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "layoutOptions": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "enum": ["generated", "raw", "human"]
+              },
+              "gen": {
+                "type": "object",
+                "properties": {
+                  "geom": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "style": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["geom", "style", "text"],
+                "additionalProperties": false
+              },
+              "style": {
+                "type": "object",
+                "properties": {
+                  "fill": {
+                    "type": "string"
+                  },
+                  "stroke": {
+                    "type": "string"
+                  },
+                  "strokeWidth": {
+                    "type": "number"
+                  },
+                  "strokeDasharray": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "fontSize": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "rule": {
+                      "type": "string",
+                      "enum": [
+                        "text-overflow",
+                        "text-wrapped",
+                        "label-on-node",
+                        "label-on-label",
+                        "label-on-border",
+                        "arrow-through-node",
+                        "node-overlap",
+                        "dangling-endpoint",
+                        "outside-zone",
+                        "crossing"
+                      ]
+                    },
+                    "why": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["rule", "why"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["origin"],
+            "additionalProperties": false
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "text", "width", "height", "meta", "x", "y"],
+        "additionalProperties": false
+      }
+    },
+    "ports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "layoutOptions": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "enum": ["generated", "raw", "human"]
+              },
+              "gen": {
+                "type": "object",
+                "properties": {
+                  "geom": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "style": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["geom", "style", "text"],
+                "additionalProperties": false
+              },
+              "style": {
+                "type": "object",
+                "properties": {
+                  "fill": {
+                    "type": "string"
+                  },
+                  "stroke": {
+                    "type": "string"
+                  },
+                  "strokeWidth": {
+                    "type": "number"
+                  },
+                  "strokeDasharray": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "fontSize": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "rule": {
+                      "type": "string",
+                      "enum": [
+                        "text-overflow",
+                        "text-wrapped",
+                        "label-on-node",
+                        "label-on-label",
+                        "label-on-border",
+                        "arrow-through-node",
+                        "node-overlap",
+                        "dangling-endpoint",
+                        "outside-zone",
+                        "crossing"
+                      ]
+                    },
+                    "why": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["rule", "why"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["origin"],
+            "additionalProperties": false
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "width", "height", "meta", "x", "y"],
+        "additionalProperties": false
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "string",
+          "enum": ["generated", "raw", "human"]
+        },
+        "gen": {
+          "type": "object",
+          "properties": {
+            "geom": {
+              "type": "string",
+              "minLength": 1
+            },
+            "style": {
+              "type": "string",
+              "minLength": 1
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["geom", "style", "text"],
+          "additionalProperties": false
+        },
+        "style": {
+          "type": "object",
+          "properties": {
+            "fill": {
+              "type": "string"
+            },
+            "stroke": {
+              "type": "string"
+            },
+            "strokeWidth": {
+              "type": "number"
+            },
+            "strokeDasharray": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string"
+            },
+            "fontSize": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "allow": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule": {
+                "type": "string",
+                "enum": [
+                  "text-overflow",
+                  "text-wrapped",
+                  "label-on-node",
+                  "label-on-label",
+                  "label-on-border",
+                  "arrow-through-node",
+                  "node-overlap",
+                  "dangling-endpoint",
+                  "outside-zone",
+                  "crossing"
+                ]
+              },
+              "why": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["rule", "why"],
+            "additionalProperties": false
+          }
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "shape": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pin": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["soft", "hard"]
+            },
+            "at": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": ["x", "y"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["kind", "at"],
+          "additionalProperties": false
+        },
+        "family": {
+          "type": "string",
+          "enum": [
+            "flowchart",
+            "class",
+            "state",
+            "er",
+            "requirement",
+            "mindmap",
+            "kanban",
+            "sequence",
+            "gantt",
+            "timeline"
+          ]
+        }
+      },
+      "required": ["origin"],
+      "additionalProperties": false
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "minLength": 1
+              }
+            ],
+            "items": false,
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "targets": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "minLength": 1
+              }
+            ],
+            "items": false,
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "text": {
+                  "type": "string"
+                },
+                "width": {
+                  "type": "number"
+                },
+                "height": {
+                  "type": "number"
+                },
+                "layoutOptions": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "meta": {
+                  "type": "object",
+                  "properties": {
+                    "origin": {
+                      "type": "string",
+                      "enum": ["generated", "raw", "human"]
+                    },
+                    "gen": {
+                      "type": "object",
+                      "properties": {
+                        "geom": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "style": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["geom", "style", "text"],
+                      "additionalProperties": false
+                    },
+                    "style": {
+                      "type": "object",
+                      "properties": {
+                        "fill": {
+                          "type": "string"
+                        },
+                        "stroke": {
+                          "type": "string"
+                        },
+                        "strokeWidth": {
+                          "type": "number"
+                        },
+                        "strokeDasharray": {
+                          "type": "string"
+                        },
+                        "color": {
+                          "type": "string"
+                        },
+                        "fontSize": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "allow": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "type": "string",
+                            "enum": [
+                              "text-overflow",
+                              "text-wrapped",
+                              "label-on-node",
+                              "label-on-label",
+                              "label-on-border",
+                              "arrow-through-node",
+                              "node-overlap",
+                              "dangling-endpoint",
+                              "outside-zone",
+                              "crossing"
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["rule", "why"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["origin"],
+                  "additionalProperties": false
+                },
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": ["id", "text", "width", "height", "meta", "x", "y"],
+              "additionalProperties": false
+            }
+          },
+          "layoutOptions": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "enum": ["generated", "raw", "human"]
+              },
+              "gen": {
+                "type": "object",
+                "properties": {
+                  "geom": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "style": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["geom", "style", "text"],
+                "additionalProperties": false
+              },
+              "style": {
+                "type": "object",
+                "properties": {
+                  "fill": {
+                    "type": "string"
+                  },
+                  "stroke": {
+                    "type": "string"
+                  },
+                  "strokeWidth": {
+                    "type": "number"
+                  },
+                  "strokeDasharray": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "fontSize": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "rule": {
+                      "type": "string",
+                      "enum": [
+                        "text-overflow",
+                        "text-wrapped",
+                        "label-on-node",
+                        "label-on-label",
+                        "label-on-border",
+                        "arrow-through-node",
+                        "node-overlap",
+                        "dangling-endpoint",
+                        "outside-zone",
+                        "crossing"
+                      ]
+                    },
+                    "why": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["rule", "why"],
+                  "additionalProperties": false
+                }
+              },
+              "roles": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["origin"],
+            "additionalProperties": false
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "startPoint": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y"],
+                  "additionalProperties": false
+                },
+                "endPoint": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y"],
+                  "additionalProperties": false
+                },
+                "bendPoints": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["x", "y"],
+                    "additionalProperties": false
+                  }
+                },
+                "incomingShape": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "outgoingShape": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "incomingSections": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "outgoingSections": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": ["id", "startPoint", "endPoint"],
+              "additionalProperties": false
+            }
+          },
+          "container": {
+            "type": "string",
+            "minLength": 1
+          },
+          "junctionPoints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": ["x", "y"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["id", "sources", "targets", "meta", "sections"],
+        "additionalProperties": false
+      }
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "#"
+      }
+    }
+  },
+  "required": ["id", "x", "y", "width", "height", "meta"],
+  "additionalProperties": false
+}

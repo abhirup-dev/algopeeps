@@ -1,6 +1,9 @@
 {
   "name": "@elkdraw/core",
   "version": "0.0.0",
+  "scripts": {
+    "schemas": "bun scripts/schemas.js && prettier --write schemas"
+  },
   "dependencies": {
     "elkjs": "^0.12.0",
     "safe-stable-stringify": "^2.5.0",

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "nesting": {
+      "type": "string",
+      "enum": ["flat", "deep"]
+    },
+    "bindings": {
+      "type": "string",
+      "enum": ["native", "none"]
+    },
+    "opaqueMeta": {
+      "type": "boolean"
+    },
+    "edgeLabels": {
+      "type": "string",
+      "enum": ["bound", "separate", "none"]
+    },
+    "readBack": {
+      "type": "boolean"
+    },
+    "shapes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "freeform": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "nesting",
+    "bindings",
+    "opaqueMeta",
+    "edgeLabels",
+    "readBack",
+    "shapes",
+    "freeform"
+  ],
+  "additionalProperties": false
+}

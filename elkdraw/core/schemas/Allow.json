@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "rule": {
+      "type": "string",
+      "enum": [
+        "text-overflow",
+        "text-wrapped",
+        "label-on-node",
+        "label-on-label",
+        "label-on-border",
+        "arrow-through-node",
+        "node-overlap",
+        "dangling-endpoint",
+        "outside-zone",
+        "crossing"
+      ]
+    },
+    "why": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": ["rule", "why"],
+  "additionalProperties": false
+}

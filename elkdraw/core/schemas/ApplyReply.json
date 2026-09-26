@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "rev": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "created": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "updated": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "kept": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "deleted": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "groups": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["geom", "style", "text"]
+            }
+          }
+        },
+        "required": ["id", "groups"],
+        "additionalProperties": false
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "groups": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["geom", "style", "text"]
+            }
+          }
+        },
+        "required": ["id", "groups"],
+        "additionalProperties": false
+      }
+    },
+    "moved": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dx": {
+            "type": "number"
+          },
+          "dy": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "dx", "dy"],
+        "additionalProperties": false
+      }
+    },
+    "lints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "text-overflow",
+              "text-wrapped",
+              "label-on-node",
+              "label-on-label",
+              "label-on-border",
+              "arrow-through-node",
+              "node-overlap",
+              "dangling-endpoint",
+              "outside-zone",
+              "crossing"
+            ]
+          },
+          "ids": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "hint": {
+            "type": "string"
+          },
+          "suppressed": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["code", "ids", "hint"],
+        "additionalProperties": false
+      }
+    },
+    "measured": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "rev",
+    "created",
+    "updated",
+    "kept",
+    "deleted",
+    "overrides",
+    "conflicts",
+    "moved",
+    "lints",
+    "measured"
+  ],
+  "additionalProperties": false
+}
