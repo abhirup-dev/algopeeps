@@ -744,15 +744,17 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   holds `isDeleted` elements — the store removes deleted ids outright), in
   one `ctx.apply`. `deleted` counts raw Excalidraw elements (e.g. a labeled
   rectangle is 2: the shape and its bound text), not neutral scene elements.
-- Tests: `tools.test.ts` gained a describe-fixture-size test, a REST test for
-  all six, a snapshot-restore round-trip test, and one CLI-vs-MCP identity
-  test per tool (`screenshot` and `snapshot` need one field masked each:
-  `path` — each call gets its own default unless `--out`/`out` is passed
-  explicitly — and `time`, respectively). `tools.e2e.ts` gained a `screenshot`
-  step. Every CLI example in this task's skill edits was run against a dev
-  server started with an isolated `ELKDRAW_DATA_DIR` (a scratch `mktemp -d`),
-  then stopped with `POST /api/shutdown` (not a `dev.sh` SIGTERM — 1.10's log
-  has the orphan gotcha for that path).
+- Tests: `tools.test.ts` gained a describe-fixture-size test (plus a
+  dangling-zone unit test for `describeText`), a REST test for all six, a
+  snapshot-restore round-trip test, and one CLI-vs-MCP identity test per
+  tool. `get`/`describe`/`query`/`clear` compare replies as-is; `screenshot`
+  passes the same explicit `out` to both servers so the path matches too;
+  `snapshot` masks only `time` (wall-clock, so the two saves can't agree).
+  `tools.e2e.ts` gained a `screenshot` step. Every CLI example in this task's
+  skill edits was run against a dev server started with an isolated
+  `ELKDRAW_DATA_DIR` (a scratch `mktemp -d`), then stopped with
+  `POST /api/shutdown` (not a `dev.sh` SIGTERM — 1.10's log has the orphan
+  gotcha for that path).
 - `SURFACE.md`, `skill/SKILL.md`, `skill/references/cheatsheet.md` and
   `skill/MAINTAINERS.md` updated: only `export` (Phase 2 Mermaid) and `wait`
   are still `NOT_IMPLEMENTED`. Headings/structure unchanged in both skill

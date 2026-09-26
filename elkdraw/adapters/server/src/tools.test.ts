@@ -273,6 +273,20 @@ test("describe(yct) is compact and under 4 KB", async () => {
   expect(text).toContain('a3: auth -> trip "3 create trip"');
 });
 
+test("describeText: a dangling zone (its frame is gone) reads as loose", () => {
+  const text = describeText({
+    elements: [
+      {
+        id: "a",
+        type: "box",
+        zone: "gone",
+        box: { x: 0, y: 0, width: 10, height: 10 },
+      },
+    ],
+  });
+  expect(text).toContain("a: box");
+});
+
 test("get, describe, query, screenshot, snapshot, clear over REST", async () => {
   const { url } = start();
   await post(url, "apply", scene);
@@ -392,14 +406,16 @@ for (const { name, args } of cliOnly) {
 }
 
 test("cli and MCP screenshot replies are identical (same explicit out)", async () => {
-  const cliOut = join(tempDir(), "cli-screenshot.png");
-  const mcpOut = join(tempDir(), "mcp-screenshot.png");
+  // Same explicit `out` on both servers (each writes its own copy of the
+  // same scene there, sequentially): the reply is then byte-for-byte
+  // identical, no field needs masking.
+  const out = join(tempDir(), "screenshot.png");
 
   const viaCli = start();
   await post(viaCli.url, "apply", scene);
   const cli = Bun.spawn(
     ["bun", CLI, "--url", viaCli.url, "screenshot", "--input", "-"],
-    { stdin: new Blob([JSON.stringify({ out: cliOut })]), stdout: "pipe" },
+    { stdin: new Blob([JSON.stringify({ out })]), stdout: "pipe" },
   );
   const cliReply = parseJson(
     z.record(z.string(), z.unknown()),
@@ -416,16 +432,11 @@ test("cli and MCP screenshot replies are identical (same explicit out)", async (
   try {
     const mcp = await client.callTool({
       name: "screenshot",
-      arguments: { out: mcpOut },
+      arguments: { out },
     });
     expect(mcp.isError).toBeFalsy();
-    // `path` is the one field that must differ (each got its own explicit out).
-    const { path: cliPath, ...cliRest } = cliReply;
-    const mcpStruct = mcp.structuredContent as Record<string, unknown>;
-    const { path: mcpPath, ...mcpRest } = mcpStruct;
-    expect(cliPath).toBe(cliOut);
-    expect(mcpPath).toBe(mcpOut);
-    expect(mcpRest).toEqual(cliRest);
+    expect(mcp.structuredContent).toEqual(cliReply);
+    expect(cliReply["path"]).toBe(out);
   } finally {
     await client.close();
   }

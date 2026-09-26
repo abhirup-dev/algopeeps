@@ -138,11 +138,13 @@ export function describeText(scene: NeutralScene): string {
     return `${e.id}: ${e.shape ?? "box"}${label(e)} ${fmtBox(e.box)}`;
   };
   const zones = scene.elements.filter((e) => e.type === "zone");
+  const zoneIds = new Set(zones.map((z) => z.id));
   const byZone = new Map<string, SceneElement[]>();
   const loose: SceneElement[] = [];
   for (const e of scene.elements) {
     if (e.type === "zone") continue;
-    if (e.zone === undefined) {
+    // A dangling `zone` (its frame was deleted) reads as loose, not dropped.
+    if (e.zone === undefined || !zoneIds.has(e.zone)) {
       loose.push(e);
       continue;
     }

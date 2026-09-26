@@ -260,13 +260,13 @@ apply scene.json
   → lints: text-overflow [auth-svc#label] → set auth-svc width 220 in the file → apply
   → lints: node-overlap [auth-svc, rate-limiter] → look --target auth-svc,rate-limiter --r 150
     → "rate-limiter sits 20px into auth-svc" → rightOf rate-limiter of auth-svc gap 60 → apply
-  → lints: [] → look at the whole diagram → "all checks pass"
+  → lints: [] → screenshot the whole diagram → "all checks pass"
   → proceed
 ```
 
 ## Workflow: Refine an Existing Diagram
 
-1. `changes` to see what the human did since your last apply (lines like `{"author":"human","op":"moved","ids":["kafka"],"detail":{"dx":120,"dy":0}}`, no `author`/`time` on `diff`'s `changes`). `apply` writes exactly what you send, so a human's move is lost if you re-apply an old position: copy their changes into your file first (`look --target <id>` for the new box).
+1. `changes` to see what the human did since your last apply (lines like `{"author":"human","op":"moved","ids":["kafka"],"detail":{"dx":120,"dy":0}}`, no `author`/`time` on `diff`'s `changes`). `apply` writes exactly what you send, so a human's move is lost if you re-apply an old position: copy their changes into your file first (`get --id <id>` for the new box).
 2. No file (a diagram you didn't draw)? `describe` gives a compact text scene (ids, labels, boxes, arrows, grouped by zone) and `query`/`get` fetch elements by type, id or bounding box — read the live canvas directly instead of reconstructing it from `changes --since 0`.
 3. Identify elements by `id` or label text (not by x/y coordinates — they change).
 4. Edit the file and re-apply it; `--if-rev <rev>` (the `rev` from `changes`) fails instead of overwriting if the canvas moved on meanwhile. Delete with a `delete` patch, or set `"prune": true` so ids you removed from the file are deleted (only elements you created; human-drawn elements are never pruned). **Bound arrows re-route automatically when you move or resize their endpoints** — no need to delete and recreate them.
@@ -299,9 +299,9 @@ No duplicate command: copy the elements in `scene.json` with new ids and place t
 - **Exit code 2 (invalid input)?** Nothing was sent. stderr names the path and the problem (`elements[3].text: unknown key; use label.text`); fix that field. `validate` checks a file the same way, reading the canvas to resolve references, without writing.
 - **Exit code 1 with `"code": "NOT_IMPLEMENTED"`?** That tool or option is not available on this server; stderr includes its input schema. Only `export` and `wait` are still in this state — use another route from this skill (`screenshot` for a picture, `changes`/`diff` instead of `wait`).
 - **Exit code 1 with a rev mismatch?** Someone changed the canvas after the `--if-rev` you gave. Run `changes`, fold the edits into your file, apply again.
-- **Elements not appearing?** `look --target <id>` finds one wherever it is and errors by name if it truly isn't on the canvas.
+- **Elements not appearing?** `get --id <id>` (or `look --target <id>` for the rendered box) finds one wherever it is and errors by name if it truly isn't on the canvas.
 - **Arrow not connecting?** `dangling-endpoint` names it: either the bound id is missing, or the bound end sits more than 15px off its shape. Resend the element (or its `start`/`end`) so it snaps again.
-- **Canvas in a bad state?** Delete the elements you added with `apply --patches` (`delete` per id), then re-apply `scene.json`.
+- **Canvas in a bad state?** `snapshot --action restore --name <name>` if you saved one before the change; otherwise delete the elements you added with `apply --patches` (`delete` per id), or `clear --yes` and re-apply `scene.json` from scratch.
 - **A defect lint can't see?** `look` at it, fix it, and mention it to the user: it is a missing lint rule.
 
 ---

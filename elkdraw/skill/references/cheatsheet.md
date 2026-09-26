@@ -40,7 +40,7 @@ Flags come from each tool's input schema: booleans are `--flag`, numbers `--flag
 | `get --id <id>`                                                     | `{rev, element}`; `INVALID_INPUT` if the id is not on the canvas                                                                                                  |
 | `describe [--scope all\|frame:<id>\|near:<id>,r=<px>]`              | `{rev, text}`: one line per element (id, kind, label, rounded box), grouped by zone; arrows read `id: from -> to "label"`. Reads the stored scene, no render pass |
 | `query [--type t] [--ids a,b] [--bbox '{...}'] [--limit n]`         | `{rev, elements, truncated}`: `type` matches the neutral kind (`box`/`zone`/`line`/`text`) or a box's `shape` (e.g. `rectangle`); `bbox` keeps elements inside it |
-| `screenshot [--format png] [--out f.png] [--max-px n]`              | `{path, format, width, height}`: the whole canvas, headless, via the sidecar. `format: svg` is not supported yet (`INVALID_INPUT`). For a crop, use `look`        |
+| `screenshot [--format png] [--out f.png] [--max-px n]`              | `{path, format, width, height}`: the whole canvas, headless, via the sidecar. `format: svg` is not available (`INVALID_INPUT`). For a crop, use `look`            |
 | `snapshot --action save --name <n>` / `list` / `restore --name <n>` | `{rev, snapshots: [{name, rev, time}]}`. Restore is a normal write (bumps rev, shows in `changes`); names live in server memory only, not on disk                 |
 | `clear --yes`                                                       | `{rev, deleted}`: deletes every element on the canvas in one write. `snapshot save` first if you might want it back                                               |
 
