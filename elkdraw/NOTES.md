@@ -433,7 +433,7 @@ input, deps)` and `add(...)` (create only), pure and synchronous. Input
   `bbox` matches what `render` actually used.
 - `clampScale` shrinks the `maxW`/`maxH` ratio by `1 - 1e-9` before taking the
   min: the app's headless `snap` sizes its canvas with `Math.round(side *
-  scale)`, so an exact `scale = maxPx / side` can round a side 1px over.
+scale)`, so an exact `scale = maxPx / side` can round a side 1px over.
 - A `readonly string[] | Box` union does not narrow cleanly through
   `Array.isArray`: `Box` has no index signature ruling out "also an array", so
   the narrowed type keeps a `Box & unknown[]` arm. `render.ts` uses an
@@ -441,7 +441,7 @@ input, deps)` and `add(...)` (create only), pure and synchronous. Input
 - Needs from others: `adapters/mcp/src/tools.ts`'s `look` output is
   `{path, bbox, scale, marks}` (`marks: record(Id, Point)`); the skill's
   `skill/references/cheatsheet.md` documents `{path, bbox, scale, marks,
-  boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
+boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
   the cheatsheet. 1.10 (CLI/MCP wiring) needs to add `boxes` to the tool's
   output schema (a contract change) to carry the ids' scene-coordinate boxes
   through, and settle `viewport` one way or the other. `marks`' pixel space
