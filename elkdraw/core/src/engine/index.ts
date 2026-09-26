@@ -24,3 +24,4 @@ export {
   type LookOptions,
   type LookResult,
 } from "../../look.ts";
+export { labelId, lint } from "../../lint/lint.ts";

@@ -450,3 +450,43 @@ boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
   cap needs 1.10 to shrink the padded box before calling `render` (or a
   contract change to give `render` a scale/cap parameter): `render` itself
   cannot take one.
+### 1.5 Rendered lint, 12 rules (2026-09-26)
+
+- `lint(scene: NeutralScene): LintHit[]` in `core/lint/lint.ts`, exported
+  from `@elkdraw/core/engine` (with `labelId`). Pure, sync, no sidecar: the
+  caller composes `readScene(scene, measure)` then `lint`. Every hit is
+  returned; an element's `meta.allow` (customData.allow) matching the code sets
+  `suppressed: why`. `core/tsconfig.json` `include` += `lint`.
+- Text boxes must be ink boxes (the sidecar's `measure`). `text-wrapped`
+  counts rendered lines from ink height: fires when height >
+  (written lines − 1) × 1.25 × fontSize + 1.5 × fontSize (1.25 = Excalidraw's
+  line height, not in NeutralScene; fontSize from `style.fontSize`). Stored
+  line boxes (no measure) misfire this rule on most labels: never lint
+  unmeasured scenes.
+- Containers vs leaves (CONTEXT.md): no fixture uses frames, zones are dashed
+  rectangles. `outside-zone` fires for native zones (`zone` field, both ways)
+  and for a leaf across a container's edge; `node-overlap` is leaf-leaf
+  partial overlap (> 2 px both ways; abutting cells and nesting are fine).
+- Bound text has no id in NeutralScene: labels are named `<owner>#label`
+  (apply's derived id); fixtures use `<owner>-label`, so 1.6 maps
+  `#label` → `-label` before scoring. Allows are looked up on the owner.
+- Constants (tuned on the fixtures, top of lint.ts): TOL 2, BIND_GAP 15
+  (Excalidraw leaves ~8 px at ellipses), HEAD min(25, last segment / 2),
+  MASK 5 (arrow label mask; counts for `label-on-border` and the arrowhead).
+  Outline distance is exact for rect/diamond, sampled for ellipses.
+- Calibration (scratch, not committed): sidecar `measure(scene.elements)` →
+  `readScene(scene, async () => boxes)` → lint on the three fixtures: 0 hits
+  in clean regions, 0 hits outside defects; open defects matched yct 11/14,
+  batch 3/8, bst-first 0/2. Misses: yct-15/16, batch-12, bst-01/02 do not
+  wrap in measurement (Virgil 16 px; the tests that wrap use Excalifont 20);
+  batch-10/11/14/15 arrowheads only touch with the stored (wider) label
+  widths the tester's editor showed; yct-12 passes 6 px from the label's ink.
+- `unbound` arrow ends never fire `dangling-endpoint` (legend and bst
+  pointers are clean regions); the SKILL.md table says they do.
+- Apply seam (1.10): `deps.lint?(elements: Element[]) => LintHit[]` is sync
+  over wire elements, but rendered boxes need the async sidecar. Either make
+  the seam async (`(els) => readScene({elements: els}, m).then(lint)`), or
+  run apply without `lint` and fill `reply.lints` after
+  `lint(await readScene(next, m))`. `m` must measure the whole scene
+  (`sidecar.measure(scene.elements)`): readScene's `MeasureText` passes only
+  `{id, type, text}`, which loses the container a label wraps in.
