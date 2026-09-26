@@ -5,6 +5,14 @@
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
-  "include": ["src", "skeleton", "place", "apply", "lint", "look.ts", "look.test.ts"],
+  "include": [
+    "src",
+    "skeleton",
+    "place",
+    "apply",
+    "lint",
+    "look.ts",
+    "look.test.ts"
+  ],
   "references": []
 }
