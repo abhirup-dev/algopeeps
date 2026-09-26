@@ -149,7 +149,7 @@ Add a term when you introduce one; fix it here when the design changes it.
   neutral. Excalidraw is the one real backend; draw.io is phase 5.
 - **core vs core/engine entry** — `@elkdraw/core` exports contracts and zod
   helpers only; engine code goes in `@elkdraw/core/engine`, banned from
-  `app`, `adapters/mcp`, `adapters/cli` (phase 1, §19.1 B4).
+  `app`, `adapters/mcp`, `adapters/cli` (lint-enforced; `core/src/engine/index.ts`, §19.1 B4).
 
 ## Perception and sidecar
 
