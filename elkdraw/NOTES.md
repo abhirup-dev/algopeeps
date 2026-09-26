@@ -193,4 +193,6 @@ later tasks should not need `bun add`.
   (`flaggedFixed`, `cleanRegionHits`); `missed` is 0 by construction. The
   textAlign-ignored index labels are in `unmapped` (no v0 rule). Round 3 has
   no section in `dogfood-excalidraw-yctimlin.md`; `report` points at
-  `dogfood-synthesis.md`, and sources cite transcript d24dbb60 line 407.
+  `dogfood-synthesis.md`, and sources cite transcript d24dbb60 line 408
+  (1-based). `reported: true` here means "in the synthesis or in the
+  tester's round-3 chat answer", which is the only round-3 report.

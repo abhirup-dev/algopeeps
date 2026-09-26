@@ -8,7 +8,7 @@
       "rule": "text-wrapped",
       "ids": ["t12-label"],
       "description": "First add: key \"12\" wraps to \"1\" / \"2\" inside its 44 px circle, which stretches into an oval.",
-      "source": "synthesis §1 #3; tester A round-3 answer (2), (3) (transcript d24dbb60, line 407); /tmp/xd_bst_v1.png",
+      "source": "synthesis §1 #3; tester A round-3 answer (2), (3) (transcript d24dbb60, line 408); /tmp/xd_bst_v1.png",
       "reported": true,
       "fixedInFinal": true,
       "note": "Fixed by fix1 (all tree circles widened to 52 px). The first export stored this label as one line, 24x22."
@@ -18,7 +18,7 @@
       "rule": "text-wrapped",
       "ids": ["t10-label"],
       "description": "First add: key \"10\" wraps to \"1\" / \"0\" inside its 44 px circle, which stretches into an oval.",
-      "source": "tester A round-3 answer (2), (4) (transcript d24dbb60, line 407); /tmp/xd_bst_v1.png",
+      "source": "tester A round-3 answer (2), (4) (transcript d24dbb60, line 408); /tmp/xd_bst_v1.png",
       "reported": true,
       "fixedInFinal": true,
       "note": "Fixed by fix1, with bst-01."
@@ -148,7 +148,7 @@
   "unmapped": [
     {
       "description": "First add: the 17 free texts (index labels i0-i14, lo/hi labels p-lo-t, p-hi-t) store width 60 and textAlign center but render left-aligned, so index \"8\" sits under the 8|9 cell boundary. Setting autoResize false returned updated: 17 and changed nothing. Fixed in fix2 by x = centre - 4 x digit count.",
-      "source": "synthesis §1 #3, #4; tester A round-3 answer (3) (transcript d24dbb60, line 407); /tmp/xd_bst_v2_crop.png",
+      "source": "synthesis §1 #3, #4; tester A round-3 answer (3) (transcript d24dbb60, line 408); /tmp/xd_bst_v2_crop.png",
       "reason": "No v0 rule covers a text drawn away from its stored alignment (a stored-vs-rendered alignment mismatch); fixed in the final scene, so it costs no missed defect."
     }
   ]
