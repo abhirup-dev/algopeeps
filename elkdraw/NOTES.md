@@ -204,3 +204,35 @@ later tasks should not need `bun add`.
 - The package does not declare `zod`, so input is typed (Excalidraw element
   types), not zod-parsed; output is. Owns says `read/**`; files live in
   `src/read/` because the package tsconfig includes only `src`.
+
+### 1.1 Skeleton input schema (2026-09-26)
+
+- `core/skeleton/schema.ts`: `SkeletonInput` (`{elements}`, the `add` input),
+  `SkeletonElement`, `SkeletonId`, `validateSkeleton(input)` →
+  `{ok, value} | {ok: false, errors: string[]}`, `skeletonErrors(zodError)`.
+  Re-exported from `@elkdraw/core` (zod only, so the root entry, not
+  `engine`: `adapters/mcp` needs it). Hand-written zod; core does not depend on
+  `@excalidraw/excalidraw`. No transforms, so `z.toJSONSchema` works.
+- Strict per type (`z.discriminatedUnion("type")` of `strictObject`s: a plain
+  union loses per-field paths): rectangle, ellipse, diamond, text, arrow, line,
+  frame. Image, freedraw, embeddable, iframe, magicframe left out. Text on
+  shapes is `label`, bindings are `start`/`end: {id}` (no inline-created
+  ends). Store-owned fields (seed, version, versionNonce, updated, index,
+  isDeleted, boundElements, containerId, lastCommittedPoint) are rejected.
+  `allow` uses the contract `Allow`, so 1.0's new lint codes flow in.
+- Ids required, pattern `^[a-z0-9][a-z0-9._/#@:>-]*$` (rejects Excalidraw's
+  mixed-case nanoids; a lowercase random id still passes). Duplicate ids are
+  reported at `elements[i].id`, also when other errors exist (`when`).
+  References (`start/end.id`, `children`) are not resolved here: they may
+  name elements already on the canvas; that is apply's job (1.2).
+- Errors: one `path: message` line each; `unrecognized_keys` split into one
+  `path.key: unknown key` line per key.
+- `core/tsconfig.json`: `rootDir` `src` → `.`, `include` += `skeleton`
+  (the bead's Owns is `core/skeleton/**`, outside `src`).
+- Negative fixture `core/skeleton/negative.jsonl` is JSONL so Prettier leaves
+  it at 20 lines (JSON would be reformatted to ~60).
+- Dogfood scenes are wire scenes, not skeleton input: raw, they fail. The test
+  projects them (bound text → `label`, bindings → `start`/`end`, store fields
+  dropped by name) and the projection validates. Keys Excalidraw ignores are
+  dropped by name and counted: `fontSize` on non-text (yct 3, all 3
+  disagreeing with the label's fontSize; batch 26, 9 disagreeing) and `elbowed` (yct 20, batch 21).

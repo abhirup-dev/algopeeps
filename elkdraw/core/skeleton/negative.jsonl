@@ -1,0 +1,20 @@
+{ "type": "rectangle", "id": "trip", "x": 0, "y": 0, "fontSize": 20 }
+{ "type": "arrow", "id": "a1", "x": 0, "y": 0, "elbowed": false }
+{ "type": "rectangle", "x": 0, "y": 0 }
+{ "type": "ellipse", "id": "kafka", "x": 0, "y": 0 }
+{ "type": "diamond", "id": "kafka", "x": 0, "y": 0 }
+{ "type": "arrow", "id": "a2", "x": 0, "y": 0, "allow": [{ "rule": "all" }] }
+{ "type": "line", "id": "l1", "x": 0, "y": 0, "allow": [{ "rule": "crossing", "why": "" }] }
+{ "type": "arrow", "id": "a3", "x": 0, "y": 0, "start": { "type": "text" } }
+{ "type": "cloud", "id": "c1", "x": 0, "y": 0 }
+{ "type": "rectangle", "id": "Xk3_9aBcQzT", "x": 0, "y": 0 }
+{ "type": "text", "id": "t1", "x": 0, "y": 0, "text": "Hi", "containerId": "trip" }
+{ "type": "rectangle", "id": "pg", "x": 0, "y": 0, "label": { "fontSize": 16 } }
+{ "type": "ellipse", "id": "redis", "x": 0, "y": 0, "seed": 42 }
+{ "type": "rectangle", "id": "auth", "x": 0, "y": 0, "strokeStyle": "dash" }
+{ "type": "arrow", "id": "a4", "x": "0", "y": 0, "end": { "id": "auth" } }
+{ "type": "frame", "id": "zone/core", "x": 0, "y": 0 }
+{ "type": "text", "id": "t2", "x": 0, "y": 0, "text": "" }
+{ "type": "line", "id": "l2", "x": 0, "y": 0, "points": [[0, 0]] }
+{ "type": "rectangle", "id": "r1", "x": 0, "y": 0, "roundness": { "type": 4 } }
+{ "type": "rectangle", "id": "r2", "x": 0, "y": 0, "opacity": 150 }
