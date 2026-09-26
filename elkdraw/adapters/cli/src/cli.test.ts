@@ -1,0 +1,147 @@
+import { afterAll, expect, test } from "bun:test";
+import { fileURLToPath } from "node:url";
+import { tools } from "@elkdraw/mcp";
+import { defaultUrl } from "./index.ts";
+
+const MAIN = fileURLToPath(new URL("main.ts", import.meta.url));
+
+async function cli(...args: string[]) {
+  const proc = Bun.spawn([process.execPath, MAIN, ...args], {
+    stdout: "pipe",
+    stderr: "pipe",
+    env: { ...process.env, ELKDRAW_URL: "", PORT: "" },
+  });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { stdout, stderr, code };
+}
+
+const calls: { method: string; path: string; body: string }[] = [];
+const status = {
+  port: 1,
+  url: "http://x",
+  branch: "b",
+  session: "s",
+  rev: 3,
+  clients: 0,
+};
+const fake = Bun.serve({
+  hostname: "127.0.0.1",
+  port: 0,
+  async fetch(req) {
+    const path = new URL(req.url).pathname;
+    calls.push({ method: req.method, path, body: await req.text() });
+    if (path === "/api/status") return Response.json(status);
+    if (path === "/api/shutdown") return Response.json({ ok: true });
+    if (path === "/api/tools/lint") return Response.json({ rev: 3, hits: [] });
+    return Response.json(
+      { error: { code: "NOT_IMPLEMENTED", message: "no", tool: "x" } },
+      { status: 501 },
+    );
+  },
+});
+const url = fake.url.href;
+afterAll(() => fake.stop(true));
+
+test("--help lists every command", async () => {
+  const { stdout, code } = await cli("--help");
+  expect(code).toBe(0);
+  for (const name of ["start", "stop", "status", ...tools.map((t) => t.name)]) {
+    expect(stdout).toMatch(new RegExp(`^  ${name}\\b`, "m"));
+  }
+});
+
+test("a tool command posts its validated input", async () => {
+  const { stdout, code } = await cli(
+    "--url",
+    url,
+    "lint",
+    "--ids",
+    "a,b",
+    "--scope",
+    "viewport",
+  );
+  expect(code).toBe(0);
+  expect(stdout.trim()).toBe(JSON.stringify({ rev: 3, hits: [] }));
+  expect(calls.at(-1)).toEqual({
+    method: "POST",
+    path: "/api/tools/lint",
+    body: JSON.stringify({ scope: "viewport", ids: ["a", "b"] }),
+  });
+});
+
+test("numbers, booleans, JSON and --input", async () => {
+  await cli("--url", url, "look", "--target", "n1", "--r", "40", "--marks");
+  expect(calls.at(-1)?.body).toBe(
+    JSON.stringify({ target: "n1", r: 40, marks: true }),
+  );
+  await cli(
+    "--url",
+    url,
+    "query",
+    "--bbox",
+    '{"x":0,"y":0,"width":5,"height":5}',
+  );
+  expect(calls.at(-1)?.body).toBe(
+    JSON.stringify({ bbox: { x: 0, y: 0, width: 5, height: 5 } }),
+  );
+  await cli(
+    "--url",
+    url,
+    "wait",
+    "--input",
+    '{"for":"review"}',
+    "--since",
+    "2",
+  );
+  expect(calls.at(-1)?.body).toBe(JSON.stringify({ for: "review", since: 2 }));
+});
+
+test("invalid input exits 2 without a request", async () => {
+  const before = calls.length;
+  const { code, stderr } = await cli("--url", url, "look");
+  expect(code).toBe(2);
+  expect(stderr).toContain("target");
+  expect(calls.length).toBe(before);
+});
+
+test("server errors exit 1 with the body on stderr", async () => {
+  const { code, stderr } = await cli("--url", url, "describe");
+  expect(code).toBe(1);
+  expect(stderr).toContain("NOT_IMPLEMENTED");
+});
+
+test("status, stop and start against a running server", async () => {
+  const s = await cli("--url", url, "status");
+  expect(s.stdout.trim()).toBe(JSON.stringify(status));
+  const stop = await cli("--url", url, "stop");
+  expect(stop.code).toBe(0);
+  expect(calls.at(-1)).toMatchObject({ method: "POST", path: "/api/shutdown" });
+  const start = await cli("--url", url, "start");
+  expect(start.stdout.trim()).toBe(JSON.stringify(status));
+});
+
+test("unreachable server exits 3", async () => {
+  const dead = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: () => new Response(),
+  });
+  const deadUrl = dead.url.href;
+  await dead.stop(true);
+  expect((await cli("--url", deadUrl, "status")).code).toBe(3);
+  expect((await cli("--url", deadUrl, "lint")).code).toBe(3);
+});
+
+test("base URL: $ELKDRAW_URL, else $PORT, else 3940", () => {
+  expect(defaultUrl({ ELKDRAW_URL: "http://h:1", PORT: "2" })).toBe(
+    "http://h:1",
+  );
+  expect(defaultUrl({ PORT: "2" })).toBe("http://127.0.0.1:2");
+  expect(defaultUrl({ ELKDRAW_URL: "", PORT: "" })).toBe(
+    "http://127.0.0.1:3940",
+  );
+});

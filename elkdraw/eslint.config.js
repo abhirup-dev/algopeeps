@@ -18,7 +18,7 @@ const allowedDeps = {
   "backends/fake": ["core"],
   sidecar: ["core"],
   "adapters/mcp": ["core"],
-  "adapters/cli": ["core", "server"],
+  "adapters/cli": ["core", "mcp", "server"],
   "adapters/server": ["core", "backend-excalidraw", "backend-fake", "mcp"],
   app: ["core"],
 };
