@@ -912,3 +912,38 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   regenerated; CONTRACTS.md changelog; SKILL.md table has 2 new rows and 2
   changed ones. Stale elsewhere (not owned): CONTEXT.md "twelve lint codes"
   and skill/MAINTAINERS.md "12 codes".
+### 1.17 Frames: cross-zone arrows, frame re-send, place on a frame (2026-09-26)
+
+- Root cause of p1rh-01: `convertToExcalidrawElements`'s frame step sets
+  `frameId` on the child and on every entry of its `boundElements`: its label
+  and every arrow bound to it, cross-zone ones included. Excalidraw clips
+  frame children to the frame. Fix in page-side `convert()`
+  (`app/src/headless.ts`, `framed()`): after conversion, a bound arrow/line is
+  in a frame only when both ends are bound and share that frame (else
+  `frameId: null`); a label takes its container's frame. It covers the batch
+  and stored arrows/labels bound to a batch element; stored ones whose frame
+  changed come back as updates (so a stale clipped arrow heals on re-send).
+  Unbound arrows keep what they were given.
+- Re-send crash (`Bound element with id <child>#label doesn't exist`): the same
+  frame step walks a stored child's `boundElements`, which name elements not in
+  the batch. Stored elements fed in as references now carry only in-input
+  `boundElements`; the merge restores the stored list.
+- `core/place/stored.ts` `fromStored(frame).children` no longer lists bound
+  text or bound arrows (they follow their container / ends).
+- `place` on a canvas-only frame: the refusal from 1.15 is gone. The frame
+  moves and every canvas-only child moves by the same delta (children given in
+  the same apply keep their own position). Bound arrows follow via 1.16.
+- `outside-zone` hints (`core/lint/lint.ts`) now say which element is outside
+  which zone and the fix: for a line clipped to a zone, the end that is outside
+  it ("re-send it; an arrow joins a frame only when both its ends are inside");
+  for a box/text, move it inside, grow the zone or drop it from children.
+- Tests: `sidecar.e2e.ts` "convert: a cross-frame arrow is no frame's child and
+  draws unclipped" (frameIds, ink in the gap between frames, then a frame
+  re-send with labelled stored children; PNG at
+  `sidecar/test-results/cross-frame-arrow.png`); `tools.e2e.ts` "frames:
+  cross-zone arrows stay unclipped; frames re-send and move"; `lint.test.ts`
+  outside-zone hint. The sidecar test fails on the base (`frameId` "fb").
+- Found, not fixed: (1) Excalidraw's converter uses `frame.x || minX`, so a
+  frame given `x: 0` (or `y: 0`) is re-placed at its children's bounds minus 10. (2) `snap` of a scene with frames draws ~20 px low: its origin is
+  `getCommonBounds(roots)`, but export also makes room for the frame name
+  above the frame. Crops of frames in `look` may be offset by that much.

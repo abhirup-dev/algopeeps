@@ -240,6 +240,19 @@ test("outside-zone: native zones, both directions; leaves across a container", (
   const across = node("x", at(350, 100, 100, 60));
   expect(only("outside-zone", rect, held, across)).toEqual([["x", "r"]]);
   expect(only("node-overlap", rect, held, across)).toEqual([]);
+  // p1rh-01: an arrow clipped to a zone it only half belongs to names the
+  // end that is outside, not "take it out of children".
+  const far = node("far", at(500, 20, 100, 60));
+  const cross = line("c", [p(250, 50), p(495, 50)], {
+    from: "m",
+    to: "far",
+    zone: "z",
+  });
+  const [h] = run(zone, member, far, cross).filter(
+    (x) => x.code === "outside-zone",
+  );
+  expect(h?.ids).toEqual(["c", "z"]);
+  expect(h?.hint).toContain("its end far is outside z");
 });
 
 test("crossing: info; collinear runs count, shared ends do not", () => {

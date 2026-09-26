@@ -394,11 +394,23 @@ export function lint(scene: NeutralScene): LintHit[] {
           : el.box;
     const zone = el.zone === undefined ? undefined : byId.get(el.zone);
     if (zone?.type === "zone" && !within(drawn, zone.box)) {
+      // A line joins a frame only through its ends (Excalidraw clips it to
+      // the frame): name the end that is not in the zone, if there is one.
+      const out =
+        el.type === "line"
+          ? [el.from, el.to].find(
+              (id) => id !== undefined && byId.get(id)?.zone !== zone.id,
+            )
+          : undefined;
       hit(
         "outside-zone",
         [el.id, zone.id],
         drawn,
-        `Grow or move ${zone.id} (50px padding), or take ${el.id} out of its children`,
+        el.type !== "line"
+          ? `${el.id} is in ${zone.id} but drawn outside it: move ${el.id} inside ${zone.id}, grow ${zone.id} (50px padding), or drop ${el.id} from ${zone.id}'s children`
+          : out !== undefined
+            ? `${el.id} is clipped to ${zone.id} but its end ${out} is outside ${zone.id}: re-send ${el.id} (an arrow joins a frame only when both its ends are inside)`
+            : `${el.id} runs outside ${zone.id}, which clips it: grow ${zone.id} (50px padding) or keep ${el.id}'s points inside it`,
       );
     }
     if (el.type !== "box") continue;

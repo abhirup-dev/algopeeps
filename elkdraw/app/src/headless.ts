@@ -181,7 +181,22 @@ async function convert(
       if (e && e["isDeleted"] !== true) referenced.set(id, e);
     }
   }
-  const input = [...skeletons, ...referenced.values()];
+  // A stored element's boundElements may name elements outside this input (its
+  // label, other stored arrows); the frame step throws on those ("Bound element
+  // with id <child>#label doesn't exist"). Keep only in-input ones here; the
+  // merge below restores the stored list.
+  const inputIds = new Set([...batch, ...referenced.keys()]);
+  const bare = [...referenced.values()].map((e) =>
+    Array.isArray(e["boundElements"])
+      ? {
+          ...e,
+          boundElements: (e["boundElements"] as { id: string }[]).filter((b) =>
+            inputIds.has(b.id),
+          ),
+        }
+      : e,
+  );
+  const input = [...skeletons, ...bare];
   // Unchecked cast: SkeletonElement is our strict subset of Excalidraw's
   // skeleton, and referenced entries are stored Excalidraw elements.
   const out = convertToExcalidrawElements(
@@ -219,7 +234,7 @@ async function convert(
         );
       }),
   );
-  if (moved.size === 0) return routed;
+  if (moved.size === 0) return framed(routed, scene);
   // The far end may be a stored element outside the batch.
   const ends = new Map([...stored, ...byId]);
   const followers = scene
@@ -234,7 +249,51 @@ async function convert(
         }),
     )
     .map((e) => follow(e, ends, moved));
-  return [...routed, ...followers];
+  return framed([...routed, ...followers], scene);
+}
+
+const frameOf = (e: Element | undefined): string | null =>
+  typeof e?.["frameId"] === "string" ? e["frameId"] : null;
+
+/** Excalidraw clips a frame's children to the frame, and its converter puts
+ * every arrow bound to a child into the frame, cross-zone arrows included
+ * (p1rh-01). Here a bound arrow is in a frame only when both its ends are,
+ * and a label is in its container's frame. Stored arrows and labels whose
+ * frame changes come back too (apply counts them as updated). */
+function framed(out: Element[], scene: readonly Element[]): Element[] {
+  const given = new Set(out.map((e) => e.id));
+  const all = new Map<string, Element>([
+    ...scene
+      .filter((e) => e["isDeleted"] !== true)
+      .map((e): [string, Element] => [e.id, e]),
+    ...out.map((e): [string, Element] => [e.id, e]),
+  ]);
+  const changed = new Map<string, Element>();
+  const set = (e: Element, frameId: string | null) => {
+    if (frameOf(e) === frameId) return;
+    const next = { ...e, frameId };
+    all.set(e.id, next);
+    changed.set(e.id, next);
+  };
+  for (const e of [...all.values()]) {
+    if (e.type !== "arrow" && e.type !== "line") continue;
+    const [s, t] = [bindingId(e["startBinding"]), bindingId(e["endBinding"])];
+    if (s === undefined && t === undefined) continue;
+    if (!given.has(e.id) && !given.has(s ?? "") && !given.has(t ?? ""))
+      continue;
+    const [fs, ft] = [frameOf(all.get(s ?? "")), frameOf(all.get(t ?? ""))];
+    set(e, s !== undefined && t !== undefined && fs === ft ? fs : null);
+  }
+  for (const e of [...all.values()]) {
+    const c = e["containerId"];
+    if (e.type !== "text" || typeof c !== "string") continue;
+    if (given.has(e.id) || given.has(c) || changed.has(c))
+      set(e, frameOf(all.get(c)));
+  }
+  return [
+    ...out.map((e) => changed.get(e.id) ?? e),
+    ...[...changed.values()].filter((e) => !given.has(e.id)),
+  ];
 }
 
 // Gap between an arrow end and the outline it binds to.
