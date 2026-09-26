@@ -29,10 +29,13 @@ class CliExit extends Error {
   }
 }
 
+/** Empty env vars count as unset. */
+const nonEmpty = (value: string | undefined) =>
+  value === "" ? undefined : value;
+
 export function defaultUrl(env: Record<string, string | undefined>): string {
-  return (
-    env["ELKDRAW_URL"] ?? `http://127.0.0.1:${env["PORT"] ?? DEFAULT_PORT}`
-  );
+  const port = nonEmpty(env["PORT"]) ?? DEFAULT_PORT;
+  return nonEmpty(env["ELKDRAW_URL"]) ?? `http://127.0.0.1:${port}`;
 }
 
 async function request(

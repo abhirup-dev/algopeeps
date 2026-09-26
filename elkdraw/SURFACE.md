@@ -123,6 +123,8 @@ just names.
 - `--input <json|->` gives the whole input object, and flags override it.
 - The assembled object is validated by the same zod schema before any request.
 - Results are JSON on stdout; errors go to stderr.
+- Run it as `bun elkdraw/adapters/cli/src/main.ts <command>`. The package
+  declares an `elkdraw` bin, but Bun does not link workspace bins at the root.
 
 | Exit | Meaning                                         |
 | ---- | ----------------------------------------------- |
@@ -157,12 +159,12 @@ The schemas are exported from `@elkdraw/mcp`:
 
 ```ts
 ServerStatus = {
-  port: int,
-  url: string,
-  branch: string,
-  session: string,
-  rev: int,
-  clients: int,
+  port: int, // the port the server listens on
+  url: string, // the browser canvas URL (portless URL when set up, else http://127.0.0.1:<port>)
+  branch: string, // git branch of the worktree the server runs from
+  session: string, // the canvas session id
+  rev: int, // current scene rev
+  clients: int, // connected browser tabs (WebSocket clients)
 };
 ToolErrorBody = {
   code: "INVALID_INPUT" | "UNKNOWN_TOOL" | "NOT_IMPLEMENTED",
@@ -188,4 +190,6 @@ try {
 ```
 
 `dispatch` validates the input and fills gaps with `stubHandlers`. It also
-validates the handler's output against the tool's output schema.
+validates the handler's output against the tool's output schema. That failure is
+a `ZodError`, not a `ToolError`: any error other than a `ToolError` is a 500,
+which the CLI reports as exit 1.

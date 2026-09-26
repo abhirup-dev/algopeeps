@@ -1,6 +1,7 @@
 import { afterAll, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
 import { tools } from "@elkdraw/mcp";
+import { defaultUrl } from "./index.ts";
 
 const MAIN = fileURLToPath(new URL("main.ts", import.meta.url));
 
@@ -133,4 +134,14 @@ test("unreachable server exits 3", async () => {
   await dead.stop(true);
   expect((await cli("--url", deadUrl, "status")).code).toBe(3);
   expect((await cli("--url", deadUrl, "lint")).code).toBe(3);
+});
+
+test("base URL: $ELKDRAW_URL, else $PORT, else 3940", () => {
+  expect(defaultUrl({ ELKDRAW_URL: "http://h:1", PORT: "2" })).toBe(
+    "http://h:1",
+  );
+  expect(defaultUrl({ PORT: "2" })).toBe("http://127.0.0.1:2");
+  expect(defaultUrl({ ELKDRAW_URL: "", PORT: "" })).toBe(
+    "http://127.0.0.1:3940",
+  );
 });
