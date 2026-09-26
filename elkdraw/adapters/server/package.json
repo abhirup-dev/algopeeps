@@ -12,6 +12,7 @@
     "@elkdraw/core": "workspace:*",
     "@elkdraw/mcp": "workspace:*",
     "@modelcontextprotocol/server": "2.0.0",
+    "safe-stable-stringify": "^2.5.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {

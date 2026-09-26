@@ -2,9 +2,13 @@
 // Run with `bun run --cwd elkdraw/app test:e2e` (builds first).
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { join } from "node:path";
-import { parseJson } from "@elkdraw/core";
 import { type Browser, type Page, chromium } from "playwright";
-import { type ClientMessage, Delta, type ServerMessage } from "./protocol.ts";
+import {
+  type ClientMessage,
+  Delta,
+  type ServerMessage,
+  parseJson,
+} from "@elkdraw/core";
 
 const appDir = join(import.meta.dir, "..");
 const dist = join(appDir, "dist");

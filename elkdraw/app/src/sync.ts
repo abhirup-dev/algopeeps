@@ -1,6 +1,9 @@
 // Scene sync: version-based diffing and a reconnecting WebSocket client.
-import { safeParseJson } from "@elkdraw/core";
-import { type ClientMessage, ServerMessage } from "./protocol.ts";
+import {
+  type ClientMessage,
+  ServerMessage,
+  safeParseJson,
+} from "@elkdraw/core";
 
 interface Versioned {
   readonly id: string;

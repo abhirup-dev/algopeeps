@@ -2,7 +2,7 @@ import { CaptureUpdateAction, Excalidraw } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { useEffect, useRef, useState } from "react";
 import { toScene, toWire } from "./excalidraw.ts";
-import type { ServerMessage } from "./protocol.ts";
+import type { ServerMessage } from "@elkdraw/core";
 import {
   type Baseline,
   type ConnectionState,

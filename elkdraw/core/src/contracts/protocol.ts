@@ -1,5 +1,5 @@
 // WebSocket sync protocol between the elkdraw server and the browser canvas.
-// Lives here until the server lane (P0.5) moves it to a shared package.
+// Shared by adapters/server and app.
 //
 //   server -> client: hello, snapshot, delta (agent or other clients), ack
 //   client -> server: delta (author "human")
