@@ -393,3 +393,60 @@ input, deps)` and `add(...)` (create only), pure and synchronous. Input
   warm, snap 1460x900 @2x ~70 ms, measureText ~5 ms.
 - Stale for the orchestrator: the "Sidecar and elkjs" section above and
   CONTEXT.md "Stubs today (task 1.3)".
+
+### 1.7 look --around ids (2026-09-26)
+
+- `core/look.ts` (pure, no sidecar import): `targetBox(boxes, ids)` (union,
+  throws on a missing id), `pad(box, r)`, `clampScale(box, maxPx?)` (default
+  caps 512x384; the acceptance), `look(boxes, ids, {r, maxPx, marks})`
+  composing all three plus `marks: Record<Id, Point>` (each id's box centre
+  mapped to the crop's own pixel space: `(centre - bbox origin) * scale`; no
+  contract fixes that space down, see Needs). Exported from
+  `@elkdraw/core/engine`. `core/tsconfig.json` `include` gained `look.ts` and
+  `look.test.ts` (single files, not a directory, per the bead's `Owns:`); 1.9
+  will add `place` to the same array, a trivial merge conflict.
+- `backends/excalidraw/src/render/render.ts` implements `BackendAdapter.render`
+  for `ExcalidrawScene`: `measure`s the scene once, unions `target` (ids) or
+  uses it as-is (already a `Box`, e.g. `pad`ded by a caller), `clampScale`s
+  that box, `snap`s it with **no `ids` filter** (a crop must show what the
+  target collides with, not just the target). `boxes` on the result holds the
+  ids' own boxes in scene coordinates; empty when `target` was a `Box`. Takes
+  `RenderDeps` (`measure`/`snap`, narrowed from `Sidecar`) so `render.test.ts`
+  fakes them with no browser; a real `Sidecar` satisfies `RenderDeps`
+  structurally (extra optional `ids` param on `snap`), used directly in
+  `render.e2e.ts`. Files live in `src/render/` (package `tsconfig.json`
+  `rootDir` is `src`), same reason 1.4 gave for `src/read/`.
+- `render`'s own signature (frozen by 1.0) has no `r`/`maxPx`/`marks`: a
+  caller wanting a margin computes `core/look`'s `pad`ded box itself before
+  calling `render(scene, thatBox)`. The acceptance's "boxes in scene coords"
+  needs the ids call too, so the full `look` flow is two `render` calls:
+  `render(scene, ids)` for `boxes` (tight, unpadded), then `core.look`/`pad`
+  for the crop box, then `render(scene, thatBox)` for the final PNG. Wiring
+  that into the `look` MCP tool's single round trip is 1.10's job.
+- `render.e2e.ts` (`bun run --cwd elkdraw/backends/excalidraw test:e2e`, ~1.2 s
+  warm, needs `app/dist`): the dogfood `yct` fixture, ids `["a9", "surge"]`
+  (defect `yct-13`, `arrow-through-node`, `fixedInFinal: false`, so it is
+  still in `scene.excalidraw`; there is no lint engine yet, task 1.5, so this
+  is the fixture's ground truth id pair, not a live lint hit). Asserts the
+  final crop's real PNG dimensions (`IHDR` bytes 16-23, big-endian u32; no PNG
+  decode dependency) are `<= 512x384` at `r=150`, and that `core.look`'s pure
+  `bbox` matches what `render` actually used.
+- `clampScale` shrinks the `maxW`/`maxH` ratio by `1 - 1e-9` before taking the
+  min: the app's headless `snap` sizes its canvas with `Math.round(side *
+  scale)`, so an exact `scale = maxPx / side` can round a side 1px over.
+- A `readonly string[] | Box` union does not narrow cleanly through
+  `Array.isArray`: `Box` has no index signature ruling out "also an array", so
+  the narrowed type keeps a `Box & unknown[]` arm. `render.ts` uses an
+  explicit `target is readonly string[]` predicate instead.
+- Needs from others: `adapters/mcp/src/tools.ts`'s `look` output is
+  `{path, bbox, scale, marks}` (`marks: record(Id, Point)`); the skill's
+  `skill/references/cheatsheet.md` documents `{path, bbox, scale, marks,
+  boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
+  the cheatsheet. 1.10 (CLI/MCP wiring) needs to add `boxes` to the tool's
+  output schema (a contract change) to carry the ids' scene-coordinate boxes
+  through, and settle `viewport` one way or the other. `marks`' pixel space
+  (crop-local, not scene coords) is this task's assumption, not a contract
+  fact; 1.10 should confirm or correct it. A `maxPx` below the default 512x384
+  cap needs 1.10 to shrink the padded box before calling `render` (or a
+  contract change to give `render` a scale/cap parameter): `render` itself
+  cannot take one.

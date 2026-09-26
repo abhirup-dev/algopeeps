@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "update-snapshots": "bun test --update-snapshots src/read"
+    "update-snapshots": "bun test --update-snapshots src/read",
+    "test:e2e": "bun run --cwd ../../app build && bun test ./src/render/render.e2e.ts"
   },
   "exports": {
     ".": "./src/index.ts"

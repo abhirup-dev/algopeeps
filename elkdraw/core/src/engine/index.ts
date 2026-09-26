@@ -14,3 +14,13 @@ export {
   type ApplyResult,
   type Scene,
 } from "../../apply/apply.ts";
+export {
+  clampScale,
+  look,
+  MAX_HEIGHT,
+  MAX_WIDTH,
+  pad,
+  targetBox,
+  type LookOptions,
+  type LookResult,
+} from "../../look.ts";
