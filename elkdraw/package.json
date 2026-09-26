@@ -1,0 +1,38 @@
+{
+  "name": "elkdraw",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "core",
+    "backends/*",
+    "adapters/*",
+    "app",
+    "sidecar",
+    "test/parity",
+    "eval"
+  ],
+  "scripts": {
+    "typecheck": "tsc -b",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "test": "bun test",
+    "check": "bun run typecheck && bun run lint && bun run format && bun run test",
+    "dev": "echo 'elkdraw dev: nothing to run yet (server lands in P0.5)'",
+    "build": "tsc -b"
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
+    "@eslint/js": "^10.0.1",
+    "@total-typescript/ts-reset": "^0.6.1",
+    "@types/bun": "^1.4.2",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.1"
+  }
+}

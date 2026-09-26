@@ -1,0 +1,22 @@
+{
+  "name": "@elkdraw/eval",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@elkdraw/core": "workspace:*",
+    "@elkdraw/backend-excalidraw": "workspace:*",
+    "@elkdraw/backend-fake": "workspace:*",
+    "@elkdraw/sidecar": "workspace:*",
+    "@elkdraw/mcp": "workspace:*",
+    "@elkdraw/server": "workspace:*",
+    "@elkdraw/cli": "workspace:*"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
+    "playwright": "1.63.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@elkdraw/backend-excalidraw",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@elkdraw/core": "workspace:*",
+    "@excalidraw/excalidraw": "0.18.1"
+  }
+}

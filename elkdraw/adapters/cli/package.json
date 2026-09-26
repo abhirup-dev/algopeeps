@@ -1,0 +1,15 @@
+{
+  "name": "@elkdraw/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "^15.0.0",
+    "@elkdraw/core": "workspace:*",
+    "@elkdraw/server": "workspace:*",
+    "commander": "^15.0.0"
+  }
+}
