@@ -119,6 +119,8 @@
       "version": "0.0.0",
       "dependencies": {
         "@elkdraw/core": "workspace:*",
+        "elkjs": "^0.12.0",
+        "zod": "^4.6.5",
       },
       "devDependencies": {
         "playwright": "1.63.0",

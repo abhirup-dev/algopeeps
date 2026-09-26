@@ -64,3 +64,34 @@ New dependencies go through the orchestrator; do not run bun add on a task branc
 | prettier (dev)                                        | root                          | ^3.9.9   | The only formatter.                                                           |
 | @types/bun (dev)                                      | root                          | ^1.4.2   | Bun runtime and `bun:test` types.                                             |
 | @total-typescript/ts-reset (dev)                      | root                          | ^0.6.1   | `JSON.parse`/`Response.json()` return `unknown`; `.filter(Boolean)` narrows.  |
+
+## Sidecar
+
+`@elkdraw/sidecar` (`sidecar/src/index.ts`): `new Sidecar(dist = app/dist)`,
+`start()` (idempotent; `Bun.serve` on a random 127.0.0.1 port serves the bundle,
+headless Chromium loads it and waits for `.excalidraw`), `measure(elements) ->
+Box[]`, `snap(bbox, scale = 1) -> Uint8Array` (PNG), `close()`. P0.7: both calls
+are stubs (100x40 box per element at the origin; a 1x1 PNG), but they go through
+`page.evaluate` and zod validates inputs before the page and outputs after it.
+
+- The app has no headless mode. The sidecar serves no `/ws`, so the app's sync
+  client retries every second in the background; harmless for measuring. A
+  `?headless=1` flag in `app/` would silence it if that ever matters.
+- Timings (M-series Mac, Bun 1.4.2, chromium-1243): cold `start()` ~0.25 s
+  (bundle already built); warm `measure`/`snap` 0.3-3 ms. The e2e asserts < 2 s.
+- Run: `bun run --cwd elkdraw/sidecar test:e2e` (builds the app, then
+  `bun test ./src/sidecar.e2e.ts`). Not part of `check`: it needs `app/dist`.
+
+elkjs under Bun (probe B1, `sidecar/src/elk.test.ts`, runs in `check`): the
+bundled build throws (`new _Worker` undefined). This works:
+
+```ts
+import ELK from "elkjs/lib/elk-api.js";
+const elk = new ELK({
+  workerUrl: Bun.resolveSync("elkjs/lib/elk-worker.min.js", import.meta.dir),
+});
+await elk.layout(graph); // elk-api's default factory: new Worker(url), Bun's Web Worker
+elk.terminateWorker();
+```
+
+3-node layered layout: ~90 ms including worker start.
