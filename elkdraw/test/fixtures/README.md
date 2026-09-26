@@ -147,13 +147,13 @@ measured boxes, as the design says.
 
 | Scene     | Defects | Reported | Not reported | Unfixed | Rule gaps | Unmapped | Env only | Must flag |
 | --------- | ------- | -------- | ------------ | ------- | --------- | -------- | -------- | --------- |
-| yct       | 23      | 13       | 10           | 14      | 6         | 1        | 3        | 11        |
+| yct       | 24      | 13       | 11           | 15      | 6         | 1        | 3        | 12        |
 | batch     | 17      | 11       | 6            | 8       | 4         | 4        | 5        | 3         |
 | bst       | 2       | 2        | 0            | 0       | 0         | 1        | 0        | 0         |
 | bst-first | 2       | 2        | 0            | 2       | 0         | 1        | 2        | 0         |
 
 The `*-painted` variants have the same defect lists; must flag: yct-painted
-14, batch-painted 7 (batch-10 is `notDrawn`), bst-first-painted 2.
+15, batch-painted 7 (batch-10 is `notDrawn`), bst-first-painted 2.
 
 Not in any fixture: the Mermaid-path scene (batch report §2.6, cleared before
 the rebuild), and round 2 defects (Analytics over Postgres after the "human"

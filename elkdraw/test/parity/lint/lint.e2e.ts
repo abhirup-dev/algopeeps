@@ -55,20 +55,6 @@ const EXPECTED = {
   "eval-p1/bst-r1": 0,
 };
 
-// Drawn in the dogfood PNGs but missing from their manifests (not owned by
-// 1.19): the two dashed heads tangle on Kafka in yct final.png. Move into
-// the manifests and drop this.
-const yct17 = {
-  id: "yct-17",
-  rule: "arrowhead-overlap",
-  ids: ["e-trip", "e-surge", "kafka"],
-  fixedInFinal: false,
-};
-const EXTRA: Record<string, z.infer<typeof Manifest>["defects"]> = {
-  "dogfood/yct": [yct17],
-  "dogfood/yct-painted": [yct17],
-};
-
 const sidecar = new Sidecar();
 beforeAll(async () => {
   await sidecar.start();
@@ -81,7 +67,6 @@ for (const [name, mustFlag] of Object.entries(EXPECTED)) {
   test(`${name}: lint flags every open defect, nothing else`, async () => {
     const dir = `${fixtures}${name}/`;
     const m = parseJson(Manifest, await Bun.file(`${dir}defects.json`).text());
-    m.defects.push(...(EXTRA[name] ?? []));
     const scene = parseJson(
       Scene,
       await Bun.file(`${dir}scene.excalidraw`).text(),
