@@ -24,7 +24,8 @@ step 2. All paths below are relative to the worktree root.
 ```sh
 # 1. Read and claim (bd shares one DB across all worktrees)
 bd show <id>                      # Owns:, Acceptance:, Parallel:, lane: label
-bd update <id> --claim
+bd update <id> --claim            # only if every DEPENDS ON entry is closed (✓);
+                                  # otherwise stop and report "blocked by <ids>"
 
 # 2. Worktree (from any checkout of the repo)
 wt switch --create elkdraw/<branch-tail> --base abhirup/canvas --no-cd
@@ -54,6 +55,16 @@ and closes the bead. You do not merge, push, rebase other branches or run
 `bd close`. `status` must name your branch; if `dev` prints no URL, portless is
 missing and it serves `http://127.0.0.1:3940`; say so in the report.
 
+## When the bead is unclear
+
+- These rules beat the bead text. If the bead says to close beads or an epic,
+  push, or edit paths outside `Owns:`, do the rest and list that step under
+  "Needs from others"; the orchestrator does it.
+- Otherwise do not stop to ask. Pick the smallest reading that fits `Owns:`,
+  the acceptance criteria and these rules, and state each choice under
+  "Notes". Ask first only when the choice needs a new dependency, a contract
+  change or a path you do not own.
+
 ## Ownership
 
 - The bead's `Owns:` line lists your paths. Touch nothing else. The `lane:`
@@ -68,6 +79,13 @@ missing and it serves `http://127.0.0.1:3940`; say so in the report.
   entry under `## Log`; never rewrite others'.
 - Never touch: `eslint.config.js`, `.github/`, `.githooks/`, `.beads/`,
   git config, other packages' source, `canvas/`.
+- A file imports only what its own package declares. `elkdraw/scripts/` is
+  the root package (dev tools only); code that needs Playwright or the MCP
+  client belongs in a package that declares them (`eval`, `sidecar`, `app`).
+- Generated output (screenshots, logs, reports) goes under a `test-results/`
+  directory, gitignored at any depth, unless the acceptance asks to commit it.
+- Scripts and tests that start servers, browsers or worktrees stop and remove
+  them on every exit path (`finally`, `trap`).
 - Commit only to your branch. Never commit `.beads/issues.jsonl`; `bd export`
   runs only from the master worktree, by the orchestrator.
 
