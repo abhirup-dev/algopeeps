@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "enum": [
+        "text-overflow",
+        "text-wrapped",
+        "label-on-node",
+        "label-on-label",
+        "label-on-border",
+        "arrow-through-node",
+        "node-overlap",
+        "dangling-endpoint",
+        "outside-zone",
+        "crossing"
+      ]
+    },
+    "ids": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "hint": {
+      "type": "string"
+    },
+    "suppressed": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": ["code", "ids", "hint"],
+  "additionalProperties": false
+}

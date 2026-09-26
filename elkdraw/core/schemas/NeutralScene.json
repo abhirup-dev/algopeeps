@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "elements": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "box"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "zone": {
+                "type": "string",
+                "minLength": 1
+              },
+              "style": {
+                "type": "object",
+                "properties": {
+                  "fill": {
+                    "type": "string"
+                  },
+                  "stroke": {
+                    "type": "string"
+                  },
+                  "strokeWidth": {
+                    "type": "number"
+                  },
+                  "strokeDasharray": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "fontSize": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "meta": {},
+              "box": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "width": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": ["x", "y", "width", "height"],
+                "additionalProperties": false
+              },
+              "shape": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "box": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      },
+                      "width": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "height": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["x", "y", "width", "height"],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["text", "box"],
+                "additionalProperties": false
+              }
+            },
+            "required": ["type", "id", "box"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "zone"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "zone": {
+                "type": "string",
+                "minLength": 1
+              },
+              "style": {
+                "type": "object",
+                "properties": {
+                  "fill": {
+                    "type": "string"
+                  },
+                  "stroke": {
+                    "type": "string"
+                  },
+                  "strokeWidth": {
+                    "type": "number"
+                  },
+                  "strokeDasharray": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "fontSize": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "meta": {},
+              "box": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "width": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": ["x", "y", "width", "height"],
+                "additionalProperties": false
+              },
+              "text": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "box": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      },
+                      "width": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "height": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["x", "y", "width", "height"],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["text", "box"],
+                "additionalProperties": false
+              }
+            },
+            "required": ["type", "id", "box"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "line"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "zone": {
+                "type": "string",
+                "minLength": 1
+              },
+              "style": {
+                "type": "object",
+                "properties": {
+                  "fill": {
+                    "type": "string"
+                  },
+                  "stroke": {
+                    "type": "string"
+                  },
+                  "strokeWidth": {
+                    "type": "number"
+                  },
+                  "strokeDasharray": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "fontSize": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "meta": {},
+              "points": {
+                "minItems": 2,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y"],
+                  "additionalProperties": false
+                }
+              },
+              "from": {
+                "type": "string",
+                "minLength": 1
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "box": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      },
+                      "width": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "height": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["x", "y", "width", "height"],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["text", "box"],
+                "additionalProperties": false
+              }
+            },
+            "required": ["type", "id", "points"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "text"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "zone": {
+                "type": "string",
+                "minLength": 1
+              },
+              "style": {
+                "type": "object",
+                "properties": {
+                  "fill": {
+                    "type": "string"
+                  },
+                  "stroke": {
+                    "type": "string"
+                  },
+                  "strokeWidth": {
+                    "type": "number"
+                  },
+                  "strokeDasharray": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "fontSize": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "meta": {},
+              "text": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "box": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      },
+                      "width": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "height": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["x", "y", "width", "height"],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["text", "box"],
+                "additionalProperties": false
+              }
+            },
+            "required": ["type", "id", "text"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": ["elements"],
+  "additionalProperties": false
+}
