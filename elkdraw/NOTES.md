@@ -143,3 +143,15 @@ later tasks should not need `bun add`.
   `--cacert ~/.portless/ca.pem`, Bun/Node need `NODE_EXTRA_CA_CERTS`.
 - Pending at the time of writing: P0.9 eval harness, P0.13 registration docs
   and skill, P0.14 exit smoke.
+- P0.14 exit smoke: `bun run --cwd elkdraw smoke:p0` (`scripts/smoke-p0.sh`
+  sets `NODE_EXTRA_CA_CERTS`, then runs `eval/src/smoke-p0.ts`). It creates
+  `elkdraw/smoke-p0-b` off the current branch (`wt switch --create --no-hooks`),
+  runs `CI=true check` in both worktrees (one after the other), starts `dev` in
+  both, and per URL checks `/api/status`, MCP `listTools` + `status` (branch)
+  - `lint` (`NOT_IMPLEMENTED`), CLI `status`, and the app pill
+    `<branch> · open`; screenshots land in `eval/test-results/`. Teardown (also
+    on SIGINT/SIGTERM) stops both servers, the browser, and `wt remove -D -f
+--foreground` drops the worktree and branch. Passed 2026-09-26 in ~45 s
+    (checks ~20 s each, both app builds included). Playwright's Chromium does
+    not trust portless's CA, so the page opens with `ignoreHTTPSErrors`; the
+    URLs print at the end for opening by hand while a `dev` runs.
