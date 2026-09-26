@@ -236,6 +236,7 @@ later tasks should not need `bun add`.
   dropped by name) and the projection validates. Keys Excalidraw ignores are
   dropped by name and counted: `fontSize` on non-text (yct 3, all 3
   disagreeing with the label's fontSize; batch 26, 9 disagreeing) and `elbowed` (yct 20, batch 21).
+
 ### 1.13 BST defect manifest (2026-09-26)
 
 - `test/fixtures/dogfood/bst/`: `scene.excalidraw`, `final.png`,
@@ -262,6 +263,7 @@ later tasks should not need `bun add`.
   so this is the fixture that tests lint; the `tree` clean region leaves out
   t10, t12 and their labels. `test/fixtures/README.md` now lists both BST
   fixtures, their sources and counts.
+
 ### 1.11 Agent guide and skill (2026-09-26)
 
 - `skill/SKILL.md` + `skill/references/cheatsheet.md` replace the Phase 0
