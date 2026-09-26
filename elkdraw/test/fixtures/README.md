@@ -7,10 +7,12 @@ ids exist in the scene) and `test/parity/src/mermaid-fixtures.test.ts` (every
 
 ```
 fixtures/
-  dogfood/yct/     scene.excalidraw  final.png  defects.json   one-command-at-a-time tester
-  dogfood/batch/   scene.excalidraw  final.png  defects.json   batch-path tester
-  tasks/           ride-hailing.mmd  bst.mmd                    the two dogfood tasks as Mermaid
-  mermaid/         <family>-N.mmd                               Mermaid docs samples, 10 families
+  dogfood/yct/        scene.excalidraw  final.png  defects.json   one-command-at-a-time tester
+  dogfood/batch/      scene.excalidraw  final.png  defects.json   batch-path tester
+  dogfood/bst/        scene.excalidraw  final.png  defects.json   round-3 BST, final
+  dogfood/bst-first/  scene.excalidraw  final.png  defects.json   round-3 BST, first add
+  tasks/              ride-hailing.mmd  bst.mmd                    the two dogfood tasks as Mermaid
+  mermaid/            <family>-N.mmd                               Mermaid docs samples, 10 families
 ```
 
 ## Dogfood scenes
@@ -25,6 +27,24 @@ byte for byte from `canvas/.artifacts/dogfood/` (gitignored there):
 | `dogfood/yct/final.png`          | `xd_final.png`                                                     |                                              |
 | `dogfood/batch/scene.excalidraw` | `batch-final.excalidraw` (= `/tmp/dogfood-batch/final.excalidraw`) | `canvas/docs/dogfood-excalidraw-batch.md`    |
 | `dogfood/batch/final.png`        | `07-final.png`                                                     |                                              |
+
+Round 3 (tester A, dense BST figure) has no written report section; its report
+is the tester's round-3 chat answer (transcript `d24dbb60…jsonl`, line 408)
+and the R3 rows of `canvas/docs/dogfood-synthesis.md`. The BST scenes are not
+byte for byte: both are filtered to the 95 BST elements (the 65 the tester
+added plus their bound `-label` texts), dropping the round-2 ride-hailing state
+on the same canvas. The PNGs are cropped to the tester's own 1000x720 window
+(`sips -c 720 1000 --cropOffset 0 2900`):
+
+| Fixture                              | Source                                                                                                                                    | Report                             |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `dogfood/bst/scene.excalidraw`       | fresh `export` from the tester's still-running server (2026-09-26); geometry equals the tester's final `query` dump `/tmp/xd_r3_all.json` | `canvas/docs/dogfood-synthesis.md` |
+| `dogfood/bst/final.png`              | `/tmp/xd_bst_v3.png` (after fix1, fix2)                                                                                                   |                                    |
+| `dogfood/bst-first/scene.excalidraw` | `/tmp/xd_r3.excalidraw` (exported after the first add, before both fixes)                                                                 | `canvas/docs/dogfood-synthesis.md` |
+| `dogfood/bst-first/final.png`        | `/tmp/xd_bst_v1.png` (first add)                                                                                                          |                                    |
+
+The final BST is clean, so `bst` only measures false positives; `bst-first`
+holds the same two wraps unfixed and is the one that tests lint.
 
 The PNG is what the browser rendered and is the truth. The stored geometry is
 not: arrow label `x/y` and arrow endpoints are recomputed at render time (for
@@ -74,19 +94,21 @@ measured boxes, as the design says.
   batch-11). Lint 1.6 either adds rules or accepts these as known misses.
 - **`fixedInFinal: true` ids** point at elements that still exist; their
   geometry in the final scene is the fixed one. The intermediate scenes were
-  never committed.
+  never committed, except the BST first add (`bst-first`).
 
 ### Counts
 
-| Scene | Defects | Reported | Not reported | Unfixed | Rule gaps | Unmapped |
-| ----- | ------- | -------- | ------------ | ------- | --------- | -------- |
-| yct   | 23      | 13       | 10           | 14      | 6         | 1        |
-| batch | 17      | 11       | 6            | 8       | 4         | 4        |
+| Scene     | Defects | Reported | Not reported | Unfixed | Rule gaps | Unmapped |
+| --------- | ------- | -------- | ------------ | ------- | --------- | -------- |
+| yct       | 23      | 13       | 10           | 14      | 6         | 1        |
+| batch     | 17      | 11       | 6            | 8       | 4         | 4        |
+| bst       | 2       | 2        | 0            | 0       | 0         | 1        |
+| bst-first | 2       | 2        | 0            | 2       | 0         | 1        |
 
 Not in any fixture: the Mermaid-path scene (batch report §2.6, cleared before
-the rebuild), and round 2 and 3 defects (Analytics over Postgres after the
-"human" edits, the human note over the legend title, BST label wrapping and
-alignment). Those scenes were never exported to the artifacts directory.
+the rebuild), and round 2 defects (Analytics over Postgres after the "human"
+edits, the human note over the legend title). Those scenes were never exported
+to the artifacts directory.
 
 ## Tasks
 

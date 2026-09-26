@@ -196,3 +196,9 @@ later tasks should not need `bun add`.
   `dogfood-synthesis.md`, and sources cite transcript d24dbb60 line 408
   (1-based). `reported: true` here means "in the synthesis or in the
   tester's round-3 chat answer", which is the only round-3 report.
+- Follow-up (orchestrator request): `test/fixtures/dogfood/bst-first/` from
+  the byte-for-byte first-add export `/tmp/xd_r3.excalidraw` (same 95-element
+  filter) and `/tmp/xd_bst_v1.png` (same crop). bst-01/bst-02 are open there,
+  so this is the fixture that tests lint; the `tree` clean region leaves out
+  t10, t12 and their labels. `test/fixtures/README.md` now lists both BST
+  fixtures, their sources and counts.
