@@ -450,6 +450,7 @@ boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
   cap needs 1.10 to shrink the padded box before calling `render` (or a
   contract change to give `render` a scale/cap parameter): `render` itself
   cannot take one.
+
 ### 1.5 Rendered lint, 12 rules (2026-09-26)
 
 - `lint(scene: NeutralScene): LintHit[]` in `core/lint/lint.ts`, exported
