@@ -4,4 +4,13 @@
 // entry. The root "@elkdraw/core" stays contracts + json.ts (zod only) so the
 // app's browser bundle never pulls an engine in. app, adapters/mcp and
 // adapters/cli may not import this entry (eslint.config.js).
-export {};
+export {
+  add,
+  apply,
+  ApplyInput,
+  ApplyPatch,
+  PlaceOp,
+  type ApplyDeps,
+  type ApplyResult,
+  type Scene,
+} from "../../apply/apply.ts";

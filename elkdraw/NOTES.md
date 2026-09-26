@@ -309,3 +309,29 @@ later tasks should not need `bun add`.
   only. Whoever owns the `apply` tool (placement + asset ops in its input)
   wires these in; nothing here assumes a caller shape beyond "array of
   `SkeletonElement` in, array out".
+### 1.2 Apply for skeleton (2026-09-26)
+
+- `core/apply/apply.ts`, exported from `@elkdraw/core/engine`: `apply(scene,
+input, deps)` and `add(...)` (create only), pure and synchronous. Input
+  `ApplyInput {elements, place, patches, prune, dryRun, ifRev}`; result
+  `{reply, upserts, deletes, elements}` (delta for `Store.apply`, next scene)
+  or `{errors}`. `reply.rev` assumes the store bumps by one; 1.10 should use
+  the store's returned rev.
+- Conversion is injected (`deps.convert`): `convertToExcalidrawElements`
+  fails under Bun (`window is not defined`), and with happy-dom globals it
+  still fails on `canvas.getContext("2d")`. Core does not declare
+  `@excalidraw/excalidraw` anyway. 1.10 wires the real converter (sidecar or
+  browser); it gets `scene` so arrows can bind to boxes outside the batch,
+  which Excalidraw's batch-only binding does not do by itself.
+- Seams: `deps.place` (1.9; absent = `place` is an error), `deps.lint` (1.5;
+  absent = `lints: []`). `measured` comes from the converter.
+- Agent elements get `customData.origin = "generated"`; prune only deletes
+  those, and only when `elements`/`place` are sent. Bound label text gets id
+  `<id>#label`. Unchanged = equal after masking version, versionNonce, seed,
+  updated, index, with boundElements order-free. Updates keep the stored
+  seed, index and bound entries the input does not own (human arrows).
+- `set` label does not re-measure text size (ponytail note in code). Deleting
+  an element leaves dangling `boundElements` on untouched elements; Excalidraw
+  restore repairs them.
+- "Clean apply under 300 bytes": tested for a 3-element create and the no-op
+  re-apply; a large first apply grows with `created`.
