@@ -1,0 +1,21 @@
+name: elkdraw-check
+
+on:
+  push:
+    paths: ["elkdraw/**", ".github/workflows/elkdraw-check.yml"]
+  pull_request:
+    paths: ["elkdraw/**", ".github/workflows/elkdraw-check.yml"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: elkdraw
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - run: bun run check

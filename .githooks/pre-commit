@@ -1,5 +1,13 @@
 #!/bin/sh
-# WP-I: canvas quality gate for plain `git commit` (same command as the worktrunk
-# pre-commit hook in .config/wt.toml). Enable once per clone:
+# Quality gates for plain `git commit` (same commands as the worktrunk pre-commit
+# hooks in .config/wt.toml). Each project's check runs only when its files are
+# staged, so neither slows the other. Enable once per clone:
 #   git config core.hooksPath .githooks
-cd canvas && bun run check
+set -e
+staged=$(git diff --cached --name-only)
+if printf '%s\n' "$staged" | grep -q '^canvas/'; then
+  (cd canvas && bun run check)
+fi
+if printf '%s\n' "$staged" | grep -q '^elkdraw/'; then
+  (cd elkdraw && bun run check)
+fi
