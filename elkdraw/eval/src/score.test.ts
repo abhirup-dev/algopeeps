@@ -19,7 +19,7 @@ const hit = (code: LintHit["code"], ...ids: string[]): LintHit => ({
 test("no hits: every unfixed defect is missed", () => {
   const s = score(manifest, []);
   expect(s.found).toEqual([]);
-  expect(s.missed).toHaveLength(14);
+  expect(s.missed).toHaveLength(15);
 });
 
 test("hits need the same rule and all of the defect's ids", () => {

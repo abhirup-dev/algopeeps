@@ -1010,6 +1010,7 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   should update it to 200px+ to match the skill. `app/src/headless.ts`
   `snap()` has the same stored-vs-ink bounds gap this bug was really in;
   worth its own bead if `look` crops near a scene's extreme edge in the wild.
+
 ### 1.19b Housekeeping: yct-17 pile-up, eval-p1 schema check, stale counts (2026-09-26)
 
 - `dogfood/yct` and `yct-painted` `defects.json`: added the Trip/Surge->Kafka
