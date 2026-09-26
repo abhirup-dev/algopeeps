@@ -1026,3 +1026,136 @@ ending with the eval at its boundary and a recorded gain versus the previous pha
 
 Proposals-as-threads moves from Phase 1.5 to Phase 3, where lift produces the patches a
 proposal carries. Beads epics for Phases 1–5 are filed from this table.
+
+## 19. Phase 0 scaffold review against Phases 1–5 (2026-09-26)
+
+Reviewed at `0ffbfd6`: `CONTRACTS.md` + `core/src/contracts`, `SURFACE.md` +
+`adapters/mcp/src/tools.ts`, `adapters/server` (server, store), `backends/fake`,
+`sidecar`, `app` (App, sync), `test/parity`, `eval` (bar, score, baseline),
+`eslint.config.js`, `AGENTS.md`, `NOTES.md`, and the beads spec for Phases 1–5.
+Verdict: the scaffold is sound; the contracts match §§11–18 where they exist.
+Four things must be settled before Phase 1 tasks fan out, none large. Everything
+else is a per-phase contracts task or a bead edit.
+
+### 19.1 Blocking before Phase 1
+
+| # | Adjustment | Files | Contract change? |
+|---|---|---|---|
+| B1 | **Add a "contracts for Phase 1" task (1.0)** and make 1.2, 1.5, 1.8 depend on it. `AGENTS.md` says contracts change only in a dedicated task, but no phase has one, so every P1 task that needs a field would stub and report. Content: (i) `LintCode` += `arrow-through-label`, `label-on-own-arrowhead` (the two gaps the fixtures found; `Allow.rule` follows); (ii) `LintHit` += `bbox: Box` (1.5's acceptance and `look` need it) and `severity: "error" \| "info"` (`crossing` is info; the §17.4 bar counts errors only); (iii) `FeedLine`: an `op` enum for P1 (`added, removed, moved, relabelled, restyled, reconnected, applied`) plus an optional `detail` object (old/new label, dx/dy) so 1.8's "three lines for R2" is expressible; (iv) `ApplyReply`: no `skipped`; 1.2's bead text is aligned to the contract instead (`kept` covers it), and P1 fills `overrides/conflicts/moved` with `[]` and `measured` truthfully. | `core/src/contracts/{lint,reply}.ts`, `core/schemas/*`, `CONTRACTS.md` | Yes (additive) |
+| B2 | **`BackendAdapter.read` must be able to reach the browser.** `read(scene): NeutralScene` is sync and pure, but `TextBox.box` is defined as "where it actually drew" and `test/fixtures/README.md` states the stored geometry is not the truth (bound labels and arrow endpoints are recomputed at render). The Excalidraw backend therefore needs the sidecar inside `read`. Change the signature to `read?(scene): Promise<NeutralScene>` (the fake wraps in `Promise.resolve`). The alternative, passing a measured box map into lint alongside the scene, spreads the browser dependency into lint, diff and look; keep it behind the seam. | `core/src/contracts/backend.ts`, `backends/fake/src/index.ts` | Yes (one return type) |
+| B3 | **Package graph vs. bead paths for the sidecar.** Beads 1.3 and 1.7 put the sidecar and render under `backends/excalidraw/`, but P0 built `sidecar/` as its own package and `allowedDeps` has `backends/excalidraw: [core]`, so the backend cannot import it. Keep `sidecar/` where it is (Playwright stays out of the backend package) and add the edge `backends/excalidraw → sidecar` in the three places (`package.json`, tsconfig references, `allowedDeps`). Re-point 1.3's Owns to `elkdraw/sidecar/**`. Also unify types: the sidecar's local `BBox`/`Box`-with-id become core `Box` + `Record<Id, Box>`. | `eslint.config.js`, `backends/excalidraw/{package,tsconfig}.json`, bead 1.3 | No (package graph; orchestrator) |
+| B4 | **Keep heavy engines out of the app bundle.** `app` imports `@elkdraw/core` at runtime (protocol schemas), and `core/src/index.ts` re-exports everything. Once P2 adds mermaid (touches `window` at import), elkjs (`Bun.resolveSync` worker URL) and P4 adds libavoid (LGPL WASM that must never be inlined in the app bundle, §15.3), Vite will pull them into the browser build. Fix now while core is small: core's root export stays contracts + `json.ts` (zod only); engine code (`skeleton`, `apply`, `lint`, `diff`, `place`, `mermaid`, `layout`, `merge`, `lift`, `print`, `router`, `families`) is exported from a second entry `@elkdraw/core/engine` (package.json `exports`), the deep-import lint rule exempts exactly that path, and `app/**`, `adapters/mcp/**`, `adapters/cli/**` are banned from it. Alternative with the same effect: a separate `@elkdraw/engine` package; it costs ~25 bead path edits, so the subpath is the lazier choice. | `core/package.json`, `eslint.config.js`, `NOTES.md` package graph | No (packaging; orchestrator) |
+
+A fifth item is an ownership hole rather than code: **nobody owns
+`adapters/server/**` in Phase 1**, yet the real tool bodies must live there
+(`adapters/mcp` is core-only by rule and cannot call a backend or the sidecar;
+`mcpTools(ctx)` in `server.ts` is the injection point). Extend 1.10's Owns to
+`elkdraw/adapters/server/**` and extend `ToolContext` there (backend, sidecar,
+`events(since)`, `sceneAt(rev)`, a change waiter). Same for 1.5.1, 1.5.3, 1.5.5
+and 3.4, which name `core/store/**`: the store is `adapters/server/src/store.ts`
+and holds wire `Element`s; re-point those paths (see 19.3).
+
+Tasks that can start today without waiting for B1–B4: 1.1, 1.4 (sync read of
+stored geometry for the snapshot acceptance; switch to async when B2 lands),
+1.9, 1.11, and the fixture work in 1.6.
+
+### 19.2 Non-blocking, by open point
+
+1. **Contract choices (P0.2).** Strip-unknown on tree objects, strict meta,
+   `roles[]`, one absolute `pin {kind, at}`: all accepted. Relative pins
+   (`rightOf`, `gap`) are not needed; 1.9's placement ops produce coordinates,
+   and §15.2's placer reads `meta.pin.at`. `Graph` without positions is right
+   for nodes: soft pins carry the coordinates ELK interactive needs (order only,
+   §15.1), and the placer owns positions. It is wrong for ports: fixed compounds
+   (§14.3, 4.7) need `FIXED_POS` ports with `x`/`y`, which `GraphPort` lacks;
+   add optional `x`/`y` to `GraphPort` (elkjs's own optional fields) in the P2
+   contracts task. `semantic()` must additionally mask `meta.gen` and
+   `meta.pin`, else every re-layout is a semantic change (gen.geom differs);
+   `meta.style` stays visible (it is text: classDef). `reconnect` needs no new
+   id in the patch: the derived `from->to[#n]` id is recomputed by the printer
+   and reported as a `renamed` feed line. `LintHit.bbox`: B1.
+2. **Two extra lint rules.** Add them (B1). §5's ten were v0; the fixtures are
+   the better authority. 1.5 becomes twelve rules.
+3. **Store: last-writer-wins, base rev ignored.** Fine for Phase 1 (one human,
+   one agent, element versions). Two consequences to write down in 1.2: the
+   agent's upserts must carry `version = stored + 1` or they lose; `ifRev`
+   is check-then-apply with no `await` between (the store is sync), so it is
+   atomic. The real gap is in the app: on `snapshot` it replaces the scene, so
+   edits made while disconnected are dropped. Cheap fix in 1.5.2 or a small
+   app bead: merge the snapshot by version instead of replacing, then flush.
+4. **Eval.** Reference = best-per-measure across testers is conservative; keep.
+   The warm-session BST baseline makes the BST bar stricter, not looser; keep,
+   and if a Phase 2 no-go is BST-only on tokens, the one fix cycle may
+   re-baseline BST from a cold run and say so. **No BST defect manifest** is a
+   real hole: the bar allows ≤1 missed defect on BST but nothing can be scored.
+   Add a small P1 test bead (below).
+5. **Status schema, sidecar stubs, `?headless`.** `ServerStatus` is exported
+   from `@elkdraw/mcp`, which is enough. Stubs are 1.3's job. `?headless=1`
+   silencing the sync client is worth the ten lines; give it to 1.3 as an
+   allowed edit in `app/src/` (one file).
+
+Further notes:
+
+- **`@excalidraw/excalidraw` under Bun.** 1.4 (`read`) and 2.6 (`emit` via
+  `convertToExcalidrawElements`) import the package in Bun. Its entry touches
+  the DOM, and `convertToExcalidrawElements` sizes bound text with canvas
+  `measureText`. 1.4 should open with a probe (happy-dom shim as for mermaid);
+  if sizing is wrong, 2.6 runs the conversion inside the sidecar page instead.
+  This is the "SVG scraping" class of risk from §11.7, now on the Excalidraw
+  side.
+- **elkjs on Node and Bun.** `Bun.resolveSync` and Bun's Web Worker in the B1
+  invocation are Bun-only; 2.11 wants both runtimes, so 2.3 needs a
+  `workerFactory` switch (`worker_threads` on Node).
+- **mermaid and happy-dom are dev deps of `test/parity` only.** 2.1 needs them
+  as runtime deps of `core`; an orchestrator `bun add` on the base before
+  Phase 2, listed in `NOTES.md`.
+- **`Presentation` is missing from the contracts.** §12–13 and bead 2.6 pass
+  `LaidGraph + Presentation` to `emit`; `emit(graph, prev?)` has no way to
+  receive merge's per-group decisions (the TODO in `backend.ts`). Define it in
+  the P2 contracts task.
+- **Protocol additions for 1.5.** Threads, presence and review events are new
+  `ServerMessage`/`ClientMessage` variants: a P1.5 contracts task.
+- **`look` output.** Bead 1.7 promises rendered boxes for the ids; the tool
+  output has `marks: Record<Id, Point>` only. Add `boxes: Record<Id, Box>` in
+  1.10 (tool schema, not a contract).
+- **`diff` and `changes` need the scene at a rev.** The store keeps only the
+  head; add `sceneAt(rev)` by replaying from the last keyframe (1.8 owns it).
+- **Event log lines are wire elements**, so the change feed derives "moved
+  Kafka" by diffing `sceneAt(rev-1)` against `sceneAt(rev)`. Acceptable; it
+  is what §12.4 asks for.
+- **Two `Box` schemas** (core and sidecar) and **`Family` includes
+  `sequence/gantt/timeline`** already: good, nothing to do.
+
+### 19.3 Bead changes for Phases 1–5
+
+New tasks:
+
+| Id | Title | Owns | Blocks | Lane |
+|---|---|---|---|---|
+| 1.0 | Contracts for Phase 1 (19.1 B1 + B2) | `core/src/contracts/**`, `core/schemas/**`, `CONTRACTS.md`, `backends/fake/src/index.ts` (async read) | 1.2, 1.5, 1.7, 1.8 | core |
+| 1.13 | BST defect manifest | `test/fixtures/dogfood/bst/**` | 1.12 | test |
+| 1.5.0 | Contracts for Phase 1.5: `Thread`, `ThreadMessage`, protocol messages for threads, presence, review; `FeedLine.author` names | `core/src/contracts/**` | 1.5.1, 1.5.3, 1.5.4 | core |
+| 2.0 | Contracts for Phase 2: `EdgeMeta` heads/labelAt/pattern enum, `GraphPort.x/y`, `Presentation`, `emit(graph, presentation, prev?)`, `SceneLine.heads`, `semantic()` masks `gen`/`pin`, `ApplyReply.warnings`; plus the orchestrator's dep move (mermaid, happy-dom → core) | `core/src/contracts/**`, `core/package.json` | 2.1, 2.3, 2.5, 2.6, 2.8 | core |
+| 3.0 | Contracts for Phase 3: `SetPatch.style`, `Thread.proposal` (v1.5), `diff` output as semantic change records | `core/src/contracts/**` | 3.1, 3.5, 3.6 | core |
+| 4.0 | Contracts for Phase 4: `NodeMeta.compartments`, `meta.range`, family layouter hook | `core/src/contracts/**` | 4.1, 4.3 | core |
+
+Changed Owns / deps:
+
+- 1.3: Owns → `elkdraw/sidecar/**` + `elkdraw/app/src/headless.ts` (the
+  `?headless` flag). Depends on B3.
+- 1.7: Owns keeps `backends/excalidraw/render/**` (thin, calls the sidecar) and
+  `core/look.ts`; depends on 1.0.
+- 1.10: Owns += `elkdraw/adapters/server/**`; the tool bodies and the
+  `ToolContext` extension live here.
+- 1.8: Owns += `elkdraw/adapters/server/src/store.ts` (`sceneAt(rev)`).
+- 1.2: reply text aligned to `ApplyReply` (drop `skipped`).
+- 1.5: twelve rules; hits carry `bbox` and `severity`.
+- 1.5.1: Owns += `elkdraw/adapters/server/**` (thread store and replay).
+- 1.5.2: `CanvasApp.tsx` → `App.tsx`. Add the snapshot-merge fix (19.2 #3).
+- 1.5.3: Owns += `elkdraw/adapters/server/**` (review event, `wait`).
+- 1.5.5: Owns → `elkdraw/adapters/server/src/store/**` (checkpoints).
+- 3.4: Owns → `elkdraw/adapters/server/src/store/**` + `elkdraw/core/persist/**`
+  (hash, pair logic, pure) + `adapters/cli/open.ts`.
+- 2.10: `elkdraw/schema/**` → `elkdraw/core/schemas/**` (already there).
+- 2.3: acceptance adds "same layout under Node and Bun" (worker factory).
+- Phase 0: relabel `phase-0` → `phase:0` so filters line up.
