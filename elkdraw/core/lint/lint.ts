@@ -360,6 +360,8 @@ export function lint(scene: NeutralScene): LintHit[] {
       const [ca, cb] = [container.has(a.id), container.has(b.id)];
       if (ca !== cb) {
         const [leaf, zone] = ca ? [b, a] : [a, b];
+        // A native zone's own check (below) covers it.
+        if (zone.zone) continue;
         hit(
           "outside-zone",
           [leaf.id, zone.id],

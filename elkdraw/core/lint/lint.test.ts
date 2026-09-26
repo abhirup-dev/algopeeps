@@ -232,7 +232,6 @@ test("outside-zone: native zones, both directions; leaves across a container", (
   const member = node("m", at(150, 20, 100, 60), { zone: "z" });
   expect(only("outside-zone", zone, out, stray, member)).toEqual([
     ["out", "z"],
-    ["out", "z"],
     ["stray", "z"],
   ]);
   // A zone-like rectangle (it holds a node) with a node across its edge.
