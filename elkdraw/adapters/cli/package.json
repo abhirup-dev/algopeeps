@@ -9,7 +9,12 @@
   "dependencies": {
     "@commander-js/extra-typings": "^15.0.0",
     "@elkdraw/core": "workspace:*",
+    "@elkdraw/mcp": "workspace:*",
     "@elkdraw/server": "workspace:*",
-    "commander": "^15.0.0"
+    "commander": "^15.0.0",
+    "zod": "^4.6.5"
+  },
+  "bin": {
+    "elkdraw": "./src/main.ts"
   }
 }
