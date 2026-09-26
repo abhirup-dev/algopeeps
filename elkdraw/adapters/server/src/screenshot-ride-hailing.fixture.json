@@ -1,0 +1,622 @@
+{
+  "prune": true,
+  "elements": [
+    {
+      "id": "title",
+      "type": "text",
+      "x": 40,
+      "y": 10,
+      "text": "Ride-hailing: Request a ride",
+      "fontSize": 32
+    },
+    {
+      "id": "edge-zone",
+      "type": "rectangle",
+      "x": 40,
+      "y": 70,
+      "width": 1960,
+      "height": 190,
+      "strokeStyle": "dashed",
+      "strokeColor": "#868e96"
+    },
+    {
+      "id": "edge-h",
+      "type": "text",
+      "x": 60,
+      "y": 78,
+      "text": "Edge",
+      "fontSize": 20,
+      "strokeColor": "#868e96"
+    },
+    {
+      "id": "core-zone",
+      "type": "rectangle",
+      "x": 40,
+      "y": 330,
+      "width": 1960,
+      "height": 400,
+      "strokeStyle": "dashed",
+      "strokeColor": "#868e96"
+    },
+    {
+      "id": "core-h",
+      "type": "text",
+      "x": 60,
+      "y": 338,
+      "text": "Core services",
+      "fontSize": 20,
+      "strokeColor": "#868e96"
+    },
+    {
+      "id": "data-zone",
+      "type": "rectangle",
+      "x": 40,
+      "y": 810,
+      "width": 1960,
+      "height": 220,
+      "strokeStyle": "dashed",
+      "strokeColor": "#868e96"
+    },
+    {
+      "id": "data-h",
+      "type": "text",
+      "x": 60,
+      "y": 818,
+      "text": "Data",
+      "fontSize": 20,
+      "strokeColor": "#868e96"
+    },
+    {
+      "id": "rider",
+      "type": "rectangle",
+      "x": 100,
+      "y": 130,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Rider app"
+      }
+    },
+    {
+      "id": "gateway",
+      "type": "rectangle",
+      "x": 500,
+      "y": 130,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "API gateway"
+      }
+    },
+    {
+      "id": "auth",
+      "type": "rectangle",
+      "x": 900,
+      "y": 130,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Auth service"
+      }
+    },
+    {
+      "id": "driver",
+      "type": "rectangle",
+      "x": 1700,
+      "y": 130,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Driver app"
+      }
+    },
+    {
+      "id": "trip",
+      "type": "rectangle",
+      "x": 500,
+      "y": 400,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Trip service"
+      }
+    },
+    {
+      "id": "pricing",
+      "type": "rectangle",
+      "x": 900,
+      "y": 400,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Pricing service"
+      }
+    },
+    {
+      "id": "matching",
+      "type": "rectangle",
+      "x": 1300,
+      "y": 400,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Matching service"
+      }
+    },
+    {
+      "id": "location",
+      "type": "rectangle",
+      "x": 1700,
+      "y": 400,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Location service"
+      }
+    },
+    {
+      "id": "payment",
+      "type": "rectangle",
+      "x": 500,
+      "y": 610,
+      "width": 200,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Payment service"
+      }
+    },
+    {
+      "id": "notification",
+      "type": "rectangle",
+      "x": 1290,
+      "y": 610,
+      "width": 220,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Notification service"
+      }
+    },
+    {
+      "id": "postgres",
+      "type": "ellipse",
+      "x": 70,
+      "y": 870,
+      "width": 260,
+      "height": 90,
+      "fillStyle": "solid",
+      "backgroundColor": "#b2f2bb",
+      "strokeColor": "#2f9e44",
+      "label": {
+        "text": "Postgres (trips)"
+      }
+    },
+    {
+      "id": "kafka",
+      "type": "ellipse",
+      "x": 870,
+      "y": 870,
+      "width": 260,
+      "height": 90,
+      "fillStyle": "solid",
+      "backgroundColor": "#b2f2bb",
+      "strokeColor": "#2f9e44",
+      "label": {
+        "text": "Kafka event bus"
+      }
+    },
+    {
+      "id": "analytics",
+      "type": "ellipse",
+      "x": 1250,
+      "y": 870,
+      "width": 300,
+      "height": 90,
+      "fillStyle": "solid",
+      "backgroundColor": "#b2f2bb",
+      "strokeColor": "#2f9e44",
+      "label": {
+        "text": "Analytics warehouse"
+      }
+    },
+    {
+      "id": "redis",
+      "type": "ellipse",
+      "x": 1660,
+      "y": 865,
+      "width": 290,
+      "height": 100,
+      "fillStyle": "solid",
+      "backgroundColor": "#b2f2bb",
+      "strokeColor": "#2f9e44",
+      "label": {
+        "text": "Redis geo-index\n(driver locations)"
+      }
+    },
+    {
+      "id": "stripe",
+      "type": "rectangle",
+      "x": -260,
+      "y": 610,
+      "width": 180,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#e9ecef",
+      "strokeColor": "#868e96",
+      "label": {
+        "text": "Stripe"
+      }
+    },
+    {
+      "id": "apns",
+      "type": "rectangle",
+      "x": 2080,
+      "y": 610,
+      "width": 180,
+      "height": 70,
+      "fillStyle": "solid",
+      "backgroundColor": "#e9ecef",
+      "strokeColor": "#868e96",
+      "label": {
+        "text": "APNs / FCM"
+      }
+    },
+    {
+      "id": "s1",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "rider"
+      },
+      "end": {
+        "id": "gateway"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "1 request"
+      }
+    },
+    {
+      "id": "s2",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "gateway"
+      },
+      "end": {
+        "id": "auth"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "2 verify"
+      }
+    },
+    {
+      "id": "s3",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "auth"
+      },
+      "end": {
+        "id": "trip"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "3 create trip"
+      }
+    },
+    {
+      "id": "s4",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "trip"
+      },
+      "end": {
+        "id": "pricing"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "4 quote"
+      }
+    },
+    {
+      "id": "s5",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "pricing"
+      },
+      "end": {
+        "id": "matching"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "5 match"
+      }
+    },
+    {
+      "id": "s6",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "matching"
+      },
+      "end": {
+        "id": "location"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "6 nearby"
+      }
+    },
+    {
+      "id": "s7",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "location"
+      },
+      "end": {
+        "id": "redis"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "7 GEOSEARCH"
+      }
+    },
+    {
+      "id": "s8",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "matching"
+      },
+      "end": {
+        "id": "notification"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "8 notify"
+      }
+    },
+    {
+      "id": "s9",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "trip"
+      },
+      "end": {
+        "id": "payment"
+      },
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "9 charge"
+      }
+    },
+    {
+      "id": "pay-stripe",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "payment"
+      },
+      "end": {
+        "id": "stripe"
+      },
+      "strokeColor": "#1971c2"
+    },
+    {
+      "id": "notif-apns",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "notification"
+      },
+      "end": {
+        "id": "apns"
+      },
+      "strokeColor": "#1971c2"
+    },
+    {
+      "id": "apns-driver",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "apns"
+      },
+      "end": {
+        "id": "driver"
+      },
+      "strokeColor": "#1971c2"
+    },
+    {
+      "id": "trip-pg",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "trip"
+      },
+      "end": {
+        "id": "postgres"
+      },
+      "strokeColor": "#1971c2"
+    },
+    {
+      "id": "a-trip",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "trip"
+      },
+      "end": {
+        "id": "kafka"
+      },
+      "strokeColor": "#e8590c",
+      "strokeStyle": "dashed"
+    },
+    {
+      "id": "a-pay",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "payment"
+      },
+      "end": {
+        "id": "kafka"
+      },
+      "strokeColor": "#e8590c",
+      "strokeStyle": "dashed"
+    },
+    {
+      "id": "a-notif",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "notification"
+      },
+      "end": {
+        "id": "kafka"
+      },
+      "strokeColor": "#e8590c",
+      "strokeStyle": "dashed"
+    },
+    {
+      "id": "a-analytics",
+      "type": "arrow",
+      "x": 0,
+      "y": 0,
+      "start": {
+        "id": "kafka"
+      },
+      "end": {
+        "id": "analytics"
+      },
+      "strokeColor": "#e8590c",
+      "strokeStyle": "dashed"
+    },
+    {
+      "id": "legend-zone",
+      "type": "rectangle",
+      "x": 40,
+      "y": 1090,
+      "width": 460,
+      "height": 210,
+      "strokeColor": "#868e96"
+    },
+    {
+      "id": "legend-h",
+      "type": "text",
+      "x": 60,
+      "y": 1098,
+      "text": "Legend",
+      "fontSize": 20,
+      "strokeColor": "#868e96"
+    },
+    {
+      "id": "lg-sync",
+      "type": "arrow",
+      "x": 100,
+      "y": 1150,
+      "points": [
+        [0, 0],
+        [100, 0]
+      ],
+      "strokeColor": "#1971c2"
+    },
+    {
+      "id": "lg-sync-t",
+      "type": "text",
+      "x": 230,
+      "y": 1138,
+      "text": "sync call",
+      "fontSize": 20
+    },
+    {
+      "id": "lg-async",
+      "type": "arrow",
+      "x": 100,
+      "y": 1200,
+      "points": [
+        [0, 0],
+        [100, 0]
+      ],
+      "strokeColor": "#e8590c",
+      "strokeStyle": "dashed"
+    },
+    {
+      "id": "lg-async-t",
+      "type": "text",
+      "x": 230,
+      "y": 1188,
+      "text": "async event",
+      "fontSize": 20
+    },
+    {
+      "id": "lg-store",
+      "type": "ellipse",
+      "x": 100,
+      "y": 1235,
+      "width": 100,
+      "height": 45,
+      "fillStyle": "solid",
+      "backgroundColor": "#b2f2bb",
+      "strokeColor": "#2f9e44"
+    },
+    {
+      "id": "lg-store-t",
+      "type": "text",
+      "x": 230,
+      "y": 1245,
+      "text": "data store",
+      "fontSize": 20
+    }
+  ]
+}

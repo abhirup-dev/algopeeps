@@ -490,7 +490,7 @@ export function lint(scene: NeutralScene): LintHit[] {
         "label-on-own-arrowhead",
         [labelId(line.id), line.id],
         line.text.box,
-        `Give ${line.id} 120px+ (move its shapes apart), or drop the label`,
+        `Give ${line.id} 200px+ (move its shapes apart), or drop the label`,
       );
     }
 

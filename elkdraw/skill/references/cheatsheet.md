@@ -9,7 +9,7 @@
 
 ## CLI Reference
 
-`bun elkdraw/adapters/cli/src/main.ts <command>`, run from the repository root.
+`bun elkdraw/adapters/cli/src/main.ts <command>`, run from the repo root (or `bun "$ELKDRAW/adapters/cli/src/main.ts" <command>` from anywhere, with `$ELKDRAW` set to this repo's `elkdraw/` directory -- see SKILL.md Step 0).
 JSON results on stdout, always. Diagnostics on stderr. Exit codes: 0 ok, 1 error (server answered non-2xx; its `{"error": {code, message, tool}}` body on stderr), 2 usage or invalid input (nothing was sent), 3 server unreachable or `start` timed out (10 s).
 
 Flags come from each tool's input schema: booleans are `--flag`, numbers `--flag <n>`, string arrays comma-separated (`--ids a,b`), objects and other arrays JSON (`--bbox '{...}'`). camelCase fields are kebab flags (`dryRun` → `--dry-run`). `--input <json|->` gives the whole input object (`-` reads stdin); flags override it. `help [command]` or `<command> --help` lists them.
@@ -100,7 +100,7 @@ Names are namespaced by the host (`mcp__elkdraw__apply` in Claude Code, `elkdraw
 Notes:
 
 - Labels are `"label": {"text": "..."}` on shapes and arrows; arrow binding is `"start": {"id": "..."}` / `"end": {"id": "..."}`. `text` on a shape and `startElementId`/`endElementId` are rejected, with a hint naming the field to use instead.
-- Every element needs an `id`. Re-sending an id updates it; unchanged elements count as `kept`.
+- Every element needs an `id`. Re-sending an id patches it: fields you leave out keep their stored value (size, style, label, customData); x/y are still required. A place op on an id already on the canvas moves it and keeps everything else. To drop a label, delete `<id>#label`. Unchanged elements count as `kept`.
 - Zones are `"type": "frame"` with `name` and `children` (ids).
 - `fontFamily` is Excalidraw's number (`5` Excalifont, `6` Nunito, `8` Comic Shanns) or omitted.
 - `allow: [{"rule": "<code>", "why": "..."}]` on an element suppresses one lint code for it; hits come back with `suppressed`.
@@ -140,5 +140,5 @@ Errors: `{"error": {"code", "message", "tool", "inputSchema?"}}` with status `IN
 
 Stroke/fill pairs: `#e03131`/`#ffc9c9` red, `#2f9e44`/`#b2f2bb` green, `#1971c2`/`#a5d8ff` blue, `#9c36b5`/`#eebefa` purple, `#e8590c`/`#ffd8a8` orange, `#0c8599`/`#99e9f2` cyan, `#868e96`/`#e9ecef` gray.
 Styling: `"fillStyle": "solid"` for crisp flat fills (default is sketchy hachure); `"strokeStyle": "dashed"` for zone borders / async arrows; `ellipse` or `diamond` to set stores apart from services.
-Sizing: shapes ≥ 120×60 with width ≥ `labelChars * 12`, fonts ≥ 16 (titles ≥ 20), gaps 40–80px (120px+ for labeled arrows), align to a 20px grid.
+Sizing: shapes ≥ 120×60 with width ≥ `labelChars * 12`, fonts ≥ 16 (titles ≥ 20), gaps 40–80px (200px+ for labeled arrows, verified against `label-on-own-arrowhead` up to a 12-character label), align to a 20px grid.
 Order of work: zones (frames) → primary shapes (with `label`) → arrows (bound via ids) → annotations → placement → apply → lint → look → fix.
