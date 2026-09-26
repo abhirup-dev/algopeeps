@@ -117,8 +117,42 @@ function headlessApi(api: ExcalidrawImperativeAPI): HeadlessApi {
       ctx.fillStyle = BACKGROUND;
       ctx.fillRect(0, 0, out.width, out.height);
       if (els.length) {
+        // Export sizes and positions itself from getCommonBounds of whatever
+        // it draws, not from bbox. For a frame that is a root, export
+        // silently grows upward to fit the frame's name label above it
+        // (~20px, always on unless frameRendering.name is off) even though
+        // getCommonBounds(roots(els)) does not see that label. For rough.js
+        // strokes at the scene's extreme edge, export draws from the
+        // *stored* geometry, not ink, so overshoot past the stored corner
+        // clips (1.18). Both drift the crop's origin from the real content
+        // bounds. Two invisible 1x1 corner markers (mirrors inkBox's own
+        // trick), PAD clear of the real content *and* of bbox on every side,
+        // make export's own bounds a known quantity: PAD (100) comfortably
+        // beats both the name label's growth and any stroke overshoot, so
+        // the markers -- not the label or the overshoot -- become
+        // getCommonBounds' extremes.
+        const [ex0, ey0, ex1, ey1] = getCommonBounds(roots(els));
+        const minX = Math.floor(Math.min(ex0, bbox.x)) - PAD;
+        const minY = Math.floor(Math.min(ey0, bbox.y)) - PAD;
+        const maxX = Math.ceil(Math.max(ex1, bbox.x + bbox.width)) + PAD;
+        const maxY = Math.ceil(Math.max(ey1, bbox.y + bbox.height)) + PAD;
+        const corners = restoreElements(
+          [
+            { x: minX, y: minY },
+            { x: maxX, y: maxY },
+          ].map((at, i) => ({
+            ...at,
+            id: `elkdraw-snap-corner-${String(i)}`,
+            type: "rectangle",
+            // 1x1: restore drops invisibly small (0x0) elements.
+            width: 1,
+            height: 1,
+            opacity: 0,
+          })) as unknown as Parameters<typeof restoreElements>[0],
+          null,
+        );
         const src = await exportToCanvas({
-          elements: els,
+          elements: [...els, ...corners],
           appState: { exportBackground: false },
           files: null,
           exportPadding: 0,
@@ -128,7 +162,6 @@ function headlessApi(api: ExcalidrawImperativeAPI): HeadlessApi {
             scale,
           }),
         });
-        const [minX, minY] = getCommonBounds(roots(els));
         ctx.drawImage(src, (minX - bbox.x) * scale, (minY - bbox.y) * scale);
       }
       return out.toDataURL("image/png");

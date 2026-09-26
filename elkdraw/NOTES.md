@@ -1010,6 +1010,7 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   should update it to 200px+ to match the skill. `app/src/headless.ts`
   `snap()` has the same stored-vs-ink bounds gap this bug was really in;
   worth its own bead if `look` crops near a scene's extreme edge in the wild.
+
 ### 1.19b Housekeeping: yct-17 pile-up, eval-p1 schema check, stale counts (2026-09-26)
 
 - `dogfood/yct` and `yct-painted` `defects.json`: added the Trip/Surge->Kafka
@@ -1038,3 +1039,65 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   `dogfood/yct`'s unfixed-defect count as 14; it is 15 now that yct-24 is a
   real entry. One-line fix: `expect(s.missed).toHaveLength(14)` -> `(15)` at
   `eval/src/score.test.ts:22`. `check` fails on this line until it lands.
+
+### 1.21 snap draws scenes with frames ~20 px low (algopeeps-4c0.24)
+
+- Root cause (1.17's "Found, not fixed"): `snap` (`app/src/headless.ts`)
+  positions its crop from `getCommonBounds(roots(els))` — the elements it was
+  told to draw — but `exportToCanvas` draws more than that: by default it
+  injects a text element for every root frame's name, placed above the frame
+  (Excalidraw's `FRAME_STYLE`: `nameFontSize` 14 x `nameLineHeight` 1.25 +
+  `nameOffsetY` 3 = 20.5 px), and _that_ extra element is what
+  `getCanvasSize` actually sizes/positions the canvas on. `snap`'s own
+  `minX`/`minY` didn't include it, so the drawn image landed 20.5 px above
+  where `snap` assumed — read back at `(minX - bbox.y) * scale`, the box
+  reads 20.5 px low. Same bug family as 1.18: `snap` computing its own
+  origin from a subset of what export actually bounds itself on.
+- Fix, in `snap` itself (not `screenshotTool`'s workaround this time): two
+  invisible 1x1 corner markers (mirrors `inkBox`'s own trick), placed at
+  `min(getCommonBounds(roots(els)), bbox) - PAD` and
+  `max(getCommonBounds(roots(els)), bbox) + PAD` (`PAD` 100, already used by
+  `inkBox`). `PAD` beats both the 20.5 px name-label growth and any rough.js
+  stroke overshoot at the scene's extreme edge, so the markers — not
+  whatever export would otherwise size itself on — become
+  `getCommonBounds`' actual extremes; `snap` then draws at those _known_
+  coordinates instead of ones computed from `els` alone. `min`/`max` against
+  `bbox` too (not just against the real content) keeps a crop far outside the
+  content (a `look` pad) from losing its own corner markers to real content
+  that's closer to origin — and keeps two same-`els` calls with different
+  `bbox`s (e.g. a full-scene snap vs a sub-crop of it) pinned to the same
+  origin when `bbox` doesn't reach past the real content, exactly matching
+  the pre-existing "snap of a bbox equals its crop of a larger snap" test.
+- `screenshotTool`'s 1.18 corner-marker workaround (re-measuring with two
+  out-of-frame markers before `snap`) is gone: `snap` now does the
+  equivalent unconditionally, so the caller doesn't need to. Confirmed via
+  `adapters/server` `test:e2e` (the 1.18 bottom-crop regression test) still
+  green with the workaround removed.
+- Repro'd and verified by hand: a red-stroked box inside a frame, `snap`'d
+  before/after the fix, decoded and colour-scanned for the box's own red ink
+  (isolating it from the frame's grey border/name label) — before: box drawn
+  20.5 px low vs `measure`'s ink-true box; after: within 1 px. Same story
+  visually (frame border and name label both visibly ~20 px lower before the
+  fix, in the same crop).
+- Tests (`sidecar/src/sidecar.e2e.ts`, `describe("snap: scenes with frames
+(algopeeps-4c0.24)")`): "snap(bbox) draws the box at its measured (ink)
+  offset, not ~20px low" (a big snap covering the whole scene, vs `measure`'s
+  ink-true box — independent ground truth, not another `snap` call, per the
+  1.18 lesson that two `snap`s of the same `els` are equally wrong and so
+  can't catch this); "look crop (pad around the box) centres it" (the
+  acceptance's literal case). Both fail on the pre-fix code by exactly
+  20.5 px (checked); green after. `pngInkBox` colour-matches a target RGB
+  (the box's own red stroke) rather than "any non-white pixel", so a frame's
+  border/name-label ink in the same crop is never mistaken for the target
+  element's — a same-colour reference would have been a false pass here (all
+  ink in the crop shifts together).
+- Not owned by this task but touched, with the coordinator's go-ahead
+  (message during the task): `app/src/headless.ts` `snap()` (`sidecar/src`'s
+  own file was a thin forwarder with none of the crop math) and
+  `adapters/server/src/tools.ts` `screenshotTool` (dropped its now-redundant
+  1.18 workaround, `corners()` and the extra `renderer.measure` call).
+- `backends/excalidraw/src/render/render.ts` and `look` (`core/look.ts` +
+  `render.ts`, 1.7/1.9) call `snap` the same way `screenshotTool` did before
+  1.18's workaround (no per-caller corner markers), so they get this fix for
+  free; their own `test:e2e` (`backends/excalidraw`, `test/parity`) still
+  green, no snapshot changes needed.
