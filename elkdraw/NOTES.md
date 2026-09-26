@@ -1,5 +1,9 @@
 # elkdraw notes
 
+Facts a later agent needs: structure, pinned versions, gotchas, timings. The
+reference sections come first; `## Log` at the end has one entry per phase or
+task, newest last. Agents append their own log entry (see `AGENTS.md`).
+
 ## Package graph
 
 ```
@@ -15,15 +19,6 @@ project references (`tsc -b` fails on cycles and on files outside a project),
 and `no-restricted-imports` in `eslint.config.js` (`allowedDeps`). Change all
 three together. `adapters/mcp` stays core-only for good: server depends on it.
 
-## MCP HTTP transport
-
-`@modelcontextprotocol/server@2.0.0` ships a web-standard Streamable HTTP
-transport: `WebStandardStreamableHTTPServerTransport`, exported from the package
-root, with `handleRequest(req: Request, options?): Promise<Response>`. It plugs
-straight into `Bun.serve({ fetch })`, so no express. The same root export also
-has `createMcpHandler` (per-request handler factory) and
-`validateHostHeader` / `localhostAllowedHostnames` for DNS-rebinding checks.
-
 ## TypeScript
 
 - TypeScript is pinned `~6.0.3`: typescript-eslint 8.70 requires
@@ -37,7 +32,8 @@ has `createMcpHandler` (per-request handler factory) and
 
 ## Dependencies
 
-New dependencies go through the orchestrator; do not run bun add on a task branch.
+New dependencies go through the orchestrator; do not run `bun add` on a task
+branch (`AGENTS.md`, Dependencies). Every dependency is listed here.
 
 | Package                                               | Where                                              | Version  | Why                                                                                              |
 | ----------------------------------------------------- | -------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
@@ -67,7 +63,16 @@ New dependencies go through the orchestrator; do not run bun add on a task branc
 | @types/bun (dev)                                      | root                                               | ^1.4.2   | Bun runtime and `bun:test` types.                                                                |
 | @total-typescript/ts-reset (dev)                      | root                                               | ^0.6.1   | `JSON.parse`/`Response.json()` return `unknown`; `.filter(Boolean)` narrows.                     |
 
-## Sidecar
+## MCP HTTP transport
+
+`@modelcontextprotocol/server@2.0.0` ships a web-standard Streamable HTTP
+transport: `WebStandardStreamableHTTPServerTransport`, exported from the package
+root, with `handleRequest(req: Request, options?): Promise<Response>`. It plugs
+straight into `Bun.serve({ fetch })`, so no express. The same root export also
+has `createMcpHandler` (per-request handler factory) and
+`validateHostHeader` / `localhostAllowedHostnames` for DNS-rebinding checks.
+
+## Sidecar and elkjs
 
 `@elkdraw/sidecar` (`sidecar/src/index.ts`): `new Sidecar(dist = app/dist)`,
 `start()` (idempotent; `Bun.serve` on a random 127.0.0.1 port serves the bundle,
@@ -97,3 +102,44 @@ elk.terminateWorker();
 ```
 
 3-node layered layout: ~90 ms including worker start.
+
+## Log
+
+### Phase 0: scaffolding (2026-09-26)
+
+Run as one branch per task, `wt switch --create elkdraw/p0.N-<slug> --base
+abhirup/canvas --no-cd`, each merged `--no-ff` into `abhirup/canvas` by the
+orchestrator. Every later-phase dependency was installed up front in P0.1, so
+later tasks should not need `bun add`.
+
+- P0.1 workspace: ten packages, composite projects, strict tsconfig
+  (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+  `verbatimModuleSyntax`), the lint baseline, `parseJson` / `safeParseJson`.
+- P0.11 CI: `.github/workflows/elkdraw-check.yml`; `.githooks/pre-commit` runs
+  a check only for the tree whose files are staged. Hooks stay opt-in.
+- P0.4 app: Excalidraw shell as a static Vite bundle; syncs over same-origin
+  `/ws` (override `?ws=` or `VITE_ELKDRAW_WS`); remote deltas apply with
+  `captureUpdate NEVER`; fonts ship under `/fonts`.
+- P0.2 contracts: zod schemas and types in `core/src/contracts/`, JSON Schema
+  in `core/schemas/` (stale files fail a test). See `CONTRACTS.md`.
+- P0.7 sidecar: Chromium skeleton and the elkjs-under-Bun probe (above).
+- P0.10 fake backend: in-memory `BackendAdapter` (NeutralScene scene, deep
+  zones, no bindings, fixed char-width measure); `test/parity` snapshots.
+  A changed snapshot always fails; a missing one fails only when `CI=true`.
+- P0.5 server: one Bun process serves `app/dist`, `/ws`, REST (`/api/status`,
+  `/api/shutdown`, `/api/tools/:name`) and MCP at `/mcp` behind Host/Origin
+  checks; per-session `events.jsonl` with keyframes, replayed on start.
+- P0.8 fixtures: dogfood scenes with defect manifests, task and Mermaid
+  samples.
+- P0.3 surface: 14 MCP tools with zod schemas and `NOT_IMPLEMENTED` stubs,
+  the `elkdraw` CLI (flags derived from the same schemas), `SURFACE.md`.
+- P0.6 portless: `bun run --cwd elkdraw dev` serves each worktree at
+  `https://<branch-tail>.elkdraw.localhost:1355` (README).
+- P0.5b wiring: the server uses `@elkdraw/mcp`; REST maps `ToolError` to
+  400/404/501 (else 500 `INTERNAL`); stdio forwards to the running server and
+  replies `UNREACHABLE` when it is down; cli no longer depends on server.
+- P0.12 agent rules: `AGENTS.md`. Checked: `dev` in a linked worktree prints
+  the branch URL and `/api/status` there reports the branch; `curl` needs
+  `--cacert ~/.portless/ca.pem`, Bun/Node need `NODE_EXTRA_CA_CERTS`.
+- Pending at the time of writing: P0.9 eval harness, P0.13 registration docs
+  and skill, P0.14 exit smoke.

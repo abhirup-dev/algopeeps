@@ -25,5 +25,11 @@ the files are stale. Design: `canvas/docs/agent-layer-design.md` §§11–18.
 
 ## Changelog
 
+Contracts change only in a task dedicated to the change (`AGENTS.md`,
+Contracts). That task appends one entry here, oldest first: task number, what
+changed, what consumers must do. It regenerates `core/schemas/` and fixes
+every consumer in the same branch.
+
+- P0.2: initial contracts (the table above).
 - P0.5: the WebSocket sync protocol moved unchanged from `app/src/protocol.ts` to
   `core/src/contracts/protocol.ts`; import it from `@elkdraw/core`.
