@@ -18,6 +18,7 @@ import {
   table,
   tree,
 } from "./assets.ts";
+import { fromStored } from "./stored.ts";
 
 interface Box {
   x: number;
@@ -50,42 +51,6 @@ const skeletonBox = (e: SkeletonElement): Box => ({
   height: e.height ?? DEFAULT_SIZE,
 });
 
-// The scene-fallback path (repositioning an id apply didn't give us): only
-// types whose skeleton needs nothing beyond id/x/y (no required label,
-// text or children) can be rebuilt from just a type name.
-type RepositionableType =
-  "rectangle" | "ellipse" | "diamond" | "arrow" | "line";
-const REPOSITIONABLE: readonly RepositionableType[] = [
-  "rectangle",
-  "ellipse",
-  "diamond",
-  "arrow",
-  "line",
-];
-const isRepositionable = (t: unknown): t is RepositionableType =>
-  typeof t === "string" && (REPOSITIONABLE as readonly string[]).includes(t);
-
-/** A minimal, schema-valid skeleton element: just enough to move it. */
-function bareSkeleton(
-  type: RepositionableType,
-  id: string,
-  x: number,
-  y: number,
-): SkeletonElement {
-  switch (type) {
-    case "rectangle":
-      return { type, id, x, y };
-    case "ellipse":
-      return { type, id, x, y };
-    case "diamond":
-      return { type, id, x, y };
-    case "arrow":
-      return { type, id, x, y };
-    case "line":
-      return { type, id, x, y };
-  }
-}
-
 /** Runs `ops` in order over `elements`; returns the elements to send to
  * `convert`: every input element (repositioned as ops require), plus
  * whatever asset ops generated, in each one's original/first-seen order. */
@@ -113,10 +78,15 @@ export function place(
       out.set(id, { ...existing, x, y });
       return;
     }
+    // An id only on the canvas moves as stored: everything but x/y is kept.
     const sc = sceneById.get(id);
-    if (!sc || !isRepositionable(sc.type))
-      throw new Error(`place: unknown id "${id}"`);
-    out.set(id, bareSkeleton(sc.type, id, x, y));
+    const stored = sc && sc["isDeleted"] !== true && fromStored(sc, scene);
+    if (!stored) throw new Error(`place: unknown id "${id}"`);
+    // ponytail: a frame moves without its children, and the converter
+    // cannot re-take stored labelled children yet; place them instead.
+    if (stored.type === "frame")
+      throw new Error(`place: "${id}" is a frame; place its children instead`);
+    out.set(id, { ...stored, x, y });
     order.push(id);
   };
 
