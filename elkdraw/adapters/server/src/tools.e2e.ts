@@ -169,3 +169,107 @@ test("draft -> apply -> lint -> look -> fix", async () => {
   expect(ihdrWidth).toBeLessThanOrEqual(300);
   expect(ihdrHeight).toBeLessThanOrEqual(300);
 }, 30_000);
+
+// p1rh-07 (ride-hailing transcript): after Pricing moved, s4 (trip -> pricing)
+// and s5 (pricing -> matching) stayed where they were and linted
+// dangling-endpoint. Arrows already on the canvas bound to a moved box follow
+// it, via apply (partial upsert) and via place; a waypoint arrow keeps its
+// waypoints and only its bound end moves.
+test("bound arrows follow a box moved by apply or place", async () => {
+  const box = (id: string, x: number, y: number) => ({
+    id,
+    type: "rectangle",
+    x,
+    y,
+    width: 200,
+    height: 70,
+    label: { text: id },
+  });
+  const edge = (id: string, from: string, to: string) => ({
+    id,
+    type: "arrow",
+    x: 0,
+    y: 0,
+    start: { id: from },
+    end: { id: to },
+  });
+  const Y = 3000;
+  const waypoint = { x: 400, y: Y + 250 };
+  const seeded = await rest(
+    "apply",
+    {
+      elements: [
+        box("trip", 0, Y),
+        box("pricing", 440, Y),
+        box("matching", 880, Y),
+        box("payment", 0, Y + 400),
+        edge("s4", "trip", "pricing"),
+        edge("s5", "pricing", "matching"),
+        // pricing's bottom -> waypoint -> payment's top.
+        {
+          ...edge("w1", "pricing", "payment"),
+          x: 540,
+          y: Y + 74,
+          points: [
+            [0, 0],
+            [waypoint.x - 540, waypoint.y - Y - 74],
+            [100 - 540, 396 - 74],
+          ],
+        },
+      ],
+    },
+    ApplyReply,
+  );
+  expect(seeded.created).toContain("w1");
+
+  const line = async (id: string) => {
+    const { element } = await rest("get", { id }, defs.get.output);
+    if (element.type !== "line") throw new Error(`${id} is not a line`);
+    return element.points;
+  };
+  // Distance from a point to the pricing box's outline (0 inside).
+  const off = (p: { x: number; y: number }, at: { x: number; y: number }) =>
+    Math.hypot(
+      Math.max(at.x - p.x, 0, p.x - (at.x + 200)),
+      Math.max(at.y - p.y, 0, p.y - (at.y + 70)),
+    );
+  const check = async (reply: ApplyReply, at: { x: number; y: number }) => {
+    // pricing plus the three arrows that follow it.
+    expect(reply.updated).toBe(4);
+    const codes = errors(reply.lints)
+      .filter((h) => h.ids.some((id) => ["s4", "s5", "w1"].includes(id)))
+      .map((h) => h.code);
+    expect(codes).not.toContain("dangling-endpoint");
+    const s4 = await line("s4");
+    const s5 = await line("s5");
+    const w1 = await line("w1");
+    for (const p of [s4.at(-1), s5[0], w1[0]]) {
+      if (!p) throw new Error("no point");
+      const d = off(p, at);
+      expect(d).toBeGreaterThan(0);
+      expect(d).toBeLessThanOrEqual(5);
+    }
+    expect(w1).toHaveLength(3);
+    expect(w1[1]?.x).toBeCloseTo(waypoint.x);
+    expect(w1[1]?.y).toBeCloseTo(waypoint.y);
+  };
+
+  // apply: a partial upsert moves pricing down and right.
+  const byApply = await rest(
+    "apply",
+    { elements: [{ id: "pricing", type: "rectangle", x: 520, y: Y + 60 }] },
+    ApplyReply,
+  );
+  await check(byApply, { x: 520, y: Y + 60 });
+  const payEnd = (await line("w1")).at(-1);
+
+  // place: a canvas-only move.
+  const byPlace = await rest(
+    "apply",
+    { place: [{ op: "rightOf", id: "pricing", of: "trip", gap: 300 }] },
+    ApplyReply,
+  );
+  await check(byPlace, { x: 500, y: Y });
+  // The end on the box that did not move stays put.
+  expect((await line("w1")).at(-1)).toEqual(payEnd);
+}, 30_000);
