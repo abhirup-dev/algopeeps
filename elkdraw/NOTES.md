@@ -307,6 +307,7 @@ input, deps)` and `add(...)` (create only), pure and synchronous. Input
   restore repairs them.
 - "Clean apply under 300 bytes": tested for a 3-element create and the no-op
   re-apply; a large first apply grows with `created`.
+
 ### 1.3 Sidecar: measure and snap (2026-09-26)
 
 - `?headless=1` (`app/src/headless.ts`, wired in `main.tsx`): renders Excalidraw
