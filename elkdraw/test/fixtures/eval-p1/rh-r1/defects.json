@@ -1,0 +1,218 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final.png",
+  "source": "eval/phase-1/ride-hailing/defects.json (rev 1)",
+  "note": "Rev 1: zones as frames.",
+  "defects": [
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["s3", "core"],
+      "description": "Frame core clips s3: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["s7", "data"],
+      "description": "Frame data clips s7: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["pay-stripe", "core"],
+      "description": "Frame core clips pay-stripe: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["notif-apns", "core"],
+      "description": "Frame core clips notif-apns: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["apns-driver", "edge"],
+      "description": "Frame edge clips apns-driver: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["trip-pg", "data"],
+      "description": "Frame data clips trip-pg: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["a-trip", "data"],
+      "description": "Frame data clips a-trip: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["a-pay", "data"],
+      "description": "Frame data clips a-pay: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-01",
+      "rule": "outside-zone",
+      "ids": ["a-notif", "data"],
+      "description": "Frame data clips a-notif: the arrow is drawn only inside the frame.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 1; final.png"
+    },
+    {
+      "id": "p1rh-02",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["s1#label", "s1"],
+      "description": "The s1 label sits on its own arrowhead (140 px column gap).",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 2"
+    },
+    {
+      "id": "p1rh-02",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["s2#label", "s2"],
+      "description": "The s2 label sits on its own arrowhead (140 px column gap).",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 2"
+    },
+    {
+      "id": "p1rh-02",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["s4#label", "s4"],
+      "description": "The s4 label sits on its own arrowhead (140 px column gap).",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 2"
+    },
+    {
+      "id": "p1rh-02",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["s5#label", "s5"],
+      "description": "The s5 label sits on its own arrowhead (140 px column gap).",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 2"
+    },
+    {
+      "id": "p1rh-02",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["s6#label", "s6"],
+      "description": "The s6 label sits on its own arrowhead (140 px column gap).",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 2"
+    },
+    {
+      "id": "p1rh-03",
+      "rule": "text-wrapped",
+      "ids": ["postgres#label"],
+      "description": "The postgres ellipse label wraps onto two lines.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 3; final.png"
+    },
+    {
+      "id": "p1rh-03",
+      "rule": "text-wrapped",
+      "ids": ["kafka#label"],
+      "description": "The kafka ellipse label wraps onto two lines.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 3; final.png"
+    },
+    {
+      "id": "p1rh-03",
+      "rule": "text-wrapped",
+      "ids": ["analytics#label"],
+      "description": "The analytics ellipse label wraps onto two lines.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 3; final.png"
+    },
+    {
+      "id": "p1rh-10",
+      "rule": "arrowhead-overlap",
+      "ids": ["a-trip", "a-pay", "kafka"],
+      "description": "The async arrowheads from Trip and Payment land on Kafka's top edge under 25 px apart and tangle into one.",
+      "reported": false,
+      "fixedInFinal": false,
+      "source": "final.png"
+    },
+    {
+      "id": "p1rh-08",
+      "rule": "crossing",
+      "ids": ["s7", "notif-apns"],
+      "description": "Arrow 7 (location->redis) crosses notification->APNs.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "lint only",
+      "notDrawn": {
+        "reason": "the frames clip s7 and trip-pg at rev 1, so neither crossing is painted",
+        "evidence": "final.png; snap 300,560,1600,170 at 0.5"
+      }
+    },
+    {
+      "id": "p1rh-09",
+      "rule": "crossing",
+      "ids": ["pay-stripe", "trip-pg"],
+      "description": "trip->postgres crosses payment->stripe.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "lint only",
+      "notDrawn": {
+        "reason": "the frames clip s7 and trip-pg at rev 1, so neither crossing is painted",
+        "evidence": "final.png; snap 300,560,1600,170 at 0.5"
+      }
+    }
+  ],
+  "cleanRegions": [
+    {
+      "name": "edge",
+      "ids": ["rider", "gateway", "auth", "driver", "edge"]
+    },
+    {
+      "name": "legend",
+      "ids": [
+        "legend",
+        "lg-sync",
+        "lg-sync-t",
+        "lg-async",
+        "lg-async-t",
+        "lg-store",
+        "lg-store-t"
+      ]
+    },
+    {
+      "name": "title",
+      "ids": ["title"]
+    }
+  ]
+}

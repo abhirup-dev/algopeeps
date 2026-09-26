@@ -114,7 +114,9 @@
               "node-overlap",
               "dangling-endpoint",
               "outside-zone",
-              "crossing"
+              "crossing",
+              "unlabelled-node",
+              "arrowhead-overlap"
             ]
           },
           "ids": {

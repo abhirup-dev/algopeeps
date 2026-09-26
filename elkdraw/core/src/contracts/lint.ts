@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { Box } from "./geometry.ts";
 
-/** The rendered-lint rules: §5's ten plus two from the fixtures (§19.1 B1). */
+/** The rendered-lint rules: §5's ten, two from the fixtures (§19.1 B1) and
+ * two from the Phase 1 eval (1.19). */
 export const LintCode = z.enum([
   "text-overflow",
   "text-wrapped",
@@ -15,6 +16,8 @@ export const LintCode = z.enum([
   "dangling-endpoint",
   "outside-zone",
   "crossing",
+  "unlabelled-node",
+  "arrowhead-overlap",
 ]);
 export type LintCode = z.infer<typeof LintCode>;
 

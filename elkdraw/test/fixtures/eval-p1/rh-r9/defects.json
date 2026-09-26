@@ -1,0 +1,81 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final.png",
+  "source": "eval/phase-1/ride-hailing/defects.json (rev 9)",
+  "note": "Rev 9: the final scene (= eval/phase-1/ride-hailing/scene.json).",
+  "defects": [
+    {
+      "id": "p1rh-10",
+      "rule": "arrowhead-overlap",
+      "ids": ["a-trip", "a-pay", "kafka"],
+      "description": "The async arrowheads from Trip and Payment land on Kafka's top edge under 25 px apart and tangle into one.",
+      "reported": false,
+      "fixedInFinal": false,
+      "source": "final.png; look --target kafka --r 120"
+    },
+    {
+      "id": "p1rh-08",
+      "rule": "crossing",
+      "ids": ["s7", "notif-apns"],
+      "description": "Arrow 7 (location->redis) crosses notification->APNs.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "final.png"
+    },
+    {
+      "id": "p1rh-09",
+      "rule": "crossing",
+      "ids": ["pay-stripe", "trip-pg"],
+      "description": "trip->postgres crosses payment->stripe.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "final.png"
+    }
+  ],
+  "cleanRegions": [
+    {
+      "name": "edge",
+      "ids": [
+        "rider",
+        "gateway",
+        "auth",
+        "driver",
+        "s1",
+        "s2",
+        "edge-zone",
+        "edge-h"
+      ]
+    },
+    {
+      "name": "legend",
+      "ids": [
+        "legend-zone",
+        "legend-h",
+        "lg-sync",
+        "lg-sync-t",
+        "lg-async",
+        "lg-async-t",
+        "lg-store",
+        "lg-store-t"
+      ]
+    },
+    {
+      "name": "title",
+      "ids": ["title"]
+    },
+    {
+      "name": "core",
+      "ids": [
+        "trip",
+        "pricing",
+        "matching",
+        "location",
+        "s4",
+        "s5",
+        "s6",
+        "surge",
+        "pricing-surge"
+      ]
+    }
+  ]
+}

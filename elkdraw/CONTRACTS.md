@@ -41,3 +41,6 @@ every consumer in the same branch.
   `BackendAdapter.read` returns `Promise<NeutralScene>`: await it. `Point`
   and `Box` moved to `geometry.ts` (still exported from `ir.ts` and
   `@elkdraw/core`). `ApplyReply` unchanged.
+- 1.19: `LintCode` += `unlabelled-node`, `arrowhead-overlap` (so `Allow.rule`
+  too), both severity error. Consumers: nothing to do unless they switch
+  exhaustively on `LintCode` (none do today).

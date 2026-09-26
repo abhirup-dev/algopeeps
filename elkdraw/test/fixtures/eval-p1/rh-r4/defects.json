@@ -1,0 +1,74 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final.png",
+  "source": "eval/phase-1/ride-hailing/defects.json (rev 4)",
+  "note": "Rev 4: a partial upsert (rev 3) reset legend-zone to 100x100 and the legend arrows' style.",
+  "defects": [
+    {
+      "id": "p1rh-05",
+      "rule": "arrow-through-node",
+      "ids": ["lg-sync", "legend-zone"],
+      "description": "The reset 100x100 legend box: the unbound sync legend arrow starts inside it and runs across its border.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "tester-report \u00a71 defect 5; final.png"
+    },
+    {
+      "id": "p1rh-05b",
+      "ruleGap": "element reset to defaults",
+      "ids": ["legend-zone", "lg-sync", "lg-async"],
+      "description": "The legend arrows lost their colour and dash, and the box its stroke: the legend no longer matches the diagram.",
+      "reported": true,
+      "fixedInFinal": false,
+      "wontFix": {
+        "reason": "Apply's bug (a partial upsert replaces the element instead of patching it). The scene alone cannot tell a reset style from a chosen one."
+      }
+    },
+    {
+      "id": "p1rh-10",
+      "rule": "arrowhead-overlap",
+      "ids": ["a-trip", "a-pay", "kafka"],
+      "description": "The async arrowheads from Trip and Payment land on Kafka's top edge under 25 px apart and tangle into one.",
+      "reported": false,
+      "fixedInFinal": false,
+      "source": "final.png"
+    },
+    {
+      "id": "p1rh-08",
+      "rule": "crossing",
+      "ids": ["s7", "notif-apns"],
+      "description": "Arrow 7 (location->redis) crosses notification->APNs.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "final.png"
+    },
+    {
+      "id": "p1rh-09",
+      "rule": "crossing",
+      "ids": ["pay-stripe", "trip-pg"],
+      "description": "trip->postgres crosses payment->stripe.",
+      "reported": true,
+      "fixedInFinal": false,
+      "source": "final.png"
+    }
+  ],
+  "cleanRegions": [
+    {
+      "name": "edge",
+      "ids": [
+        "rider",
+        "gateway",
+        "auth",
+        "driver",
+        "s1",
+        "s2",
+        "edge-zone",
+        "edge-h"
+      ]
+    },
+    {
+      "name": "title",
+      "ids": ["title"]
+    }
+  ]
+}
