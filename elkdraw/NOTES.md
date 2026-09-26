@@ -86,12 +86,13 @@ has `createMcpHandler` (per-request handler factory) and
 `@elkdraw/sidecar` (`sidecar/src/index.ts`): `new Sidecar(dist = app/dist)`,
 `start()` (idempotent; `Bun.serve` on a random 127.0.0.1 port serves the bundle,
 headless Chromium loads it and waits for `.excalidraw`), `measure(elements) ->
-Record<Id, Box>` (core `Box`), `snap(bbox, scale = 1) -> Uint8Array` (PNG), `close()`. P0.7: both calls
-are stubs (100x40 box per element at the origin; a 1x1 PNG), but they go through
-`page.evaluate` and zod validates inputs before the page and outputs after it.
+Record<Id, Box>` (core `Box`), `measureText(MeasureRequest[]) -> Size[]` (cached),
+`snap(bbox, scale = 1, ids?) -> Uint8Array` (PNG), `close()`. Real since 1.3 (see
+its Log entry); zod validates inputs before the page and outputs after it.
 
-- The app has no headless mode. The sidecar serves no `/ws`, so the app's sync
-  client retries every second in the background; harmless for measuring. A
+- Since 1.3 the sidecar loads the app with `?headless=1` (app/src/headless.ts), which
+  skips the sync client. (P0.7 note, superseded:) The sidecar serves no `/ws`; without the flag the sync
+  client retries every second in the background. A
   `?headless=1` flag in `app/` would silence it if that ever matters.
 - Timings (M-series Mac, Bun 1.4.2, chromium-1243): cold `start()` ~0.25 s
   (bundle already built); warm `measure`/`snap` 0.3-3 ms. The e2e asserts < 2 s.

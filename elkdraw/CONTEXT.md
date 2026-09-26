@@ -154,7 +154,8 @@ suppressed?}` in `lint.ts`. The §17.4 bar counts errors only.
 ## Perception and sidecar
 
 - **Sidecar** — `sidecar/`: headless Chromium on the app bundle, behind the
-  Excalidraw backend's `measure` and `render`. Stubs today (task 1.3).
+  Excalidraw backend's `measure` and `render`. Real since task 1.3: rendered
+  boxes via per-element export, text sizes cached by (font, size, text, width).
 - **Measure** — Text sizes in the backend's font (`MeasureRequest` →
   `Size`), behind a cache keyed by font family, size, text and wrap width.
   `measured: false` marks fallback sizes.
