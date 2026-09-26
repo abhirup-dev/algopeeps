@@ -1,7 +1,14 @@
 // Headless browser sidecar: the built app in Chromium (`?headless=1`, see
 // app/src/headless.ts), for rendered boxes, text sizes and PNG crops. Inputs
 // are validated before the page, outputs after it.
-import { Box, Element, Id, MeasureRequest, Size } from "@elkdraw/core";
+import {
+  Box,
+  Element,
+  Id,
+  MeasureRequest,
+  Size,
+  SkeletonElement,
+} from "@elkdraw/core";
 import { join, normalize } from "node:path";
 import { type Browser, type Page, chromium } from "playwright";
 import { z } from "zod";
@@ -15,6 +22,7 @@ interface Headless {
   measure(elements: unknown): Promise<unknown>;
   measureText(requests: unknown): Promise<unknown>;
   snap(bbox: unknown, scale: unknown, ids: unknown): Promise<unknown>;
+  convert(skeletons: unknown, scene: unknown): Promise<unknown>;
 }
 type WithHeadless = Window & { elkdraw: Headless };
 
@@ -142,6 +150,29 @@ export class Sidecar {
     );
     const url = PngDataUrl.parse(raw);
     return Buffer.from(url.slice(url.indexOf(",") + 1), "base64");
+  }
+
+  /** Skeletons -> Excalidraw wire elements, in the page
+   * (convertToExcalidrawElements needs a DOM and canvas). Arrow ends may name
+   * `scene` elements outside the batch; those come back with the new binding. */
+  async convert(
+    skeletons: readonly SkeletonElement[],
+    scene: readonly Element[],
+  ): Promise<Element[]> {
+    const input = {
+      skeletons: z.array(SkeletonElement).parse(skeletons),
+      scene: z.array(Element).parse(scene),
+    };
+    const page = await this.page();
+    const raw: unknown = await page.evaluate(
+      (a) =>
+        (window as unknown as WithHeadless).elkdraw.convert(
+          a.skeletons,
+          a.scene,
+        ),
+      input,
+    );
+    return z.array(Element).parse(raw);
   }
 
   async close(): Promise<void> {

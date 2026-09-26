@@ -1,4 +1,5 @@
 export {
+  type Renderer,
   type RunningServer,
   type ServerOptions,
   type Status,

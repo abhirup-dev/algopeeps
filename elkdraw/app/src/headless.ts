@@ -3,6 +3,7 @@
 // boxes, measure text in Excalidraw's own font metrics, snap PNG crops. Boxes
 // come from pixels Excalidraw drew, not from stored x/y/width/height.
 import {
+  convertToExcalidrawElements,
   Excalidraw,
   FONT_FAMILY,
   exportToCanvas as untypedExportToCanvas,
@@ -10,7 +11,13 @@ import {
   restoreElements,
 } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import type { Box, Element, MeasureRequest, Size } from "@elkdraw/core";
+import type {
+  Box,
+  Element,
+  MeasureRequest,
+  Size,
+  SkeletonElement,
+} from "@elkdraw/core";
 import { createElement } from "react";
 import type { SceneElement } from "./excalidraw.ts";
 
@@ -29,6 +36,13 @@ export interface HeadlessApi {
   /** PNG data URL of `bbox` (scene units) at `scale`, background included.
    * `ids` limits drawing to those elements and their bound text. */
   snap(bbox: Box, scale: number, ids?: readonly string[]): Promise<string>;
+  /** Skeletons -> wire elements (convertToExcalidrawElements, ids kept).
+   * Arrow ends naming a `scene` element outside the batch bind to it; that
+   * element comes back too, with the arrow added to its boundElements. */
+  convert(
+    skeletons: readonly SkeletonElement[],
+    scene: readonly Element[],
+  ): Promise<Element[]>;
 }
 
 declare global {
@@ -119,6 +133,149 @@ function headlessApi(api: ExcalidrawImperativeAPI): HeadlessApi {
       }
       return out.toDataURL("image/png");
     },
+    convert,
+  };
+}
+
+const BINDABLE = new Set(["rectangle", "ellipse", "diamond", "text"]);
+// Excalidraw's defaults for text and labels without their own font.
+const DEFAULT_FONT = FONT_FAMILY.Excalifont;
+const DEFAULT_FONT_SIZE = 20;
+
+async function convert(
+  skeletons: readonly SkeletonElement[],
+  scene: readonly Element[],
+): Promise<Element[]> {
+  // Labels are sized with canvas text metrics: load their faces first.
+  for (const s of skeletons) {
+    const t = s.type === "text" ? s : "label" in s ? s.label : undefined;
+    if (t)
+      await loadFont(
+        t.fontFamily ?? DEFAULT_FONT,
+        t.fontSize ?? DEFAULT_FONT_SIZE,
+        t.text,
+      );
+  }
+  // convertToExcalidrawElements binds only within its batch: pass the scene
+  // elements an arrow names as bare bindable skeletons, then merge the new
+  // binding back into the stored element.
+  const batch = new Set(skeletons.map((s) => s.id));
+  const stored = new Map(scene.map((e) => [e.id, e]));
+  const anchors = new Map<string, Element>();
+  for (const s of skeletons) {
+    if (s.type !== "arrow" && s.type !== "line") continue;
+    for (const end of [s.start, s.end]) {
+      const e = end && !batch.has(end.id) ? stored.get(end.id) : undefined;
+      if (e && BINDABLE.has(e.type) && e["isDeleted"] !== true)
+        anchors.set(e.id, e);
+    }
+  }
+  const input = [...skeletons, ...anchors.values()];
+  // Unchecked cast: SkeletonElement is our strict subset of Excalidraw's
+  // skeleton, and anchors are stored Excalidraw elements.
+  const out = convertToExcalidrawElements(
+    input as unknown as Parameters<typeof convertToExcalidrawElements>[0],
+    { regenerateIds: false },
+  );
+  const merged = out.map((el): Element => {
+    const prev = anchors.get(el.id);
+    if (!prev) return { ...el };
+    const had = Array.isArray(prev["boundElements"])
+      ? (prev["boundElements"] as { id: string; type: string }[])
+      : [];
+    const ids = new Set(had.map((b) => b.id));
+    const added = (el.boundElements ?? []).filter((b) => !ids.has(b.id));
+    return { ...prev, boundElements: [...had, ...added] };
+  });
+  const byId = new Map(merged.map((e) => [e.id, e]));
+  return merged.map((e) => route(e, byId));
+}
+
+// Gap between an arrow end and the outline it binds to.
+const BIND_GAP = 4;
+
+interface Shape {
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+const shapeOf = (e: Element | undefined): Shape | undefined => {
+  if (!e) return undefined;
+  const { x, y, width, height } = e;
+  return typeof x === "number" &&
+    typeof y === "number" &&
+    typeof width === "number" &&
+    typeof height === "number"
+    ? { type: e.type, x, y, width, height }
+    : undefined;
+};
+
+/** Distance from `s`'s centre to its outline along the unit vector (ux, uy). */
+function reach(s: Shape, ux: number, uy: number): number {
+  const [a, b] = [s.width / 2, s.height / 2];
+  if (a === 0 || b === 0) return 0;
+  if (s.type === "ellipse") return 1 / Math.hypot(ux / a, uy / b);
+  if (s.type === "diamond") return 1 / (Math.abs(ux) / a + Math.abs(uy) / b);
+  return Math.min(
+    ux === 0 ? Infinity : a / Math.abs(ux),
+    uy === 0 ? Infinity : b / Math.abs(uy),
+  );
+}
+
+const bindingId = (v: unknown): string | undefined =>
+  typeof v === "object" && v !== null && "elementId" in v
+    ? String(v.elementId)
+    : undefined;
+
+/** convertToExcalidrawElements binds arrows but leaves them where the
+ * skeleton put them (usually 0,0): draw each bound two-point arrow straight
+ * between the outlines of what it binds, as the editor does once they move.
+ * ponytail: straight lines only; arrows with waypoints are left as given. */
+function route(e: Element, byId: ReadonlyMap<string, Element>): Element {
+  if (e.type !== "arrow" && e.type !== "line") return e;
+  const points = e["points"];
+  const { x, y } = e;
+  if (!Array.isArray(points) || points.length !== 2) return e;
+  if (typeof x !== "number" || typeof y !== "number") return e;
+  const startId = bindingId(e["startBinding"]);
+  const endId = bindingId(e["endBinding"]);
+  const from = shapeOf(startId === undefined ? undefined : byId.get(startId));
+  const to = shapeOf(endId === undefined ? undefined : byId.get(endId));
+  if (!from && !to) return e;
+  const last = points[1] as [number, number];
+  const centre = (sh: Shape) => ({
+    x: sh.x + sh.width / 2,
+    y: sh.y + sh.height / 2,
+  });
+  const s0 = from ? centre(from) : { x, y };
+  const s1 = to ? centre(to) : { x: x + last[0], y: y + last[1] };
+  const len = Math.hypot(s1.x - s0.x, s1.y - s0.y);
+  if (len === 0) return e;
+  const ux = (s1.x - s0.x) / len;
+  const uy = (s1.y - s0.y) / len;
+  const t0 = from ? reach(from, ux, uy) + BIND_GAP : 0;
+  const t1 = to ? reach(to, ux, uy) + BIND_GAP : 0;
+  const x0 = s0.x + ux * t0;
+  const y0 = s0.y + uy * t0;
+  const dx = s1.x - ux * t1 - x0;
+  const dy = s1.y - uy * t1 - y0;
+  const bind = (b: unknown) =>
+    typeof b === "object" && b !== null ? { ...b, focus: 0, gap: BIND_GAP } : b;
+  return {
+    ...e,
+    x: x0,
+    y: y0,
+    points: [
+      [0, 0],
+      [dx, dy],
+    ],
+    width: Math.abs(dx),
+    height: Math.abs(dy),
+    startBinding: bind(e["startBinding"]),
+    endBinding: bind(e["endBinding"]),
   };
 }
 

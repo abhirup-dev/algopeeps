@@ -240,7 +240,7 @@ test("/mcp lists the @elkdraw/mcp tools; REST maps errors to SURFACE.md codes", 
       post("nope"),
       post("look", "{}"),
       post("look", "{not json"),
-      post("lint", "{}"),
+      post("export", '{"format":"mmd"}'),
     ].map(async (p) => {
       const r = await p;
       return [r.status, parseJson(ErrorReply, await r.text()).error.code];

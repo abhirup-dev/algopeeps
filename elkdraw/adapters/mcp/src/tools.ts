@@ -3,30 +3,62 @@
 // definition. Names follow yctimlin's CLI verbs where one exists (SURFACE.md).
 import {
   ApplyReply,
-  AstPatch,
   Box,
+  DeletePatch,
   FeedLine,
   Id,
   LintHit,
+  PlaceOp,
   Point,
   SceneElement,
+  SetPatch,
+  SkeletonElement,
+  SkeletonInput,
 } from "@elkdraw/core";
 import { z } from "zod";
 
 const Rev = z.int().nonnegative();
 const Out = z.string().min(1).describe("Write the file here; prints its path");
 const MaxPx = z.int().positive().describe("Longest image side in pixels");
-const Scope = z
-  .string()
-  .min(1)
-  .describe("all | viewport | frame:<id> | near:<id>,r=<px>");
+const Scope = z.string().min(1).describe("all | frame:<id> | near:<id>,r=<px>");
 const Ids = z.array(Id).min(1).describe("Element ids");
 
-// TODO(phase 1): the strict skeleton schema from core (§3.2); loose until then.
-const Skeleton = z.looseObject({
-  type: z.string().min(1),
-  id: Id.optional(),
-});
+/** P1 patches: `delete` (bound arrows and labels go too), `set` a label.
+ * Mirrors core/apply's ApplyPatch (engine-only, so not importable here). */
+const ApplyPatch = z.discriminatedUnion("op", [
+  DeletePatch,
+  SetPatch.pick({ op: true, id: true }).extend({ label: z.string().min(1) }),
+]);
+
+/** The `apply` and `validate` input. Mirrors core/apply's ApplyInput, which
+ * the handler parses again. */
+const ApplyInput = z
+  .strictObject({
+    elements: z
+      .array(SkeletonElement)
+      .optional()
+      .describe("Excalidraw element skeletons, upserted by id"),
+    place: z
+      .array(PlaceOp)
+      .optional()
+      .describe("Placement and asset ops, run in order before writing"),
+    patches: z
+      .array(ApplyPatch)
+      .optional()
+      .describe("delete / set label by id"),
+    prune: z
+      .boolean()
+      .optional()
+      .describe("Delete generated elements the input no longer lists"),
+    dryRun: z
+      .boolean()
+      .optional()
+      .describe("Validate, place and lint; write nothing"),
+    ifRev: Rev.optional().describe("Fail unless the canvas is at this rev"),
+  })
+  .refine((i) => [i.elements, i.patches, i.place].some((a) => a?.length), {
+    message: "one of elements, place, patches is required",
+  });
 
 /** `GET /api/status` (SURFACE.md). */
 export const ServerStatus = z.strictObject({
@@ -55,29 +87,20 @@ export const defs = {
   add: {
     description:
       "Create elements from Excalidraw skeletons. Replies with ids and lints, never elements.",
-    input: z.strictObject({
-      elements: z.array(Skeleton).min(1).describe("Element skeletons"),
-    }),
+    input: SkeletonInput,
     output: ApplyReply,
   },
   apply: {
     description:
-      "Apply a .mmd source or AST patches to the canvas. Human edits are kept (overrides, conflicts).",
-    input: z
-      .strictObject({
-        text: z.string().min(1).optional().describe("Mermaid (.mmd) source"),
-        patches: z.array(AstPatch).min(1).optional().describe("AST patches"),
-        dryRun: z.boolean().optional().describe("Report only; write nothing"),
-        force: z
-          .boolean()
-          .optional()
-          .describe("Overwrite conflicting human edits"),
-        ifRev: Rev.optional().describe("Fail unless the canvas is at this rev"),
-      })
-      .refine((i) => i.text !== undefined || i.patches !== undefined, {
-        message: "Give text or patches",
-      }),
+      "Upsert elements by id, run placement ops, apply patches. Replies with ids, counts and lints, never elements.",
+    input: ApplyInput,
     output: ApplyReply,
+  },
+  validate: {
+    description:
+      "Check apply input (schema, placement, references) without writing. Replies with the ids apply would write.",
+    input: ApplyInput,
+    output: z.strictObject({ ok: z.literal(true), ids: z.array(Id) }),
   },
   get: {
     description: "One element by id, in the neutral scene form.",
@@ -166,14 +189,17 @@ export const defs = {
   },
   look: {
     description:
-      "Crop around a target and return a PNG path, its bbox and scale, and optional id marks.",
+      "Crop around a target: PNG path, bbox and scale, the target ids' rendered boxes, and optional id marks.",
     input: z.strictObject({
       target: z
         .string()
         .min(1)
-        .describe("<id> | <id>,<id> | viewport | frame:<id> | x,y,w,h"),
+        .describe("<id> | <id>,<id> | frame:<id> | x,y,w,h"),
       r: z.number().nonnegative().optional().describe("Margin in scene px"),
-      marks: z.boolean().optional().describe("Draw id marks on the crop"),
+      marks: z
+        .boolean()
+        .optional()
+        .describe("Return each id's box centre in crop pixels"),
       maxPx: MaxPx.optional(),
       out: Out.optional(),
     }),
@@ -182,30 +208,26 @@ export const defs = {
       bbox: Box,
       scale: z.number().positive(),
       marks: z.record(Id, Point),
+      /** The target ids' rendered boxes, in scene coordinates. */
+      boxes: z.record(Id, Box),
     }),
   },
   diff: {
-    description:
-      "Semantic diff between two revs or .mmd files, with the lint delta.",
+    description: "What changed between two revs, with the lint delta.",
     input: z.strictObject({
-      from: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Rev or .mmd path; default the last agent turn"),
-      to: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Rev or .mmd path; default now"),
+      from: Rev.optional().describe(
+        "Rev; default the rev before the last agent apply",
+      ),
+      to: Rev.optional().describe("Rev; default now"),
     }),
-    // TODO(phase 3): semantic change records once the semantic diff exists (§12).
     output: z.strictObject({
-      changes: z.array(FeedLine),
+      changes: z.array(FeedLine.omit({ author: true, time: true })),
       lints: z.strictObject({
         added: z.array(LintHit),
         fixed: z.array(LintHit),
       }),
+      /** e.g. `+1 node-overlap, -1 crossing`, or `lint unchanged`. */
+      delta: z.string(),
     }),
   },
   changes: {

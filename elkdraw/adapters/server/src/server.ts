@@ -1,12 +1,16 @@
 // One Bun process: static app, /ws scene sync, REST under /api, MCP at /mcp.
 import { resolve, sep } from "node:path";
 import {
+  type Box,
   ClientMessage,
   type Element,
   type FeedLine,
   type ServerMessage,
+  type SkeletonElement,
   safeParseJson,
 } from "@elkdraw/core";
+import type { LogEntry } from "@elkdraw/core/engine";
+import { Sidecar } from "@elkdraw/backend-excalidraw";
 import {
   type McpServer,
   createMcpHandler,
@@ -25,6 +29,7 @@ import {
 } from "@elkdraw/mcp";
 import { z } from "zod";
 import { type Applied, Store } from "./store.ts";
+import { phase1Handlers } from "./tools.ts";
 
 export type Status = ServerStatus;
 
@@ -38,6 +43,24 @@ export interface ToolContext {
     upserts: readonly Element[],
     deletes: readonly string[],
   ): number;
+  /** The stored scene at `rev` (RangeError outside 0..rev). */
+  sceneAt(rev: number): Element[];
+  /** Who changed the scene and when, per delta after `since`. */
+  log(since: number): LogEntry[];
+  /** The server's one renderer (the sidecar), started on first use. */
+  renderer(): Promise<Renderer>;
+}
+
+/** What the tools need from the sidecar (`Sidecar` satisfies it). */
+export interface Renderer {
+  start(): Promise<void>;
+  close(): Promise<void>;
+  convert(
+    skeletons: readonly SkeletonElement[],
+    scene: readonly Element[],
+  ): Promise<Element[]>;
+  measure(elements: readonly Element[]): Promise<Record<string, Box>>;
+  snap(bbox: Box, scale: number): Promise<Uint8Array>;
 }
 
 /** The injection seam: one MCP server per /mcp request, plus the same tools
@@ -61,6 +84,8 @@ export interface ServerOptions {
   dataDir?: string;
   /** Default: mcpTools (the @elkdraw/mcp tools). */
   tools?: (ctx: ToolContext) => Tools;
+  /** Default: a headless-browser Sidecar on appDir. Made on first use. */
+  renderer?: () => Renderer;
 }
 
 export interface RunningServer {
@@ -68,9 +93,13 @@ export interface RunningServer {
   stop: () => Promise<void>;
 }
 
-/** The @elkdraw/mcp tools. Real: `status`; the rest are NOT_IMPLEMENTED stubs. */
+/** The @elkdraw/mcp tools: `status` plus the Phase 1 bodies (tools.ts); the
+ * rest are NOT_IMPLEMENTED stubs. */
 export function mcpTools(ctx: ToolContext): Tools {
-  const handlers = { status: () => Promise.resolve(ctx.status()) };
+  const handlers = {
+    status: () => Promise.resolve(ctx.status()),
+    ...phase1Handlers(ctx),
+  };
   return {
     createMcpServer: () => createMcpServer(handlers),
     dispatch: (name, input) => dispatch(name, input, handlers),
@@ -179,8 +208,24 @@ export function startServer(options: ServerOptions): RunningServer {
     rev: store.rev,
     clients: server.subscriberCount(TOPIC),
   });
+  const makeRenderer = options.renderer ?? (() => new Sidecar(root));
+  let renderer: Promise<Renderer> | undefined;
   const ctx: ToolContext = {
     status,
+    sceneAt: (rev) => store.sceneAt(rev),
+    log: (since) => store.log(since),
+    renderer() {
+      renderer ??= (async () => {
+        const r = makeRenderer();
+        await r.start();
+        return r;
+      })();
+      // A failed start (no app bundle) is retried on the next call.
+      renderer.catch(() => {
+        renderer = undefined;
+      });
+      return renderer;
+    },
     scene: () => ({ rev: store.rev, elements: store.scene() }),
     apply(author, upserts, deletes) {
       const applied = store.apply(author, upserts, deletes);
@@ -193,6 +238,9 @@ export function startServer(options: ServerOptions): RunningServer {
   const stop = async () => {
     await mcp.close();
     await server.stop(true);
+    const r = renderer;
+    renderer = undefined;
+    if (r) await (await r.catch(() => undefined))?.close();
   };
 
   async function api(req: Request, pathname: string): Promise<Response> {
