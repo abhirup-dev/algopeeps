@@ -199,7 +199,42 @@ async function convert(
     return { ...prev, boundElements: [...had, ...added], frameId: el.frameId };
   });
   const byId = new Map(merged.map((e) => [e.id, e]));
-  return merged.map((e) => route(e, byId));
+  const routed = merged.map((e) => route(e, byId));
+  // Stored arrows bound to a batch element that moved or resized follow it
+  // (binding means "follow", human-drawn arrows included). They come back as
+  // extra elements; apply counts them as updated.
+  const moved = new Set(
+    skeletons
+      .map((s) => s.id)
+      .filter((id) => {
+        const [a, b] = [shapeOf(stored.get(id)), shapeOf(byId.get(id))];
+        return (
+          a !== undefined &&
+          b !== undefined &&
+          (a.type !== b.type ||
+            a.x !== b.x ||
+            a.y !== b.y ||
+            a.width !== b.width ||
+            a.height !== b.height)
+        );
+      }),
+  );
+  if (moved.size === 0) return routed;
+  // The far end may be a stored element outside the batch.
+  const ends = new Map([...stored, ...byId]);
+  const followers = scene
+    .filter(
+      (e) =>
+        (e.type === "arrow" || e.type === "line") &&
+        !byId.has(e.id) &&
+        e["isDeleted"] !== true &&
+        [e["startBinding"], e["endBinding"]].some((b) => {
+          const id = bindingId(b);
+          return id !== undefined && moved.has(id);
+        }),
+    )
+    .map((e) => follow(e, ends, moved));
+  return [...routed, ...followers];
 }
 
 // Gap between an arrow end and the outline it binds to.
@@ -236,6 +271,64 @@ function reach(s: Shape, ux: number, uy: number): number {
   );
 }
 
+const centre = (sh: Shape) => ({
+  x: sh.x + sh.width / 2,
+  y: sh.y + sh.height / 2,
+});
+
+const isPoint = (p: unknown): p is [number, number] =>
+  Array.isArray(p) &&
+  p.length >= 2 &&
+  typeof p[0] === "number" &&
+  typeof p[1] === "number";
+
+/** A stored arrow whose bound shape (an id in `moved`) moved: a two-point
+ * arrow is redrawn straight, as `route` does; an arrow with waypoints keeps
+ * them and only its end on a moved shape moves, onto that shape's outline
+ * along the line from the neighbouring waypoint to the shape's centre.
+ * ponytail: elbow arrows lose their right angles; re-route them properly
+ * (libavoid) when elbows are in use. */
+function follow(
+  e: Element,
+  byId: ReadonlyMap<string, Element>,
+  moved: ReadonlySet<string>,
+): Element {
+  const points = e["points"];
+  const { x, y } = e;
+  if (!Array.isArray(points) || !points.every(isPoint)) return e;
+  if (typeof x !== "number" || typeof y !== "number") return e;
+  if (points.length === 2) return route(e, byId);
+  if (points.length < 2) return e;
+  const abs = points.map(([px, py]) => ({ x: x + px, y: y + py }));
+  const snap = (binding: unknown, i: number, j: number) => {
+    const id = bindingId(binding);
+    const sh =
+      id !== undefined && moved.has(id) ? shapeOf(byId.get(id)) : undefined;
+    const n = abs[j];
+    if (!sh || !n) return;
+    const c = centre(sh);
+    const len = Math.hypot(c.x - n.x, c.y - n.y);
+    if (len === 0) return;
+    const [ux, uy] = [(c.x - n.x) / len, (c.y - n.y) / len];
+    const t = reach(sh, ux, uy) + BIND_GAP;
+    abs[i] = { x: c.x - ux * t, y: c.y - uy * t };
+  };
+  snap(e["startBinding"], 0, 1);
+  snap(e["endBinding"], abs.length - 1, abs.length - 2);
+  const [o = { x, y }] = abs;
+  const rel = abs.map((p) => [p.x - o.x, p.y - o.y] as [number, number]);
+  const xs = rel.map((p) => p[0]);
+  const ys = rel.map((p) => p[1]);
+  return {
+    ...e,
+    x: o.x,
+    y: o.y,
+    points: rel,
+    width: Math.max(...xs) - Math.min(...xs),
+    height: Math.max(...ys) - Math.min(...ys),
+  };
+}
+
 const bindingId = (v: unknown): string | undefined =>
   typeof v === "object" && v !== null && "elementId" in v
     ? String(v.elementId)
@@ -257,10 +350,6 @@ function route(e: Element, byId: ReadonlyMap<string, Element>): Element {
   const to = shapeOf(endId === undefined ? undefined : byId.get(endId));
   if (!from && !to) return e;
   const last = points[1] as [number, number];
-  const centre = (sh: Shape) => ({
-    x: sh.x + sh.width / 2,
-    y: sh.y + sh.height / 2,
-  });
   const s0 = from ? centre(from) : { x, y };
   const s1 = to ? centre(to) : { x: x + last[0], y: y + last[1] };
   const len = Math.hypot(s1.x - s0.x, s1.y - s0.y);

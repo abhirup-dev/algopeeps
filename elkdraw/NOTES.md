@@ -841,3 +841,32 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   dev server: size, stroke, dash, font and label all survived.
 - Not in scope: `s4`/`s5` still lint `dangling-endpoint` after Pricing
   moves, because bound arrows do not re-route (1.16).
+
+### 1.16 Bound arrows follow a moved box (2026-09-26)
+
+- Fix in the page-side `convert()` (`app/src/headless.ts`) only; core apply
+  and `adapters/server/src/tools.ts` needed no change. After converting the
+  batch, `convert` compares each batch element's converted x/y/width/height/
+  type with the stored copy. For every one that moved or resized, it returns
+  each stored (non-deleted, not-in-batch) arrow or line bound to it,
+  re-routed. Core apply already treats any produced element with a live id as
+  an update (version +1, seed and z-order kept, unchanged ones dropped), so
+  those arrows land in the store and count in the reply's `updated`. Apply
+  (partial upsert) and place both reach `convert`, so both paths are covered.
+- Routing: two-point arrows are redrawn straight outline to outline, as
+  `route()` does for batch arrows (focus 0, gap 4; the unmoved end slides
+  along its own outline). Arrows with waypoints keep every waypoint; only the
+  end bound to the moved shape moves, onto its outline along the line from the
+  neighbouring waypoint to the shape's centre. The end on a box that did not
+  move stays exactly put.
+- Origin is not checked: human-drawn bound arrows follow too (binding means
+  "follow"). Arrows bound only to boxes that did not move are never touched,
+  so a relabel or a no-op re-send does not straighten a human's arrow.
+- `ponytail:` elbow arrows lose their right angles when an end moves.
+- Test: `adapters/server/src/tools.e2e.ts` "bound arrows follow a box moved
+  by apply or place" replays p1rh-07 (trip -> pricing -> matching, s4/s5)
+  plus a waypoint arrow w1: move pricing by partial upsert, then by
+  `rightOf`; each reply has `updated: 4`, no `dangling-endpoint` on s4/s5/w1,
+  every bound end within 5 px outside pricing's new outline, w1's waypoint
+  unchanged. It fails on the base (`updated` 1). `skill/SKILL.md:49` ("follow
+  them when they move") is now true for apply and place; no wording change.
