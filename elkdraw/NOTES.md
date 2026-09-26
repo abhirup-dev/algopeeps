@@ -280,3 +280,32 @@ later tasks should not need `bun add`.
   decides otherwise, fix the Element Format section and the examples.
 - Not run: the acceptance (fresh Opus completes ride-hailing from the skill);
   it needs 1.2, 1.5, 1.7, 1.9, 1.10.
+
+### 1.9 Placement helpers: row, column, grid, assets (2026-09-26)
+
+- `core/place/ops.ts`: pure `place(elements, ops)` for `row`/`column`/`grid`/
+  `rightOf`/`leftOf`/`below`/`above` (cheatsheet's op shapes exactly). Ops run
+  in order over a working id→element map, so a later op can target an id an
+  earlier op just placed. Missing `width`/`height` (arrows, lines, frames)
+  default to 100x100 so every op still has something to center against.
+- `core/place/assets.ts`: `array`, `linkedList`, `tree`, `stack`, `table`,
+  `hashMap`, each a pure function to a whole `SkeletonElement[]`, ids exactly
+  as the cheatsheet promises (`arr-0`, `arr-0-idx`, `ll-0-1`, `t-8`, `t-8-4`,
+  `s-0`, `tb-r0c0`, `h-0`, `h-<key>`). `tree` inserts `keys` as a BST (first
+  write wins on a duplicate key) and lays out by in-order index (x) and depth
+  (y) — this reproduces the dogfood `bst-first` fixture's tree geometry
+  exactly (44px nodes, 60px x-step, 90px level gap), verified against the
+  fixture file in `bst-fixture.test.ts`. `hashMap` buckets by sum-of-char-codes
+  mod `buckets`; non-alnum keys get a slugged id, original string kept as the
+  label.
+- Every asset's output is asserted against `validateSkeleton` in
+  `assets.test.ts`. `bst-fixture.test.ts` rebuilds the BST+array fixture in 4
+  ops (`tree`, `array`, two `below` for lo/hi pointers) — well under the
+  15-op acceptance bar — and checks structure/rough positions, not bytes.
+- `core/tsconfig.json` include gained `place` (same pattern as `skeleton`);
+  `core/src/index.ts` re-exports `place`/asset functions and the `PlaceOp`
+  variant types additively.
+- Not wired into `apply`/the server: this task's `Owns:` is `core/place/**`
+  only. Whoever owns the `apply` tool (placement + asset ops in its input)
+  wires these in; nothing here assumes a caller shape beyond "array of
+  `SkeletonElement` in, array out".

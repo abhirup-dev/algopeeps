@@ -8,3 +8,17 @@ export {
   validateSkeleton,
   type SkeletonResult,
 } from "../skeleton/schema.ts";
+export {
+  place,
+  array,
+  linkedList,
+  tree,
+  stack,
+  table,
+  hashMap,
+  type PlaceOp,
+  type RowOp,
+  type ColumnOp,
+  type GridOp,
+  type RelOp,
+} from "../place/index.ts";
