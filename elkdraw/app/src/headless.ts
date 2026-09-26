@@ -142,6 +142,45 @@ const BINDABLE = new Set(["rectangle", "ellipse", "diamond", "text"]);
 const DEFAULT_FONT = FONT_FAMILY.Excalifont;
 const DEFAULT_FONT_SIZE = 20;
 
+/** Two things convertToExcalidrawElements gets wrong for a requested box
+ * (p1.20): (1) a free text's `newTextElement` always sizes width/height from
+ * the measured text, but for `textAlign: "center"/"right"` it also treats the
+ * skeleton's `x` as the anchor for that measured width, not as the left edge
+ * of the requested `width` box — `{x:84, width:32, textAlign:"center"}`
+ * centres on x=84 instead of the box centre (100). Left is already correct
+ * (no anchor offset). Recomputed here (in `boxDelta`) from the requested box
+ * and the real (measured) width; the width itself is left as measured, not
+ * forced to the request, so this stays correct across a relabel (new text,
+ * same box) with no extra state. (2) its frame step folds an explicit `x`/`y`
+ * of 0 into "not given" (`frame.x || minX`, falsy zero) and refits the frame
+ * to its children; restore an explicitly given 0 (or any explicit x/y). */
+function boxDelta(
+  el: { type: string; width?: number },
+  s: SkeletonElement | undefined,
+): { x?: number; y?: number } {
+  if (
+    el.type === "text" &&
+    s?.type === "text" &&
+    s.width !== undefined &&
+    (s.textAlign === "center" || s.textAlign === "right") &&
+    typeof el.width === "number"
+  ) {
+    return {
+      x:
+        s.textAlign === "center"
+          ? s.x + (s.width - el.width) / 2
+          : s.x + s.width - el.width,
+    };
+  }
+  if (el.type === "frame" && s?.type === "frame") {
+    const patch: { x?: number; y?: number } = {};
+    if (s.x !== undefined) patch.x = s.x;
+    if (s.y !== undefined) patch.y = s.y;
+    return patch;
+  }
+  return {};
+}
+
 async function convert(
   skeletons: readonly SkeletonElement[],
   scene: readonly Element[],
@@ -203,15 +242,23 @@ async function convert(
     input as unknown as Parameters<typeof convertToExcalidrawElements>[0],
     { regenerateIds: false },
   );
+  const bySkeleton = new Map(skeletons.map((s) => [s.id, s]));
   const merged = out.map((el): Element => {
-    const prev = referenced.get(el.id);
-    if (!prev) return { ...el };
+    const positioned = { ...el, ...boxDelta(el, bySkeleton.get(el.id)) };
+    const prev = referenced.get(positioned.id);
+    if (!prev) return { ...positioned };
     const had = Array.isArray(prev["boundElements"])
       ? (prev["boundElements"] as { id: string; type: string }[])
       : [];
     const ids = new Set(had.map((b) => b.id));
-    const added = (el.boundElements ?? []).filter((b) => !ids.has(b.id));
-    return { ...prev, boundElements: [...had, ...added], frameId: el.frameId };
+    const added = (positioned.boundElements ?? []).filter(
+      (b) => !ids.has(b.id),
+    );
+    return {
+      ...prev,
+      boundElements: [...had, ...added],
+      frameId: positioned.frameId,
+    };
   });
   const byId = new Map(merged.map((e) => [e.id, e]));
   const routed = merged.map((e) => route(e, byId));
