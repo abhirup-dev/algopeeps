@@ -13,6 +13,7 @@ const Block = Inner.extend({
   id: z.string().optional(),
   name: z.string().optional(),
   content: z.union([z.string(), z.array(Inner)]).optional(),
+  is_error: z.boolean().optional(),
 });
 const Usage = z.object({
   input_tokens: z.number().default(0),
@@ -35,6 +36,14 @@ const TranscriptRecord = z.object({
 });
 type TranscriptRecord = z.infer<typeof TranscriptRecord>;
 type Usage = z.infer<typeof Usage>;
+
+/**
+ * A tool result for a refused call: the eval gate hook (gate.ts DENIED), no
+ * allow rule ("haven't granted it yet"), or a path outside the session's
+ * working directories ("allowed working directories").
+ */
+export const DENIAL =
+  /elkdraw-eval: not allowlisted|haven't granted it yet|allowed working directories/;
 
 /** Bytes per token for tool output and prompts; design §9.5's basis for code-like text. */
 export const BYTES_PER_TOKEN = 3.2;
@@ -74,6 +83,8 @@ export interface TranscriptMetrics {
   toolCalls: number;
   toolCallsByName: Record<string, number>;
   apiCalls: number;
+  /** Tool calls refused by the permission allowlist (DENIAL). */
+  denials: number;
   images: { count: number; tokens: number; sizes: string[] };
   /** Prompt and tool-result text the task fed back into context. */
   inputTextBytes: number;
@@ -126,6 +137,7 @@ export function readTranscript(
   const sizes: string[] = [];
   let imageTokens = 0;
   let inputTextBytes = 0;
+  let denials = 0;
   let model: string | undefined;
   let effort: string | undefined;
 
@@ -163,6 +175,11 @@ export function readTranscript(
         if (b.type === "text") addText(b.text);
         else if (b.type === "image") image(b.source?.data);
         else if (b.type === "tool_result") {
+          const text =
+            typeof b.content === "string"
+              ? b.content
+              : (b.content ?? []).map((c) => c.text ?? "").join("");
+          if (b.is_error === true && DENIAL.test(text)) denials++;
           if (typeof b.content === "string") addText(b.content);
           else
             for (const c of b.content ?? []) {
@@ -197,6 +214,7 @@ export function readTranscript(
     toolCalls: toolIds.size,
     toolCallsByName,
     apiCalls: usageById.size,
+    denials,
     images: { count: sizes.length, tokens: imageTokens, sizes },
     inputTextBytes,
     tokens: {

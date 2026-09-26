@@ -138,3 +138,29 @@ test("vision tokens: (w*h)/750 after the 1568 px / 1.15 MP resize", () => {
   expect(pngSize(png(3, 4))).toEqual([3, 4]);
   expect(pngSize("aGVsbG8=")).toBeUndefined();
 });
+
+test("counts permission denials, not other tool errors", () => {
+  const result = (content: string, isError: boolean) =>
+    JSON.stringify({
+      type: "user",
+      timestamp: "2026-09-26T00:00:00Z",
+      message: {
+        content: [
+          { type: "tool_result", content, is_error: isError, tool_use_id: "t" },
+        ],
+      },
+    });
+  const lines = [
+    result(
+      "Claude requested permissions to use Bash, but you haven't granted it yet.",
+      true,
+    ),
+    result(
+      "ls in '/' was blocked. For security, Claude Code may only list files in the allowed working directories for this session: '/tmp/x'.",
+      true,
+    ),
+    result("Exit code 2\nlint: 3 errors", true),
+    result("haven't granted it yet (quoted in a normal result)", false),
+  ];
+  expect(readTranscript(lines.join("\n")).denials).toBe(2);
+});
