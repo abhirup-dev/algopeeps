@@ -903,7 +903,6 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   cross-zone arrows stay unclipped; frames re-send and move"; `lint.test.ts`
   outside-zone hint. The sidecar test fails on the base (`frameId` "fb").
 - Found, not fixed: (1) Excalidraw's converter uses `frame.x || minX`, so a
-  frame given `x: 0` (or `y: 0`) is re-placed at its children's bounds minus
-  10. (2) `snap` of a scene with frames draws ~20 px low: its origin is
+  frame given `x: 0` (or `y: 0`) is re-placed at its children's bounds minus 10. (2) `snap` of a scene with frames draws ~20 px low: its origin is
   `getCommonBounds(roots)`, but export also makes room for the frame name
   above the frame. Crops of frames in `look` may be offset by that much.
