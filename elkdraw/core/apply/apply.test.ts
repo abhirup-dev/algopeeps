@@ -473,3 +473,55 @@ test("p1rh-06: a place-only op moves a stored element and keeps the rest (rev 6)
     text: "Legend",
   });
 });
+
+test("1.15: re-running an asset op keeps the generator's output over the stored one", () => {
+  const seeded = step(
+    { rev: 0, elements: [] },
+    { place: [{ op: "array", id: "arr", values: [1, 3, 5], at: [0, 0] }] },
+    rh,
+  ).scene;
+  const scene = step(
+    seeded,
+    {
+      place: [{ op: "array", id: "arr", values: [2, 4, 6], at: [0, 0] }],
+      elements: [
+        {
+          id: "arr-0",
+          type: "rectangle",
+          x: 0,
+          y: 0,
+          backgroundColor: "#ffc9c9",
+        },
+      ],
+    },
+    rh,
+  ).scene;
+  expect(byId(scene, "arr-0")?.["backgroundColor"]).toBe("#ffc9c9");
+  expect(byId(scene, "arr-0#label")?.["text"]).toBe("2");
+});
+
+test("1.15: a partial upsert placed by an op uses its stored size", () => {
+  const { scene } = step(
+    rideHailing(),
+    {
+      elements: [{ id: "pricing", type: "rectangle", x: 0, y: 0 }],
+      place: [{ op: "leftOf", id: "pricing", of: "matching", gap: 160 }],
+    },
+    rh,
+  );
+  expect(byId(scene, "pricing")).toMatchObject({ x: 940, width: 200 });
+});
+
+test("1.15: deleting <id>#label removes a label; a later partial upsert keeps it gone", () => {
+  let scene = step(rideHailing(), {
+    patches: [{ op: "delete", id: "pricing#label" }],
+  }).scene;
+  expect(byId(scene, "pricing#label")).toBeUndefined();
+  scene = step(
+    scene,
+    { elements: [{ id: "pricing", type: "rectangle", x: 900, y: 420 }] },
+    rh,
+  ).scene;
+  expect(byId(scene, "pricing#label")).toBeUndefined();
+  expect(byId(scene, "pricing")?.["boundElements"]).toEqual([]);
+});

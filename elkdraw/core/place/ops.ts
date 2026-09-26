@@ -44,11 +44,12 @@ const sceneBox = (e: Element): Box => ({
   height: numberField(e, "height") ?? DEFAULT_SIZE,
 });
 
-const skeletonBox = (e: SkeletonElement): Box => ({
+/** `stored`: the same id on the canvas, whose size a partial upsert keeps. */
+const skeletonBox = (e: SkeletonElement, stored?: Box): Box => ({
   x: e.x ?? 0,
   y: e.y ?? 0,
-  width: e.width ?? DEFAULT_SIZE,
-  height: e.height ?? DEFAULT_SIZE,
+  width: e.width ?? stored?.width ?? DEFAULT_SIZE,
+  height: e.height ?? stored?.height ?? DEFAULT_SIZE,
 });
 
 /** Runs `ops` in order over `elements`; returns the elements to send to
@@ -62,12 +63,14 @@ export function place(
   const overrides = new Map(elements.map((e) => [e.id, e]));
   const out = new Map(overrides);
   const order = elements.map((e) => e.id);
-  const sceneById = new Map(scene.map((e) => [e.id, e]));
+  const sceneById = new Map(
+    scene.filter((e) => e["isDeleted"] !== true).map((e) => [e.id, e]),
+  );
 
   const boxOf = (id: string): Box => {
     const sk = out.get(id);
-    if (sk) return skeletonBox(sk);
     const sc = sceneById.get(id);
+    if (sk) return skeletonBox(sk, sc && sceneBox(sc));
     if (sc) return sceneBox(sc);
     throw new Error(`place: unknown id "${id}"`);
   };
@@ -80,7 +83,7 @@ export function place(
     }
     // An id only on the canvas moves as stored: everything but x/y is kept.
     const sc = sceneById.get(id);
-    const stored = sc && sc["isDeleted"] !== true && fromStored(sc, scene);
+    const stored = sc && fromStored(sc, scene);
     if (!stored) throw new Error(`place: unknown id "${id}"`);
     // ponytail: a frame moves without its children, and the converter
     // cannot re-take stored labelled children yet; place them instead.

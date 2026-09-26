@@ -219,17 +219,19 @@ function run(
   });
   if (errors.length) return fail(...errors);
 
-  // An upsert of an existing id patches it: given fields over the stored
-  // ones, so size, style, label and customData survive a partial resend.
-  let skeletons = given.map((s) => {
-    const prev = live.get(s.id);
-    return prev ? mergeStored(s, prev, scene.elements) : s;
-  });
+  let skeletons = given;
   if (input.place?.length) {
     if (!deps.place)
       return fail("place: placement ops are not available yet (task 1.9)");
     skeletons = deps.place(skeletons, input.place, scene.elements);
   }
+  // An existing id is patched: its skeleton (as given, placed or generated)
+  // over the stored one, so size, style, label and customData survive a
+  // partial resend. After place, so an asset op's new output still wins.
+  skeletons = skeletons.map((s) => {
+    const prev = live.get(s.id);
+    return prev ? mergeStored(s, prev, scene.elements) : s;
+  });
   const inputIds = new Set(skeletons.map((s) => s.id));
   const converted = skeletons.length
     ? deps.convert(skeletons.map(compile), scene.elements)
