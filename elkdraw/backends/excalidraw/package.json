@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "update-snapshots": "bun test --update-snapshots src/read"
+  },
   "exports": {
     ".": "./src/index.ts"
   },
