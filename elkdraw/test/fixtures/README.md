@@ -90,12 +90,14 @@ measured boxes, as the design says.
   flag it). Ground truth is what our renderer paints: lint is right when it
   flags that. `reason` says why the tester saw it; `evidence` is a composite
   next to the manifest, `final.png` crop at 2x on the left, the sidecar's snap
-  of the same scene region at 2x on the right. All 10 today have one cause: the
+  of the same scene region at 2x on the right. The cause of the 10 today: the
   testers' `mcp-excalidraw-server` stores labels as `label: {text}` with no
-  font, so its frontend painted them in Excalidraw's defaults (Excalifont
-  20 px), while the exported scene records Virgil 16 (nodes) or 14 (arrow
-  labels). Re-measured with bound labels at Excalifont 20, lint flags 9 of the
-  10; batch-10 is a near-miss in both renders.
+  font (seen on the yct tester's live server; inferred for batch and bst from
+  the same software and the glyph size), so its frontend painted them in
+  Excalidraw's defaults (Excalifont 20 px), while the exported scene records
+  Virgil 16 (nodes) or 14 (arrow labels). Re-measured with bound labels at
+  Excalifont 20, lint flags 9 of the 10; batch-10 is a near-miss in both
+  renders.
 - **Clean regions:** a lint hit whose ids all belong to one region's `ids` is a
   false positive. `bbox` (scene coordinates, 10 px padding) is for `look` and
   humans; the ids are the contract. Regions include the legends (unbound arrows
