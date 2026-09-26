@@ -33,3 +33,11 @@ every consumer in the same branch.
 - P0.2: initial contracts (the table above).
 - P0.5: the WebSocket sync protocol moved unchanged from `app/src/protocol.ts` to
   `core/src/contracts/protocol.ts`; import it from `@elkdraw/core`.
+- 1.0: `LintCode` += `arrow-through-label`, `label-on-own-arrowhead` (so
+  `Allow.rule` too). `LintHit` += required `bbox: Box` and
+  `severity: "error" | "info"`: lint must fill both. `FeedLine.op` is an enum
+  (`added`, `removed`, `moved`, `relabelled`, `restyled`, `reconnected`,
+  `applied`) plus optional `detail {oldLabel?, newLabel?, dx?, dy?}`.
+  `BackendAdapter.read` returns `Promise<NeutralScene>`: await it. `Point`
+  and `Box` moved to `geometry.ts` (still exported from `ir.ts` and
+  `@elkdraw/core`). `ApplyReply` unchanged.

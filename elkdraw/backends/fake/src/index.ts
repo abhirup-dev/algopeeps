@@ -137,7 +137,7 @@ export const fakeBackend: BackendAdapter<FakeScene> = {
   capabilities,
   // ponytail: `prev` is ignored; merge decisions reach emit in phase 2.
   emit: (graph) => emit(graph),
-  read: (scene) => NeutralScene.parse(structuredClone(scene)),
+  read: (scene) => Promise.resolve(NeutralScene.parse(structuredClone(scene))),
   measure: (texts) => Promise.resolve(texts.map(measureOne)),
   // A stub: no pixels, only where each requested id drew.
   render: (scene, target): Promise<RenderResult> => {

@@ -11,6 +11,8 @@
         "label-on-label",
         "label-on-border",
         "arrow-through-node",
+        "arrow-through-label",
+        "label-on-own-arrowhead",
         "node-overlap",
         "dangling-endpoint",
         "outside-zone",

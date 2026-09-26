@@ -110,8 +110,9 @@ export interface BackendAdapter<Scene> {
   /** Absolute coordinates from ELK's parent-relative ones is this method's job (§14.2). */
   // TODO(phase 2): how merge's per-group keep/write decisions reach emit.
   emit(graph: LaidGraph, prev?: Scene): Scene;
-  /** Required when `capabilities.readBack`. */
-  read?(scene: Scene): NeutralScene;
+  /** Required when `capabilities.readBack`. Async: text boxes are where they
+   * actually drew, which may need the browser (§19.1 B2). */
+  read?(scene: Scene): Promise<NeutralScene>;
   /** One size per request, in order. */
   measure(texts: readonly MeasureRequest[]): Promise<Size[]>;
   render?(scene: Scene, target: readonly string[] | Box): Promise<RenderResult>;

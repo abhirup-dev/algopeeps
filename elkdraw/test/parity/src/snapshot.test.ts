@@ -40,6 +40,6 @@ const threeNodes = LaidGraph.parse({
   edges: [edge("a", "b", 40, 80), edge("b", "c", 120, 160)],
 });
 
-test("fake: three nodes", () => {
-  expect(sceneOf(fakeBackend, threeNodes)).toMatchSnapshot();
+test("fake: three nodes", async () => {
+  expect(await sceneOf(fakeBackend, threeNodes)).toMatchSnapshot();
 });
