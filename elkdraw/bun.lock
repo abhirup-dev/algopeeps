@@ -143,6 +143,7 @@
         "@elkdraw/backend-excalidraw": "workspace:*",
         "@elkdraw/backend-fake": "workspace:*",
         "@elkdraw/core": "workspace:*",
+        "@elkdraw/sidecar": "workspace:*",
       },
       "devDependencies": {
         "happy-dom": "^20.14.5",

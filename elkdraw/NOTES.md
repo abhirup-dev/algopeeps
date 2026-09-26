@@ -491,3 +491,30 @@ boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
   `lint(await readScene(next, m))`. `m` must measure the whole scene
   (`sidecar.measure(scene.elements)`): readScene's `MeasureText` passes only
   `{id, type, text}`, which loses the container a label wraps in.
+
+### 1.6 Lint validated on the dogfood fixtures (2026-09-26)
+
+- `test/parity/lint/lint.e2e.ts` (`bun run --cwd elkdraw/test/parity
+test:e2e`, ~2 s after the app build): per fixture, sidecar `measure` →
+  `readScene` → `lint`, `#label` mapped to `-label`. Asserts every open,
+  non-`envOnly` defect is matched, no fixed one is, no hit is in a clean
+  region, and every hit matches some defect. Matched: yct 11/11, batch 3/3,
+  bst-first 0/0, bst 0/0. No lint change was needed.
+- Package graph: `test/parity` now depends on `@elkdraw/sidecar` (workspace,
+  tsconfig reference; approved by the orchestrator). Its tsconfig includes
+  `src` and `lint` (rootDir `.`).
+- The 10 misses of 1.5 are all `envOnly` (new optional manifest field,
+  `{reason, evidence}`, documented in `test/fixtures/README.md`; composites
+  under `test/fixtures/dogfood/<name>/evidence/`). Cause: the testers'
+  `mcp-excalidraw-server` stores labels as `label: {text}` (no font; checked
+  read-only on the tester's server at :3010, where `document.fonts` has
+  Excalifont loaded and Virgil unloaded), so its frontend painted Excalifont
+  20 px; the exported files record Virgil 16 (nodes) / 14 (arrow labels). Not
+  a fallback font: the fixture glyphs are Excalifont and ~1.3-1.4x larger.
+  Re-measuring with bound labels forced to fontFamily 5 / fontSize 20 makes
+  lint flag 9 of the 10 (yct-12, 15, 16; batch-11, 12, 14, 15; bst-01, 02),
+  with no other new hits except `text-overflow` on the unstretched bst
+  circles; batch-10 keeps ~13 px of line before the head in both renders.
+- bst-first now has no must-flag defect: it only guards false positives, like
+  bst. If a Virgil-16 wrap fixture is wanted, it has to be built for our
+  renderer.

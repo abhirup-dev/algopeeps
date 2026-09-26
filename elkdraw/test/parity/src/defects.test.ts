@@ -32,9 +32,17 @@ const defect = z
     reported: z.boolean(),
     fixedInFinal: z.boolean(),
     note: z.string().optional(),
+    // Open in final.png but not painted by our renderer (tester's environment):
+    // out of lint's must-flag set. `evidence` is a PNG next to the manifest.
+    envOnly: z
+      .strictObject({ reason: z.string().min(1), evidence: z.string() })
+      .optional(),
   })
   .refine((d) => (d.rule === undefined) !== (d.ruleGap === undefined), {
     message: "exactly one of rule, ruleGap",
+  })
+  .refine((d) => !(d.envOnly && d.fixedInFinal), {
+    message: "envOnly applies to open defects only",
   });
 
 const manifest = z.strictObject({
@@ -74,6 +82,11 @@ for (const name of ["yct", "batch", "bst", "bst-first"]) {
     const m = parseJson(manifest, await Bun.file(`${dir}defects.json`).text());
     const s = parseJson(scene, await Bun.file(dir + m.scene).text());
     expect(await Bun.file(dir + m.png).exists()).toBe(true);
+    for (const d of m.defects) {
+      if (d.envOnly) {
+        expect(await Bun.file(dir + d.envOnly.evidence).exists()).toBe(true);
+      }
+    }
 
     const known = new Set(s.elements.map((e) => e.id));
     const referenced = [
