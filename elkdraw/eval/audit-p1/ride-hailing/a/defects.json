@@ -95,6 +95,15 @@
       "fixedInFinal": false
     },
     {
+      "id": "a-rh-15",
+      "rule": "arrowhead-overlap",
+      "ids": ["e-loc-k", "e-notify-k"],
+      "description": "Four async arrowheads converge on Kafka's top edge; Location's and Notification's land about 35 px apart and read as one pile (same standard as b-rh-02: heads within about 35 px on one edge of a shared target).",
+      "source": "final-own.png",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
       "id": "a-rh-11",
       "ruleGap": "tool: apply that deletes and re-creates the same id loses it",
       "ids": ["a9", "s-pg"],

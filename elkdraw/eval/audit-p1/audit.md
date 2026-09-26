@@ -14,8 +14,8 @@ it leaves fewer defects in the final picture.
 - Calls were about even on both tasks.
 - Tokens were 14-26% lower for B.
 - Wall time was 13-30% lower for B.
-- A's ride-hailing final holds 10 defects, all flagged by our lint. The
-  tester did not see 6 of them.
+- A's ride-hailing final holds 11 defects; our lint flags 10 of them. The
+  tester did not see 7.
 - B's final holds 3: one info hit, plus 2 defects lint misses.
 - Both BST finals are clean.
 
@@ -25,6 +25,10 @@ Each side hit tool faults that cost it a round:
   export that differs from what its canvas paints.
 - B's `screenshot --out` writes relative paths into the **server's** cwd,
   outside the tester's sandbox.
+- elkdraw has the same same-id fault that cost A its arrows. A probe after
+  the runs sent an element `ar` plus a `delete ar` patch in one `apply`. It
+  replied `deleted: ["ar"]` with no warning, and `ar` was gone. No tester
+  hit it here.
 - B's frame titles are unreadable.
 - On BST, **both** testers lost their index labels the same way: a label
   inside a transparent box turns transparent. Neither tool warned. On B,
@@ -72,9 +76,10 @@ are about bytes ÷ 3.2.
   difference that remains.
 
 Tokens against 1.12: ride-hailing -10%, BST -7%. BST calls fell from 35
-to 21. 1.20 fixed the textAlign fault behind 1.12's 17 hand `Edit`s, and
-this tester did not hit it. It hit a different fault instead (see BST
-below).
+to 21. This tester avoided 1.12's 17 hand `Edit`s by putting the index
+labels in boxes, not centred free text. 1.20's textAlign fix was therefore
+never exercised, and the drop in calls is not evidence for it. The boxes
+led to a different fault instead (see BST below).
 
 ## Defects in the final PNGs
 
@@ -82,6 +87,12 @@ Method:
 
 - By eye on each side's own final screenshot (`final-own.png`), checked
   against our sidecar render of the exported scene (`sidecar.png`).
+- Caveat: the manifests were written with each side's lint hits already
+  in view, then each hit was confirmed by eye. So "found by lint" is
+  partly circular. The one real test of lint recall is the defects seen by
+  eye that lint did not raise.
+- Arrowhead pile-ups use one standard on both sides: two heads within
+  about 35 px on one edge of a shared target.
 - Manifests are in `<task>/<side>/defects.json`, in the fixtures' shape.
 - Our lint (`render.js`: sidecar measure → `readScene` → `lint`) ran on
   both final scenes.
@@ -105,21 +116,24 @@ and size, and Virgil paints as Excalifont.
 
 | run   | final elements (with bound text) | lint on final (errors / info) | by-eye defects left | found by lint | missed by lint                                | session incidents (fixed) |
 | ----- | -------------------------------- | ----------------------------- | ------------------- | ------------- | --------------------------------------------- | ------------------------- |
-| rh-a  | 78                               | **7 / 3** (unpainted 4 / 3)   | 10                  | 10            | 0                                             | 4 (a-rh-11..14)           |
+| rh-a  | 78                               | **7 / 3** (unpainted 4 / 3)   | 11                  | 10            | 1: arrowhead pile-up                          | 4 (a-rh-11..14)           |
 | rh-b  | 72                               | **0 / 1**                     | 3                   | 1             | 2: arrowhead pile-up, unreadable frame titles | 3 (b-rh-04..06)           |
 | bst-a | 95                               | 0 / 0                         | 0                   | n/a           | n/a                                           | 3 (a-bst-01..03)          |
 | bst-b | 111                              | 0 / 0                         | 0                   | n/a           | n/a                                           | 2 (b-bst-01..02)          |
 
-rh-a's 10 defects:
+rh-a's 11 defects:
 
 - 3 store labels wrapped: `text-wrapped`.
 - "7 GEO query" on the Core border: `label-on-border`.
 - 3 labels running into their own arrowheads: `label-on-own-arrowhead`, on
   a1, a5 and a8.
 - 3 crossings: `crossing`.
+- 4 async heads converging on Kafka's top edge. Location's and
+  Notification's land about 35 px apart (a-rh-15). `arrowhead-overlap`
+  does not fire.
 
 The tester reported the 3 crossings and "1 request ride sits tight". It did
-not see the other 6, because yctimlin has no lint and its `describe` has no
+not see the other 7, because yctimlin has no lint and its `describe` has no
 geometry checks.
 
 rh-b's 3:
@@ -190,9 +204,9 @@ Transcript line refs are to `<task>/<side>/transcript.jsonl`.
 
 ### Ride-hailing, B (elkdraw)
 
-- **L32, L51, L86: 3 of its 4 denials came from the sandbox.** They were a
+- **L32, L51, L86, L172: all 4 denials came from the sandbox.** They were a
   chained `status; describe; ls`, a Write to `/tmp/elkdraw-dogfood-4741/`,
-  and a chained `apply && screenshot`. The fourth is at L172.
+  a chained `apply && screenshot`, and an `ls` (L172).
 - **L53-L57: `--input <path>` rejected** with "JSON Parse error:
   Unrecognized token '/'". Only inline JSON or `-` is accepted. The
   tester switched to a heredoc.
@@ -278,19 +292,20 @@ final.
 "Helps" says which side benefits. A-side faults live in yctimlin's code and
 are listed only where they teach elkdraw something.
 
-| #   | problem                                                                                                         | evidence                                                                                                                                                                    | proposed change                                                                                                                                                                                                                                                 | helps                  | size |
-| --- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---- |
-| 1   | A label inside a transparent-stroke box is invisible, and lint passes it                                        | bst-b L52-L74 (`lints: []`, 15 labels gone); bst-a L79-L94, the same trap on yctimlin                                                                                       | New lint rule `text-invisible`: text colour transparent, or contrast with what is behind it below a floor. Hint: "set label color". Optionally, convert defaults the label colour to `#1e1e1e` when the container stroke is transparent and no colour is given. | B (and any Excalidraw) | S    |
-| 2   | `screenshot`/`look --out` with a relative path writes into the server's cwd, and replies with the relative path | rh-b L163-L194, bst-b L116-L127: both B runs; files landed in the worktree root, one under `canvas/`                                                                        | The CLI resolves `--out` against its own cwd before sending, and the server rejects a relative `out`. Reply with the absolute path.                                                                                                                             | B                      | S    |
-| 3   | Arrowheads piling up on a shared target are still missed at 25-30 px                                            | b-rh-02; 1.12 p1rh-10, the same miss                                                                                                                                        | Tune `arrowhead-overlap` to fire when two heads land on the same side of one target within about 1.5 head lengths; add both runs as fixtures.                                                                                                                   | B                      | S    |
-| 4   | Frame titles render at about 11 px grey and cannot be enlarged                                                  | b-rh-03; rh-b L113-L115 (`fontSize: unknown key`); report §1                                                                                                                | Either allow a frame title size (contract change) or have the skill say "add a free text title at the frame's top-left" and lint small frame names. A contract change needs its own bead.                                                                       | B                      | M    |
-| 5   | Skill sizing and spacing advice is wrong                                                                        | rh-b L62: 11 errors on the first apply; ellipses wrap at `max(160, chars×12)`; labelled arrows need 200 px, not 120; rh-a left 3 wrapped ellipses on the same yctimlin rule | Fix SKILL.md: an ellipse width rule (about 1.4× the rectangle rule) and 200 px for labelled arrows. Let the lint hint say the width that would fit.                                                                                                             | B                      | S    |
-| 6   | Moving a frame leaves its children behind; adding a child means resending the whole `children` list             | rh-b L118-L128 (5 `outside-zone`), L158                                                                                                                                     | A frame move applies its dx/dy to its children. Add a `children` add/remove patch op (or `parent` on the child).                                                                                                                                                | B                      | M    |
-| 7   | `look` cannot magnify, so small text cannot be verified                                                         | bst-b L100-L115; bst-a answer (2), where yctimlin has no crop at all                                                                                                        | `look --scale n` (up to 4) or `--min-px`: upscale small crops.                                                                                                                                                                                                  | B                      | S    |
-| 8   | The skill load is the largest single input on B                                                                 | 27.0 KB SKILL.md vs yctimlin's 17.4 KB; bst-b also read the 16.5 KB cheatsheet                                                                                              | Move reference tables from SKILL.md to the cheatsheet and give the cheatsheet headings to grep, aiming for SKILL.md at or under yctimlin's size. Re-measure with this harness.                                                                                  | B                      | M    |
-| 9   | Our pipeline cannot read a yctimlin export with invalid fractional indices                                      | the sidecar threw "invalid order key: a80" on bst-a's export                                                                                                                | Sanitise invalid `index` values in `readScene`/`measure` input (drop and reassign in array order), wherever elkdraw ingests outside scenes (a future `import`).                                                                                                 | B (import)             | S    |
-| 10  | `--input` does not take a path                                                                                  | rh-b L53-L57                                                                                                                                                                | Accept `--input @file` (or a path that exists).                                                                                                                                                                                                                 | B                      | S    |
-| 11  | Hand coordinates dominate both runs                                                                             | rh-a: 3 crossings left and a 16-entry shift for edit (b); rh-b report §2.1: "70% of the effort"                                                                             | Phase 2 (ELK layered layout with frames as partitions), as already planned. This audit adds no new scope.                                                                                                                                                       | B                      | L    |
+| #   | problem                                                                                                         | evidence                                                                                                                                                                                                          | proposed change                                                                                                                                                                                                                                                 | helps                  | size |
+| --- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---- |
+| 1   | A label inside a transparent-stroke box is invisible, and lint passes it                                        | bst-b L52-L74 (`lints: []`, 15 labels gone); bst-a L79-L94, the same trap on yctimlin                                                                                                                             | New lint rule `text-invisible`: text colour transparent, or contrast with what is behind it below a floor. Hint: "set label color". Optionally, convert defaults the label colour to `#1e1e1e` when the container stroke is transparent and no colour is given. | B (and any Excalidraw) | S    |
+| 2   | `screenshot`/`look --out` with a relative path writes into the server's cwd, and replies with the relative path | rh-b L163-L194, bst-b L116-L127: both B runs; files landed in the worktree root, one under `canvas/`                                                                                                              | The CLI resolves `--out` against its own cwd before sending, and the server rejects a relative `out`. Reply with the absolute path.                                                                                                                             | B                      | S    |
+| 2b  | One `apply` that both upserts and deletes an id deletes it, and does not warn                                   | A lost two arrows this way (rh-a L87-L106). A probe on a throwaway elkdraw server showed the same outcome: element `ar` plus patch `delete ar` replied `deleted: ["ar"]`, and `get ar` then answered "no element" | Reject the apply (exit 2, INVALID_INPUT) when an id is both in `elements` and in a `delete` patch, naming the id.                                                                                                                                               | B                      | S    |
+| 3   | Arrowheads piling up on a shared target are still missed at 25-30 px                                            | b-rh-02 (25-30 px) and a-rh-15 (about 35 px) in this audit; 1.12 p1rh-10, the same miss                                                                                                                           | Tune `arrowhead-overlap` to fire when two heads land on the same side of one target within about 1.5 head lengths; add both runs as fixtures.                                                                                                                   | B                      | S    |
+| 4   | Frame titles render at about 11 px grey and cannot be enlarged                                                  | b-rh-03; rh-b L113-L115 (`fontSize: unknown key`); report §1                                                                                                                                                      | Either allow a frame title size (contract change) or have the skill say "add a free text title at the frame's top-left" and lint small frame names. A contract change needs its own bead.                                                                       | B                      | M    |
+| 5   | Skill sizing and spacing advice is wrong                                                                        | rh-b L62: 11 errors on the first apply; ellipses wrap at `max(160, chars×12)`; labelled arrows need 200 px, not 120; rh-a left 3 wrapped ellipses on the same yctimlin rule                                       | Fix SKILL.md: an ellipse width rule (about 1.4× the rectangle rule) and 200 px for labelled arrows. Let the lint hint say the width that would fit.                                                                                                             | B                      | S    |
+| 6   | Moving a frame leaves its children behind; adding a child means resending the whole `children` list             | rh-b L118-L128 (5 `outside-zone`), L158                                                                                                                                                                           | A frame move applies its dx/dy to its children. Add a `children` add/remove patch op (or `parent` on the child).                                                                                                                                                | B                      | M    |
+| 7   | `look` cannot magnify, so small text cannot be verified                                                         | bst-b L100-L115; bst-a answer (2), where yctimlin has no crop at all                                                                                                                                              | `look --scale n` (up to 4) or `--min-px`: upscale small crops.                                                                                                                                                                                                  | B                      | S    |
+| 8   | The skill load is the largest single input on B                                                                 | 27.0 KB SKILL.md vs yctimlin's 17.4 KB; bst-b also read the 16.5 KB cheatsheet                                                                                                                                    | Move reference tables from SKILL.md to the cheatsheet and give the cheatsheet headings to grep, aiming for SKILL.md at or under yctimlin's size. Re-measure with this harness.                                                                                  | B                      | M    |
+| 9   | Our pipeline cannot read a yctimlin export with invalid fractional indices                                      | the sidecar threw "invalid order key: a80" on bst-a's export                                                                                                                                                      | Sanitise invalid `index` values in `readScene`/`measure` input (drop and reassign in array order), wherever elkdraw ingests outside scenes (a future `import`).                                                                                                 | B (import)             | S    |
+| 10  | `--input` does not take a path                                                                                  | rh-b L53-L57                                                                                                                                                                                                      | Accept `--input @file` (or a path that exists).                                                                                                                                                                                                                 | B                      | S    |
+| 11  | Hand coordinates dominate both runs                                                                             | rh-a: 3 crossings left and a 16-entry shift for edit (b); rh-b report §2.1: "70% of the effort"                                                                                                                   | Phase 2 (ELK layered layout with frames as partitions), as already planned. This audit adds no new scope.                                                                                                                                                       | B                      | L    |
 
 For the record, the yctimlin faults this audit found. None of them is an
 elkdraw change.
@@ -309,7 +324,9 @@ elkdraw change.
   painted.
 - **Verbose replies.** They echo whole elements; one `add` was 20-27 KB.
 
-elkdraw already avoids the textAlign, patch-order and echo faults.
+elkdraw's compact replies avoid the echo fault, and 1.20 addressed
+textAlign; this audit did not exercise that fix. The patch-order fault has
+an elkdraw twin (fix 2b).
 
 ## Harness and caveats
 

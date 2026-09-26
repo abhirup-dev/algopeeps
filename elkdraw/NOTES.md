@@ -1152,9 +1152,9 @@ el.width)/2` for centre, `s.x + s.width - el.width` for right. The element's
 - Report: `eval/audit-p1/audit.md`. Same harness as 1.12, one run per side
   per task, both sides at once. elkdraw vs yctimlin: tokens 54265 vs 62852
   (ride-hailing), 30262 vs 41032 (BST); calls about even. Our lint on the
-  ride-hailing finals: yctimlin 7 errors + 3 info (all real, tester saw 4),
+  ride-hailing finals: yctimlin 7 errors + 3 info (plus 1 pile-up lint misses; tester saw 4 of 11),
   elkdraw 0 + 1. Ranked fixes are proposals only; the user reviews first.
-- Top findings for elkdraw: a label in a transparent-stroke box is invisible
+- Top findings for elkdraw: an apply that upserts and deletes one id deletes it silently (probe); a label in a transparent-stroke box is invisible
   and lint passes it (both sides hit it on BST); `screenshot --out` with a
   relative path writes into the server's cwd (both B runs; it wrote into
   this worktree's root and `canvas/`); `arrowhead-overlap` still misses
