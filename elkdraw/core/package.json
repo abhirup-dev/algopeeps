@@ -10,7 +10,8 @@
     "zod": "^4.6.5"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./engine": "./src/engine/index.ts"
   },
   "private": true,
   "type": "module"

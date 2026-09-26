@@ -28,10 +28,10 @@ test("measure returns a stub box per element, warm", async () => {
     { id: "b", type: "text", text: "hi" },
   ];
   const [boxes, ms] = await timed(() => sidecar.measure(els));
-  expect(boxes).toEqual([
-    { id: "a", x: 0, y: 0, width: 100, height: 40 },
-    { id: "b", x: 0, y: 0, width: 100, height: 40 },
-  ]);
+  expect(boxes).toEqual({
+    a: { x: 0, y: 0, width: 100, height: 40 },
+    b: { x: 0, y: 0, width: 100, height: 40 },
+  });
   expect(ms).toBeLessThan(WARM_MS);
 });
 
