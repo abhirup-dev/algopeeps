@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>elkdraw</title>
+    <script>
+      // Excalidraw fetches fonts (Excalifont etc.) from here at runtime. The
+      // bundle ships them under /fonts/ (see vite.config.js), so no CDN.
+      window.EXCALIDRAW_ASSET_PATH = "/";
+    </script>
+    <style>
+      html,
+      body,
+      #root {
+        margin: 0;
+        height: 100%;
+      }
+      .elkdraw-pill {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font:
+          12px system-ui,
+          sans-serif;
+        color: #fff;
+        background: #6b7280;
+        pointer-events: none;
+      }
+      .elkdraw-pill-open {
+        background: #15803d;
+      }
+      .elkdraw-pill-closed {
+        background: #b91c1c;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
