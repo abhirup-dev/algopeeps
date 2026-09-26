@@ -118,6 +118,10 @@ suppressed?}` in `lint.ts`. The §17.4 bar counts errors only.
   `label-on-label`, `label-on-border`, `arrow-through-node`, `node-overlap`,
   `dangling-endpoint`, `outside-zone`, `crossing` (info),
   `arrow-through-label`, `label-on-own-arrowhead`.
+- **Container / leaf** — Lint's split of boxes: a container is a zone or a
+  box that fully holds another box (dashed zone rectangles, a legend); the
+  rest are leaves (nodes). Labels on leaves are `label-on-node`, across a
+  container's edge `label-on-border`; arrows pass through containers freely.
 
 ## Diff and feed
 

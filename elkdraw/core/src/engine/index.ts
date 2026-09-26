@@ -14,3 +14,4 @@ export {
   type ApplyResult,
   type Scene,
 } from "../../apply/apply.ts";
+export { labelId, lint } from "../../lint/lint.ts";
