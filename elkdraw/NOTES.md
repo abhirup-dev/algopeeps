@@ -667,3 +667,32 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   call. Frames created together with their children (the skill's own example)
   work fine. Reporting under "Needs from others"; did not touch
   `adapters/server/src/tools.ts`.
+
+### 1.10b Frame children already on the canvas (2026-09-26)
+
+- Fixed the 1.10b bug above, at the root: `convertToExcalidrawElements` only
+  resolves an id within its own input batch (`oldToNewElementIdMap`), so a
+  frame skeleton's `children` entry for a stored element not in this call's
+  batch threw `Element with <id> wasn't mapped correctly` — same shape of
+  problem the existing arrow-anchor code already solved for `start`/`end`.
+  `app/src/headless.ts`'s page-side `convert()`: generalised the anchor set
+  (renamed `anchors` -> `referenced`) to also collect a frame's pre-existing
+  children, feeds them into `convertToExcalidrawElements`'s batch as bare
+  elements (so the id resolves and it assigns `frameId`), then merges only
+  `boundElements`/`frameId` back onto the original stored element — id,
+  version, everything else stays exactly as stored (checked in the new test).
+  `tools.ts` and `sidecar/src/index.ts` needed no change: the bug and the fix
+  are both in the converter, one layer down.
+- Regression test: `sidecar/src/sidecar.e2e.ts` ("convert: a frame's children
+  already on the canvas keep their id and version") calls `Sidecar.convert`
+  directly with a frame naming one pre-existing rectangle (not in the
+  skeleton batch) and asserts it no longer throws, and that the rectangle's
+  `version`/`versionNonce` are unchanged while its `frameId` now points at the
+  frame. Unit-level (no sidecar) wasn't an option: the bug is inside
+  `convertToExcalidrawElements`, which only runs in the page.
+- Not handled (out of scope for this bug): a frame with _only_ pre-existing
+  children and no explicit `x`/`y`/`width`/`height` in its skeleton — the
+  comment in `schema.ts` says `convertToExcalidrawElements` auto-sizes a frame
+  from its (batch) children, which no longer include the pre-existing ones.
+  Untested; give frames an explicit box when their children are all
+  pre-existing.
