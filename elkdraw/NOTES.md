@@ -175,3 +175,38 @@ later tasks should not need `bun add`.
   Lint verified with scratch files: app, mcp and cli importing it error;
   server and backends/excalidraw pass. `app/dist` after `vite build` has no
   elkjs (grep for `elkjs`, `elk-worker`, `org.eclipse.elk`: 0 files).
+
+### 1.3 Sidecar: measure and snap (2026-09-26)
+
+- `?headless=1` (`app/src/headless.ts`, wired in `main.tsx`): renders Excalidraw
+  with no sync client and exposes `window.elkdraw` (`api`, `measure`,
+  `measureText`, `snap`). The sidecar loads `/?headless=1` and waits for it.
+- `measure(elements) -> Record<Id, Box>`: loads fonts, then `restoreElements`
+  with `repairBindings` + `refreshDimensions` (what the editor shows once text
+  is touched), sets that as the page scene, and per element exports it alone
+  (2x, integer-aligned origin via two invisible 1x1 corner rects) and takes the
+  ink bbox (alpha >= 32). Bound text and container ride along at opacity 0 so
+  arrow labels sit on their arrow and mask it; the label is grown by
+  BOUND_TEXT_PADDING (5) because the editor masks the padded box and export the
+  bare one.
+- Refresh reproduces the dogfood defects: centred text with a too-wide stored
+  width shrinks and keeps x (drawn left, yct `title`); "12" in a 44 px circle
+  wraps. The app's `toScene` does not refresh, so the editor shows stored sizes
+  until a text is edited. The fixture PNGs' wraps ("Redis geo-index" etc.) do
+  not reproduce: Virgil 16 px measures 119 < 131 wrap width here.
+- `measureText(MeasureRequest[]) -> Size[]`: Excalidraw's wrapText + metrics
+  via two `restoreElements` passes; height = lines x fontSize x lineHeight.
+  Font is an Excalidraw name (`Virgil`, `Excalifont`, ...) or numeric id.
+  Cache (in-process, unbounded) keyed (backend, font, size, text, wrapWidth).
+- `snap(bbox, scale, ids?)`: exports the last measured scene (or `ids` plus
+  their bound text), crops `bbox` onto white.
+- Gotchas: restore drops 0x0 elements; a text with height > 0 but no
+  lineHeight gets lineHeight derived from height (use height 0). Type-aware
+  lint cannot resolve `exportToCanvas`'s type; headless.ts re-types it.
+- e2e (`sidecar.e2e.ts`, ~8 s): per element vs the live editor canvas (zoom 2,
+  other elements opacity 0): all within 1 px except arrows, allowed 2 px (yct
+  `a8`, a curved arrow, is 1.5 px: editor caches linear elements on a canvas,
+  export draws directly). Timings: start ~0.35 s, measure 76 elements ~0.17 s
+  warm, snap 1460x900 @2x ~70 ms, measureText ~5 ms.
+- Stale for the orchestrator: the "Sidecar and elkjs" section above and
+  CONTEXT.md "Stubs today (task 1.3)".
