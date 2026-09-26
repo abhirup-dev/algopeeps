@@ -2,6 +2,7 @@
 // elements and snapping PNGs. P0.7 skeleton: measure and snap are stubs that
 // return fixed shapes, but they round-trip through page.evaluate so the
 // plumbing (serve, launch, evaluate, validate) is real. Real bodies: 1.3.
+import { Box, Id } from "@elkdraw/core";
 import { join, normalize } from "node:path";
 import { type Browser, type Page, chromium } from "playwright";
 import { z } from "zod";
@@ -13,18 +14,7 @@ export const Element = z.object({
 });
 export type Element = z.infer<typeof Element>;
 
-export const BBox = z.object({
-  x: z.number(),
-  y: z.number(),
-  width: z.number().nonnegative(),
-  height: z.number().nonnegative(),
-});
-export type BBox = z.infer<typeof BBox>;
-
-export const Box = BBox.extend({ id: z.string() });
-export type Box = z.infer<typeof Box>;
-
-const Boxes = z.array(Box);
+const Boxes = z.record(Id, Box);
 const PngDataUrl = z.string().startsWith("data:image/png;base64,");
 
 /** Default bundle: `bun run --cwd elkdraw/app build`. */
@@ -78,22 +68,24 @@ export class Sidecar {
     return (await this.#starting).page;
   }
 
-  /** Rendered boxes of elements. STUB: 100x40 at the origin for each. */
-  async measure(elements: readonly Element[]): Promise<Box[]> {
+  /** Rendered boxes of elements, by id. STUB: 100x40 at the origin for each. */
+  async measure(elements: readonly Element[]): Promise<Record<string, Box>> {
     const input = z.array(Element).parse(elements);
     const page = await this.#page();
     const raw: unknown = await page.evaluate(
       (els) =>
-        els.map((el) => ({ id: el.id, x: 0, y: 0, width: 100, height: 40 })),
+        Object.fromEntries(
+          els.map((el) => [el.id, { x: 0, y: 0, width: 100, height: 40 }]),
+        ),
       input,
     );
     return Boxes.parse(raw);
   }
 
   /** PNG of a scene region. STUB: a 1x1 PNG, whatever the bbox and scale. */
-  async snap(bbox: BBox, scale = 1): Promise<Uint8Array> {
+  async snap(bbox: Box, scale = 1): Promise<Uint8Array> {
     const input = {
-      bbox: BBox.parse(bbox),
+      bbox: Box.parse(bbox),
       scale: z.number().positive().parse(scale),
     };
     const page = await this.#page();

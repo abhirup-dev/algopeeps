@@ -83,6 +83,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@elkdraw/core": "workspace:*",
+        "@elkdraw/sidecar": "workspace:*",
         "@excalidraw/excalidraw": "0.18.1",
       },
     },

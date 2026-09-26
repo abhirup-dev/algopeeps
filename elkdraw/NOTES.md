@@ -8,6 +8,7 @@ task, newest last. Agents append their own log entry (see `AGENTS.md`).
 
 ```
 core  <- backends/excalidraw, backends/fake, sidecar, adapters/mcp, app (types only)
+sidecar <- backends/excalidraw (Playwright stays in sidecar's own package)
 adapters/server <- core, backend-excalidraw, backend-fake, mcp
 adapters/cli    <- core, mcp (spawns server/src/main.ts by path; no import)
 test/parity, eval <- anything
@@ -18,6 +19,14 @@ links declared deps, so undeclared imports do not resolve), `tsconfig.json`
 project references (`tsc -b` fails on cycles and on files outside a project),
 and `no-restricted-imports` in `eslint.config.js` (`allowedDeps`). Change all
 three together. `adapters/mcp` stays core-only for good: server depends on it.
+
+Core has two entries (`core/package.json` `exports`): `@elkdraw/core` =
+contracts + `json.ts` (zod only), `@elkdraw/core/engine` = `src/engine/`
+(mermaid adapter, elkjs layout, lint engine, later libavoid, and skeleton,
+apply, diff, place, merge, lift, print, router, families). The deep-import
+lint rule exempts exactly `@elkdraw/core/engine`; `app`, `adapters/mcp` and
+`adapters/cli` are banned from it, so Vite never bundles an engine into the
+app (mermaid touches `window` at import; libavoid is LGPL WASM, design §15.3).
 
 ## TypeScript
 
@@ -77,7 +86,7 @@ has `createMcpHandler` (per-request handler factory) and
 `@elkdraw/sidecar` (`sidecar/src/index.ts`): `new Sidecar(dist = app/dist)`,
 `start()` (idempotent; `Bun.serve` on a random 127.0.0.1 port serves the bundle,
 headless Chromium loads it and waits for `.excalidraw`), `measure(elements) ->
-Box[]`, `snap(bbox, scale = 1) -> Uint8Array` (PNG), `close()`. P0.7: both calls
+Record<Id, Box>` (core `Box`), `snap(bbox, scale = 1) -> Uint8Array` (PNG), `close()`. P0.7: both calls
 are stubs (100x40 box per element at the origin; a 1x1 PNG), but they go through
 `page.evaluate` and zod validates inputs before the page and outputs after it.
 
@@ -155,3 +164,14 @@ later tasks should not need `bun add`.
     (checks ~20 s each, both app builds included). Playwright's Chromium does
     not trust portless's CA, so the page opens with `ignoreHTTPSErrors`; the
     URLs print at the end for opening by hand while a `dev` runs.
+
+### Phase 0 review fixes B3, B4 (2026-09-26)
+
+- B3: edge `backends/excalidraw -> sidecar` added in `package.json`, tsconfig
+  references and `allowedDeps`. The sidecar's local `BBox`/`Box` schemas are
+  gone: it uses core `Box`, and `measure` returns `Record<Id, Box>` (was an
+  array of boxes with `id`). Bead 1.3's Owns should read `elkdraw/sidecar/**`.
+- B4: `@elkdraw/core/engine` entry added (empty barrel, `core/src/engine/`).
+  Lint verified with scratch files: app, mcp and cli importing it error;
+  server and backends/excalidraw pass. `app/dist` after `vite build` has no
+  elkjs (grep for `elkjs`, `elk-worker`, `org.eclipse.elk`: 0 files).

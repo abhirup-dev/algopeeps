@@ -120,6 +120,12 @@ not edit the contract.
 - Package seams: import other packages by `@elkdraw/<name>` only, from their
   public entry. No relative `../../core/src` and no deep `@elkdraw/x/...`.
   Allowed edges are in `allowedDeps` (and the graph in `NOTES.md`).
+- Core has two entries. `@elkdraw/core` is contracts + `json.ts` (zod only);
+  engines (mermaid adapter, elkjs layout, lint engine, later libavoid) and code
+  built on them go in `core/src/engine/` and are exported from
+  `@elkdraw/core/engine`, the one deep import allowed. `app`, `adapters/mcp`
+  and `adapters/cli` may not import it: engines must never reach the browser
+  bundle or the core-only adapters.
 - `no-console` except in `adapters/cli`, `eval`, `scripts`.
 - Type-checked strict rules: no floating promises, exhaustive switches,
   `import type` for types, no `as` on object literals.

@@ -14,7 +14,7 @@ import tseslint from "typescript-eslint";
 // package.json and tsconfig references. Missing = may import anything.
 const allowedDeps = {
   core: [],
-  "backends/excalidraw": ["core"],
+  "backends/excalidraw": ["core", "sidecar"],
   "backends/fake": ["core"],
   sidecar: ["core"],
   "adapters/mcp": ["core"],
@@ -24,7 +24,8 @@ const allowedDeps = {
 };
 
 // Packages reach each other only by @elkdraw/* name, never by relative path
-// or deep import.
+// or deep import. One exemption: @elkdraw/core/engine, core's second entry
+// (heavy engines), which noEngine below bans where it must never be bundled.
 const seamPatterns = [
   {
     regex:
@@ -32,10 +33,13 @@ const seamPatterns = [
     message: "Cross-package relative import. Import the package by name.",
   },
   {
-    regex: "^@elkdraw/[^/]+/",
+    regex: "^@elkdraw/(?!core/engine$)[^/]+/",
     message: "Deep import into a package. Use its public entry point.",
   },
 ];
+
+// Browser bundle and core-only adapters: contracts, never engines.
+const noEngine = ["app", "adapters/mcp", "adapters/cli"];
 
 const restrictImports = (patterns) => ({
   "no-restricted-imports": ["error", { patterns }],
@@ -118,6 +122,14 @@ export default tseslint.config(
     files: [`${dir}/**`],
     rules: restrictImports([
       ...seamPatterns,
+      ...(noEngine.includes(dir)
+        ? [
+            {
+              regex: "^@elkdraw/core/engine$",
+              message: `${dir} may not import @elkdraw/core/engine (engines stay out of the app bundle and the core-only adapters).`,
+            },
+          ]
+        : []),
       {
         group: ["@elkdraw/*", ...allowed.map((name) => `!@elkdraw/${name}`)],
         message: `${dir} may import only: ${allowed.length ? allowed.map((n) => `@elkdraw/${n}`).join(", ") : "no @elkdraw packages"}.`,
