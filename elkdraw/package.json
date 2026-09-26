@@ -19,7 +19,7 @@
     "format:fix": "prettier --write .",
     "test": "bun test",
     "check": "bun run typecheck && bun run lint && bun run format && bun run test",
-    "dev": "echo 'elkdraw dev: nothing to run yet (server lands in P0.5)'",
+    "dev": "sh scripts/dev.sh",
     "build": "tsc -b"
   },
   "devDependencies": {
