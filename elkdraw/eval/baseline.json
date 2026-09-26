@@ -1,0 +1,138 @@
+{
+  "about": "Dogfood baseline for the §17.4 bar (canvas/docs/agent-layer-design.md). Two Claude Code testers (claude-opus-5-5, effort medium) drove mcp-excalidraw-server 2.0.0 via the excalidraw-skill CLI on 2026-09-25 (canvas/docs/dogfood-synthesis.md). Every metric comes from src/transcript.ts run on the tester transcript over the given window.",
+  "method": {
+    "toolCalls": "tool_use blocks in the window, deduplicated by block id. Counts every tool (Bash, Read, Skill, Write, ...), not just canvas CLI calls.",
+    "tokens": "output_tokens from API usage (deduplicated by message.id, includes thinking) + user-side text in the window (prompt, skill text, tool results) at 3.2 bytes/token (design §9.5) + images at (w*h)/750 after the API resize to <= 1568 px long edge and <= 1.15 MP. Cache reads and the session's system-prompt cache write are excluded: both are fixed or scale with turns x context, not with the task.",
+    "wallSeconds": "first to last user/assistant record in the window.",
+    "window": "from the task prompt (inclusive) to the next orchestrator prompt (exclusive). It includes writing the report and the one-line summary the brief asks for.",
+    "command": "bun eval/src/cli.ts --dry-run <transcript> --task <task> --from <from> --to <to>"
+  },
+  "runs": [
+    {
+      "id": "yct-ride-hailing",
+      "task": "ride-hailing",
+      "tester": "A, one command at a time",
+      "transcript": "~/.claude/projects/-Users-abhirupdas-Codes-Personal-algopeeps-abhirup-canvas/d24dbb60-4b86-4be2-a3ea-34e1c802dd33.jsonl",
+      "fixture": "eval/fixtures/yct-ride-hailing.jsonl (this window, trimmed: user/assistant records only; tool inputs, assistant text and thinking dropped; user text replaced by same-byte-length filler; images cut to the PNG header)",
+      "window": {
+        "from": "2026-09-25T17:14:08.946Z",
+        "to": "2026-09-25T17:21:39.019Z"
+      },
+      "toolCalls": 33,
+      "toolCallsByName": {
+        "Bash": 17,
+        "Read": 12,
+        "Skill": 1,
+        "Write": 1,
+        "ToolSearch": 1,
+        "SendMessage": 1
+      },
+      "tokens": {
+        "output": 27158,
+        "inputText": 15965,
+        "images": 16874,
+        "total": 59997
+      },
+      "images": 11,
+      "wallSeconds": 441.4,
+      "usage": {
+        "input": 64,
+        "output": 27158,
+        "cacheRead": 2600484,
+        "cacheCreation": 105995
+      },
+      "report": {
+        "source": "canvas/docs/dogfood-excalidraw-yctimlin.md §1 Outcome",
+        "canvasCliCalls": "~40 (17 did real work: 1 add, 9 apply, 8 screenshot, 1 describe)",
+        "wall": "~6 min of tool time (331 s first status to final export)"
+      }
+    },
+    {
+      "id": "batch-ride-hailing",
+      "task": "ride-hailing",
+      "tester": "B, batch paths (add, apply, mermaid)",
+      "transcript": "~/.claude/projects/-Users-abhirupdas-Codes-Personal-algopeeps-abhirup-canvas/76acfc09-c5d4-4207-af17-f67fdbeca214.jsonl",
+      "window": {
+        "from": "2026-09-25T17:16:03.116Z",
+        "to": "2026-09-25T17:23:56.249Z"
+      },
+      "windowNote": "Starts at the 'change of tool' prompt. The 2 min before it were a failed attempt with the claude.ai Excalidraw connector (3 tool calls, OAuth), not part of the task.",
+      "toolCalls": 32,
+      "toolCallsByName": {
+        "Bash": 21,
+        "Read": 7,
+        "Skill": 1,
+        "Write": 1,
+        "ToolSearch": 1,
+        "SendMessage": 1
+      },
+      "tokens": {
+        "output": 31395,
+        "inputText": 19967,
+        "images": 10575,
+        "total": 61937
+      },
+      "images": 7,
+      "wallSeconds": 437.718,
+      "usage": {
+        "input": 64,
+        "output": 31395,
+        "cacheRead": 2787101,
+        "cacheCreation": 81453
+      },
+      "report": {
+        "source": "canvas/docs/dogfood-excalidraw-batch.md §1 Outcome",
+        "canvasCliCalls": "34 (8 mutating, 7 screenshot, 5 export, 3 get, 2 describe, 2 query, 2 snapshot)",
+        "wall": "~5.5 min of CLI time"
+      }
+    },
+    {
+      "id": "yct-bst",
+      "task": "bst",
+      "tester": "A, round 3 (only tester A ran the BST figure)",
+      "transcript": "~/.claude/projects/-Users-abhirupdas-Codes-Personal-algopeeps-abhirup-canvas/d24dbb60-4b86-4be2-a3ea-34e1c802dd33.jsonl",
+      "window": {
+        "from": "2026-09-25T17:25:24.491Z",
+        "to": "2026-09-25T17:29:38.746Z"
+      },
+      "windowNote": "Round 3 of a running session: no skill loading or setup inside the window, which makes this baseline small. It includes the chat answers the round-3 prompt asked for.",
+      "toolCalls": 10,
+      "toolCallsByName": { "Bash": 7, "Read": 3 },
+      "tokens": {
+        "output": 9998,
+        "inputText": 790,
+        "images": 2237,
+        "total": 13025
+      },
+      "images": 3,
+      "wallSeconds": 147.892,
+      "usage": {
+        "input": 22,
+        "output": 9998,
+        "cacheRead": 1561626,
+        "cacheCreation": 14287
+      },
+      "report": {
+        "source": "canvas/docs/dogfood-synthesis.md (round 3 table and pain #3, #8); no report section of its own",
+        "canvasCliCalls": null,
+        "wall": null
+      }
+    }
+  ],
+  "reference": {
+    "ride-hailing": {
+      "toolCalls": 32,
+      "tokens": 59997
+    },
+    "bst": {
+      "toolCalls": 10,
+      "tokens": 13025
+    }
+  },
+  "referenceNote": "ride-hailing takes the stricter (lower) of the two testers per measure: calls from batch (32), tokens from yct (59997). Bar: <= 10.67 calls and <= 11999 tokens for ride-hailing; <= 3.33 calls and <= 2605 tokens for BST.",
+  "defects": {
+    "ride-hailing": "Absolute bar (0 missed). Manifests of the dogfood's own final scenes: elkdraw/test/fixtures/dogfood/{yct,batch}/defects.json (14 and 8 unfixed). A new run's scene needs its own by-eye manifest; src/score.ts then counts missed.",
+    "bst": null,
+    "bstNote": "No BST scene or manifest was exported (test/fixtures/README.md). The BST missed-defect count is a by-eye number passed to --missed."
+  }
+}
