@@ -1,0 +1,15 @@
+{
+  "files": [],
+  "references": [
+    { "path": "core" },
+    { "path": "backends/excalidraw" },
+    { "path": "backends/fake" },
+    { "path": "sidecar" },
+    { "path": "adapters/mcp" },
+    { "path": "adapters/server" },
+    { "path": "adapters/cli" },
+    { "path": "app" },
+    { "path": "test/parity" },
+    { "path": "eval" }
+  ]
+}

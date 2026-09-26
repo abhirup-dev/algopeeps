@@ -1,0 +1,32 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+  },
+  "include": ["src"],
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../backends/excalidraw"
+    },
+    {
+      "path": "../backends/fake"
+    },
+    {
+      "path": "../sidecar"
+    },
+    {
+      "path": "../adapters/mcp"
+    },
+    {
+      "path": "../adapters/server"
+    },
+    {
+      "path": "../adapters/cli"
+    }
+  ]
+}
