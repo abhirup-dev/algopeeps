@@ -1,6 +1,6 @@
 ---
 name: elkdraw
-description: ELK draw canvas toolkit for creating, editing, and refining diagrams on a live Excalidraw canvas. Use when an agent needs to (1) draw or lay out diagrams, (2) iteratively refine them with rendered lint and cropped looks instead of full screenshots, (3) export .excalidraw files or PNG/SVG images, (4) save/restore canvas snapshots, (5) see what a human changed on the canvas, or (6) perform element-level CRUD and row/column/grid placement. Primary interface is the bundled CLI (bun elkdraw/adapters/cli/src/main.ts <command>) against a canvas server you start once; MCP tools and a REST API are equivalent alternatives.
+description: ELK draw canvas toolkit for creating, editing, and refining diagrams on a live Excalidraw canvas. Use when an agent needs to (1) draw or lay out diagrams, (2) iteratively refine them with rendered lint and cropped looks instead of full screenshots, (3) validate a diagram's structure and references before writing it, (4) delete or relabel elements by id and prune generated ones that fall out of the file, (5) see what a human changed on the canvas, or (6) perform element-level CRUD and row/column/grid placement. Primary interface is the bundled CLI (bun elkdraw/adapters/cli/src/main.ts <command>) against a canvas server you start once; MCP tools and a REST API are equivalent alternatives.
 ---
 
 # ELK draw Skill
@@ -17,35 +17,35 @@ Three interfaces drive the same live canvas. Pick the first one that applies:
    The server does **not** auto-start. Start it once with `bun elkdraw/adapters/cli/src/main.ts start --no-open` (prints the status JSON; a no-op when it is already running). Check it with `status`, stop it with `stop`.
 3. **REST API** (last resort, e.g. from application code): `POST /api/tools/<name>` with the tool's input as the JSON body — see `references/cheatsheet.md`. The server must already be running.
 
-The canvas URL comes from `--url`, else `ELKDRAW_URL`, else `http://127.0.0.1:$PORT` (default `http://127.0.0.1:3940`). `status` returns `url` and `branch`: give the user `url` so they can watch the canvas, and check `branch` is the worktree you mean. For a portless `https://….elkdraw.localhost:1355` URL, prefix every CLI call with `NODE_EXTRA_CA_CERTS=~/.portless/ca.pem`. Rendering is headless: `screenshot`, `look` and `lint` never need an open browser tab.
+The canvas URL comes from `--url`, else `ELKDRAW_URL`, else `http://127.0.0.1:$PORT` (default `http://127.0.0.1:3940`). `status` returns `url` and `branch`: give the user `url` so they can watch the canvas, and check `branch` is the worktree you mean. For a portless `https://….elkdraw.localhost:1355` URL, prefix every CLI call with `NODE_EXTRA_CA_CERTS=~/.portless/ca.pem`. Rendering is headless: `look` and `lint` never need an open browser tab.
 
 ### CLI Quick Reference
 
-Results are JSON on stdout, always (including `describe`). Diagnostics on stderr. Exit codes: 0 ok, 1 error (the server answered non-2xx; body on stderr), 2 usage or invalid input (nothing was sent), 3 server unreachable. Every command takes `--input <json>` or `--input -` (stdin) for its whole input object; flags override it.
+Results are JSON on stdout, always. Diagnostics on stderr. Exit codes: 0 ok, 1 error (the server answered non-2xx; body on stderr), 2 usage or invalid input (nothing was sent), 3 server unreachable. Every command takes `--input <json>` or `--input -` (stdin) for its whole input object; flags override it. A command whose reply is `{"error": {"code": "NOT_IMPLEMENTED", ...}}` is not built on this server yet; see "not available" rows below.
 
-| Task                                  | Command                                                                                                                           |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Start / stop / inspect server         | `start --no-open`, `stop`, `status`                                                                                               |
-| Create or update elements (batch)     | `apply --input - < scene.json` — `{"elements":[...],"place":[...],"prune":true}`                                                  |
-| Delete / relabel by id                | `apply --patches '[{"op":"delete","id":"a"},{"op":"set","id":"b","label":"New"}]'`                                                |
-| Create only (fails on an existing id) | `add --input - < elements.json` — `{"elements":[...]}`                                                                            |
-| Check input without writing           | `validate --input - < scene.json`, or `apply --dry-run` (also returns lints)                                                      |
-| Read one / query many                 | `get --id <id>`, `query [--type box\|zone\|line\|text] [--ids a,b] [--bbox '{"x":0,"y":0,"width":800,"height":600}'] [--limit n]` |
-| Understand the scene                  | `describe [--scope frame:<id>]` (`{rev, text}`: ids, positions, labels, connections)                                              |
-| Check the scene                       | `lint [--scope all\|frame:<id>\|near:<id>,r=<px>] [--ids a,b]` → hits with code, ids, bbox, hint                                  |
-| See part of the scene                 | `look --target <id>[,<id>] [--r 150] [--marks]` → cropped PNG path + rendered boxes                                               |
-| See the whole scene                   | `screenshot [--out f.png] [--format svg] [--max-px n]` → `{path, format, width, height}`                                          |
-| What changed                          | `changes [--since <rev>]` (who changed what), `diff [--from <rev>] [--to <rev>]` (changes + lint delta)                           |
-| Scene files                           | `export --format excalidraw\|obsidian\|svg\|png [--out f]` (no `--out` → `content` inline)                                        |
-| Snapshots                             | `snapshot --action save\|list\|restore [--name <name>]`                                                                           |
-| Wipe canvas                           | `clear --yes`                                                                                                                     |
+| Task                                  | Command                                                                                                                          |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Start / stop / inspect server         | `start --no-open`, `stop`, `status`                                                                                              |
+| Create or update elements (batch)     | `apply --input - < scene.json` — `{"elements":[...],"place":[...],"prune":true}`                                                 |
+| Delete / relabel by id                | `apply --patches '[{"op":"delete","id":"a"},{"op":"set","id":"b","label":"New"}]'`                                               |
+| Create only (fails on an existing id) | `add --input - < elements.json` — `{"elements":[...]}`                                                                           |
+| Check input without writing           | `validate --input - < scene.json` (reads the canvas to resolve references), or `apply --dry-run` (also returns lints)            |
+| Read one / query many                 | not available — keep `scene.json` as the source of truth; `look --target <id>` gives one id's rendered box                       |
+| Understand the scene                  | not available — read `scene.json`, or `changes`/`diff` for what moved since your last apply                                      |
+| Check the scene                       | `lint [--scope all\|frame:<id>\|near:<id>,r=<px>] [--ids a,b]` → hits with code, ids, bbox, hint                                 |
+| See part of the scene                 | `look --target <id>[,<id>] [--r 150] [--marks]` → cropped PNG path + rendered boxes                                              |
+| See the whole scene                   | not available — `look --target x,y,w,h --max-px n` over the diagram's full bounds                                                |
+| What changed                          | `changes [--since <rev>]` (who changed what), `diff [--from <rev>] [--to <rev>]` (changes, lint added/fixed, and a `delta` line) |
+| Scene files                           | not available — `scene.json` is the file; commit it directly                                                                     |
+| Snapshots                             | not available — commit `scene.json` to git before risky changes instead                                                          |
+| Wipe canvas                           | not available — `apply --patches` with a `delete` per known id                                                                   |
 
 ### Element Format (CLI and MCP)
 
 Elements are Excalidraw's own element skeletons (`ExcalidrawElementSkeleton`), checked strictly before anything is written:
 
 - **Ids**: every element needs a semantic `"id"` (`"trip"`, `"rider-to-gateway"`), arrows included. Ids are stable: re-sending an id updates that element.
-- **Labels**: put `"label": {"text": "My Label"}` on a shape or arrow. The label's own id is `<id>#label` in lint hits and `describe`.
+- **Labels**: put `"label": {"text": "My Label"}` on a shape or arrow. The label's own id is `<id>#label` in lint hits.
 - **Arrow binding**: `"start": {"id": "a"}` / `"end": {"id": "b"}` — arrows bind to element edges and follow them when they move. `x`/`y` are required but recomputed for bound arrows; pass `0`.
 - **Zones**: a `"type": "frame"` with `"name": "Core services"` and `"children": ["trip", "pricing", ...]`. The name is drawn above the frame, never on top of its children.
 - **Unknown or misplaced keys are rejected**, with the path: `elements[3].text: unknown key; use label.text`. Nothing is written when any element fails. yctimlin-style `text` on shapes and `startElementId`/`endElementId` are errors here.
@@ -154,36 +154,36 @@ Excalidraw diagrams are visual communication. If text is cut off, elements overl
 write scene.json ──► apply ──► lints in the reply?
       ▲                          │ yes          │ no
       │                          ▼              ▼
-      └──── fix scene.json ◄── look at the    screenshot once,
-                               hit ids        check intent, done
+      └──── fix scene.json ◄── look at the    look at the whole
+                               hit ids        diagram, check intent, done
 ```
 
-1. **Write**: keep the whole diagram in one file (`scene.json`: `elements` + `place`). It is your source of truth; edit it, don't rebuild it from `describe`.
+1. **Write**: keep the whole diagram in one file (`scene.json`: `elements` + `place`). It is your source of truth; edit it, don't try to reconstruct it from the canvas.
 2. **Apply**: `apply --input - < scene.json`. Re-applying unchanged elements is a no-op, so always send the whole file.
 3. **Lint**: the `apply` reply carries `lints`; `lint` re-runs them on demand. Each hit is `{code, ids, bbox, severity, hint}`. Lint measures what was actually drawn, not the stored numbers.
-4. **Look**: for each `error` hit you don't understand from the hint, `look --target <ids> --r 150` returns a small crop (≤ 512×384) and the rendered boxes of those ids. Read the PNG. Don't take a full screenshot to find a defect.
+4. **Look**: for each `error` hit you don't understand from the hint, `look --target <ids> --r 150` returns a small crop (≤ 512×384) and the rendered boxes of those ids. Read the PNG.
 5. **Fix**: edit `scene.json` as the hint says, apply again. The reply's lints show what is left.
 
-Done means: zero `error` hits, then one `screenshot` to check what lint can't: the diagram says what was asked (every required element, numbering, legend, title).
+Done means: zero `error` hits, then one `look` over the diagram's full coordinate range (e.g. `look --target 0,0,<w>,<h> --max-px 1024`) to check what lint can't: the diagram says what was asked (every required element, numbering, legend, title).
 
 ### Quality Checklist
 
 Lint checks these for you after each `apply`. Each code, what it means, and the usual fix:
 
-| Code                     | Severity | Means                                                                                         | Fix                                                                            |
-| ------------------------ | -------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `text-overflow`          | error    | Label is wider or taller than its shape (text truncated)                                      | Increase `width`/`height`, or shorten the label                                |
-| `text-wrapped`           | error    | Label wrapped onto more lines than it was written with                                        | Widen the shape, or put the line break in the text yourself and raise `height` |
-| `node-overlap`           | error    | Two shapes share space                                                                        | Move one; keep ≥ 40px between shapes                                           |
-| `outside-zone`           | error    | A frame child is drawn outside its frame, or a shape sits inside a frame that doesn't list it | Grow or move the frame (50px padding), or fix `children`                       |
-| `arrow-through-node`     | error    | An arrow passes through an unrelated shape                                                    | Move that shape off the line, or move an endpoint so the line is clear         |
-| `arrow-through-label`    | error    | An arrow crosses another element's label                                                      | Move the label's owner or the arrow's endpoints                                |
-| `label-on-node`          | error    | A label (usually an arrow's) sits on a shape                                                  | Lengthen the arrow (move the shapes apart), shorten or drop the label          |
-| `label-on-label`         | error    | Two labels overlap                                                                            | Spread the arrows apart, or drop one label                                     |
-| `label-on-border`        | error    | A label crosses a shape or frame border                                                       | Move it fully inside or outside; grow the container                            |
-| `label-on-own-arrowhead` | error    | An arrow's label covers its own arrowhead: the arrow is too short                             | Give labeled arrows 120px+, or drop the label                                  |
-| `dangling-endpoint`      | error    | An arrow end is not bound, or points at an id that doesn't exist                              | Set `start`/`end` to an existing id                                            |
-| `crossing`               | info     | Two arrows cross                                                                              | Reorder shapes if it's cheap; otherwise fine to leave                          |
+| Code                     | Severity | Means                                                                                                                                    | Fix                                                                            |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `text-overflow`          | error    | Label is wider or taller than its shape (text truncated)                                                                                 | Increase `width`/`height`, or shorten the label                                |
+| `text-wrapped`           | error    | Label wrapped onto more lines than it was written with                                                                                   | Widen the shape, or put the line break in the text yourself and raise `height` |
+| `node-overlap`           | error    | Two leaf shapes partially overlap (full containment is a zone, not this)                                                                 | Move one; keep ≥ 40px between shapes                                           |
+| `outside-zone`           | error    | A frame child drawn outside its frame, a shape inside a frame that doesn't list it, or a leaf across a plain containing rectangle's edge | Grow or move the frame/zone (50px padding), or fix `children`                  |
+| `arrow-through-node`     | error    | An arrow passes through an unrelated shape                                                                                               | Move that shape off the line, or move an endpoint so the line is clear         |
+| `arrow-through-label`    | error    | An arrow crosses an arrow label or free-standing text (not a shape's own label)                                                          | Move the label's owner or the arrow's endpoints                                |
+| `label-on-node`          | error    | A label (usually an arrow's) sits on a shape                                                                                             | Lengthen the arrow (move the shapes apart), shorten or drop the label          |
+| `label-on-label`         | error    | Two labels overlap                                                                                                                       | Spread the arrows apart, or drop one label                                     |
+| `label-on-border`        | error    | A label crosses a shape or frame border                                                                                                  | Move it fully inside or outside; grow the container                            |
+| `label-on-own-arrowhead` | error    | An arrow's label covers its own arrowhead: the arrow is too short                                                                        | Give labeled arrows 120px+, or drop the label                                  |
+| `dangling-endpoint`      | error    | A bound arrow end names a missing id, or sits >15px off its shape (unbound ends never fire this)                                         | Set `start`/`end` to an existing id, or resend it so the end re-snaps          |
+| `crossing`               | info     | Two arrows cross                                                                                                                         | Reorder shapes if it's cheap; otherwise fine to leave                          |
 
 Lint cannot judge intent. Also check by eye, once, at the end:
 
@@ -203,7 +203,7 @@ Create elements directly: `apply` does not take Mermaid text. If the user gives 
 ### Steps (CLI shown; MCP tools are 1:1 — see cheatsheet)
 
 1. Plan your coordinate grid — map out tiers and x-positions before writing JSON. (The colors/sizing guide lives in `references/cheatsheet.md`.)
-2. Start the server and note the canvas URL: `bun elkdraw/adapters/cli/src/main.ts start --no-open`. Optional fresh start: `clear --yes`.
+2. Start the server and note the canvas URL: `bun elkdraw/adapters/cli/src/main.ts start --no-open`. `clear` is not implemented on this server; if you need a blank canvas and know the ids from a prior turn, delete them with `apply --patches` (one `delete` per id).
 3. Write the whole diagram — shapes, arrows, zones and placement — into one file. Semantic `id` fields (e.g. `"id": "auth-svc"`) make later updates easy:
    ```bash
    cat > /tmp/scene.json <<'EOF'
@@ -247,12 +247,11 @@ Arrows are straight lines between the edges of the shapes they bind. The reliabl
 
 ## Workflow: Iterative Refinement
 
-Pairing `describe` with `look` is what makes this skill powerful.
+Pairing `scene.json` with `lint` and `look` is what makes this skill powerful.
 
-- **`describe`** → `{rev, text}`: element IDs, types, positions, labels, connections. Use it to know _what's on the canvas_ when you don't have the file (a human drew it, or you lost track).
+- **`scene.json`** → your own file: element IDs, types, positions, labels, connections. It is the only "what's on the canvas" you get — there is no `describe` to ask the server instead.
 - **`lint`** → the defects, with ids and a hint each. Use it to know _what is wrong_ without looking at anything.
-- **`look`** → a cropped PNG around ids, plus their rendered boxes. Use it for _visual quality verification_ of one spot — it shows exactly what the user sees there. `--marks` draws the ids on the crop. The CLI prints the saved file path; read/view that file.
-- **`screenshot`** → the whole canvas as one PNG. Use it once at the end, not per defect.
+- **`look`** → a cropped PNG around ids, plus their rendered boxes. Use it for _visual quality verification_ of one spot — it shows exactly what the user sees there. Add `--marks` to get each id's crop-pixel centre back in the reply (for your own bookkeeping; nothing is drawn on the PNG). The CLI prints the saved file path; read/view that file.
 
 **Feedback loop:**
 
@@ -261,18 +260,18 @@ apply scene.json
   → lints: text-overflow [auth-svc#label] → set auth-svc width 220 in the file → apply
   → lints: node-overlap [auth-svc, rate-limiter] → look --target auth-svc,rate-limiter --r 150
     → "rate-limiter sits 20px into auth-svc" → rightOf rate-limiter of auth-svc gap 60 → apply
-  → lints: [] → screenshot → "all checks pass"
+  → lints: [] → look at the whole diagram → "all checks pass"
   → proceed
 ```
 
 ## Workflow: Refine an Existing Diagram
 
-1. `changes` to see what the human did since your last apply (lines like `{"author":"human","op":"moved","ids":["kafka"],"detail":{"dx":120,"dy":0}}`). `apply` writes exactly what you send, so a human's move is lost if you re-apply an old position: copy their changes into your file first (`get --id <id>` for the new values).
-2. No file (a diagram you didn't draw)? `describe` to understand current state — note element IDs and positions — and `query --type box|zone|line|text` for the elements you need.
+1. `changes` to see what the human did since your last apply (lines like `{"author":"human","op":"moved","ids":["kafka"],"detail":{"dx":120,"dy":0}}`, no `author`/`time` on `diff`'s `changes`). `apply` writes exactly what you send, so a human's move is lost if you re-apply an old position: copy their changes into your file first (`look --target <id>` for the new box).
+2. No file (a diagram you didn't draw)? There is no `describe` or `query` to ask the server for the current scene — you need the `scene.json` a prior turn wrote, or `changes --since 0` for the full history of adds and moves.
 3. Identify elements by `id` or label text (not by x/y coordinates — they change).
 4. Edit the file and re-apply it; `--if-rev <rev>` (the `rev` from `changes`) fails instead of overwriting if the canvas moved on meanwhile. Delete with a `delete` patch, or set `"prune": true` so ids you removed from the file are deleted (only elements you created; human-drawn elements are never pruned). **Bound arrows re-route automatically when you move or resize their endpoints** — no need to delete and recreate them.
-5. Read the reply's lints; `look` to confirm the change looks right. `diff` shows what changed since your last turn and which lint hits it added or fixed.
-6. If updates fail: check the ID exists with `get --id <id>`.
+5. Read the reply's lints; `look` to confirm the change looks right. `diff` shows what changed since your last turn (no author/time), the lint hits it added or fixed, and a one-line `delta` summary (e.g. `+1 node-overlap, -1 crossing`).
+6. If updates fail: `validate` the same input first — it resolves references against both the input and the live canvas and reports which id is missing.
 
 ## Workflow: Mermaid Conversion
 
@@ -280,26 +279,15 @@ Not supported: `apply` rejects `text`. Translate the Mermaid nodes and edges int
 
 ## Workflow: File I/O
 
-- Export scene: `export --format excalidraw --out diagram.excalidraw` (no `--out` → the JSON in `content`)
-- Import scene: not supported; re-apply your `scene.json` instead
-- Image: `export --format png --out diagram.png` / `export --format svg --out diagram.svg` (headless; no browser tab)
-- Share link: not supported (local only)
+Not available: `export`, `import` and `share` are all unimplemented on this server. `scene.json` — the file you write and re-apply — is the only artifact; commit it to the repo directly.
 
-This is how diagrams live in a repo: commit `scene.json` (what you edit) and the exported `.excalidraw` (what people open), and re-apply + export when the architecture changes.
+### Obsidian vaults
 
-### Obsidian vaults: use `.excalidraw.md`
-
-Check the destination before writing: if any ancestor directory contains `.obsidian/`, it is an Obsidian vault. A raw `.excalidraw` file there opens in the Excalidraw plugin only in **compatibility mode** ("Convert to new format" warning), gets no block references or vault-wide search, and default Obsidian Sync skips non-`.md` files. Export with `--format obsidian` and a `.excalidraw.md` extension:
-
-```bash
-bun elkdraw/adapters/cli/src/main.ts export --format obsidian --out "$VAULT/diagrams/system-map.excalidraw.md"
-```
+Not available: there is no `--format obsidian` export yet. Commit `scene.json` and note in the PR that the rendered view needs a manual open until export lands.
 
 ## Workflow: Snapshots
 
-1. `snapshot --action save --name <name>` before risky changes.
-2. Make changes, evaluate with `lint` / `look`.
-3. `snapshot --action restore --name <name>` to roll back if needed. `snapshot --action list` shows what's saved.
+Not available: `snapshot` is unimplemented. Commit `scene.json` to git before risky changes, and `git checkout` it (then re-`apply`) to roll back.
 
 ## Workflow: Duplication
 
@@ -308,13 +296,13 @@ No duplicate command: copy the elements in `scene.json` with new ids and place t
 ## Error Recovery
 
 - **Exit code 3 (server unreachable)?** The server is not running at that URL. Run `start --no-open`, or fix `--url` / `ELKDRAW_URL`. For an `https://….elkdraw.localhost` URL, set `NODE_EXTRA_CA_CERTS=~/.portless/ca.pem`.
-- **Exit code 2 (invalid input)?** Nothing was sent. stderr names the path and the problem (`elements[3].text: unknown key`); fix that field. `validate` checks a file without touching the canvas.
-- **Exit code 1 with `"code": "NOT_IMPLEMENTED"`?** That tool or option is not available on this server; stderr includes its input schema. Use another route from this skill.
+- **Exit code 2 (invalid input)?** Nothing was sent. stderr names the path and the problem (`elements[3].text: unknown key; use label.text`); fix that field. `validate` checks a file the same way, reading the canvas to resolve references, without writing.
+- **Exit code 1 with `"code": "NOT_IMPLEMENTED"`?** That tool or option is not available on this server; stderr includes its input schema. `describe`, `get`, `query`, `screenshot`, `export`, `snapshot`, `clear` and `wait` are all in this state today — use another route from this skill.
 - **Exit code 1 with a rev mismatch?** Someone changed the canvas after the `--if-rev` you gave. Run `changes`, fold the edits into your file, apply again.
-- **Elements not appearing?** Check `describe` — they may be off-screen or outside the region you looked at. `look --target <id>` finds one wherever it is.
-- **Arrow not connecting?** `dangling-endpoint` names it. Verify element IDs with `get --id <id>`. Make sure `start.id`/`end.id` match existing element IDs.
-- **Canvas in a bad state?** `snapshot --action save` first, then `clear --yes` and re-apply `scene.json`. Or `snapshot --action restore` to go back.
-- **A defect lint can't see?** `look` at it with `--marks`, fix it, and mention it to the user: it is a missing lint rule.
+- **Elements not appearing?** `look --target <id>` finds one wherever it is and errors by name if it truly isn't on the canvas.
+- **Arrow not connecting?** `dangling-endpoint` names it: either the bound id is missing, or the bound end sits more than 15px off its shape. Resend the element (or its `start`/`end`) so it snaps again.
+- **Canvas in a bad state?** Delete the elements you added with `apply --patches` (`delete` per id), then re-apply `scene.json`.
+- **A defect lint can't see?** `look` at it, fix it, and mention it to the user: it is a missing lint rule.
 
 ---
 
