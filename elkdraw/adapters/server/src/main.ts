@@ -10,10 +10,16 @@ const noOpen =
   (env["ELKDRAW_NO_OPEN"] !== undefined &&
     !["", "0", "false"].includes(env["ELKDRAW_NO_OPEN"]));
 
-const { url } = startServer({
+const { url, stop } = startServer({
   port: Number(env["PORT"] ?? 3940),
   session: env["ELKDRAW_SESSION"] ?? "default",
   open: !noOpen,
   appDir: resolve(import.meta.dir, "../../../app/dist"),
 });
 process.stdout.write(`elkdraw: ${url}\n`);
+
+// Close the sidecar's browser too, not just the listener.
+for (const signal of ["SIGINT", "SIGTERM"] as const)
+  process.on(signal, () => {
+    void stop().finally(() => process.exit(0));
+  });

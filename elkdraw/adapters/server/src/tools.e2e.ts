@@ -127,21 +127,24 @@ test("draft -> apply -> lint -> look -> fix", async () => {
   expect(Object.keys(look.boxes)).toEqual(overlap?.ids ?? []);
 
   // Fix: move svc clear of lb; re-send the whole file with the arrow.
+  const file = {
+    elements: [lb, svc, db, lbDb],
+    place: [...draft.place, { op: "rightOf", id: "svc", of: "lb", gap: 80 }],
+  };
   const fixed = ApplyReply.parse(
-    (
-      await client.callTool({
-        name: "apply",
-        arguments: {
-          elements: [lb, svc, db, lbDb],
-          place: [
-            ...draft.place,
-            { op: "rightOf", id: "svc", of: "lb", gap: 80 },
-          ],
-        },
-      })
-    ).structuredContent,
+    (await client.callTool({ name: "apply", arguments: file }))
+      .structuredContent,
   );
   expect(errors(fixed.lints)).toEqual([]);
+
+  // Re-sending the whole file unchanged is a no-op through the real converter.
+  const again = await rest("apply", file, ApplyReply);
+  expect(again).toMatchObject({
+    rev: fixed.rev,
+    created: [],
+    updated: 0,
+    kept: 4,
+  });
 
   const d = await rest("diff", {}, defs.diff.output);
   expect(d.lints.fixed.map((h) => h.code)).toContain("node-overlap");

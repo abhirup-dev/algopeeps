@@ -518,3 +518,61 @@ boxes}`. `tools.ts`'s `target` grammar also allows `viewport`, absent from
   `diff(await sceneAt(from), await sceneAt(to))`. readScene drops
   `isDeleted`, so browser deletes show as `removed`. R2 end to end is in
   `adapters/server/src/store.test.ts`.
+
+### 1.10 CLI and MCP wiring for Phase 1 tools (2026-09-26)
+
+- Real now: `apply`, `add`, `validate`, `lint`, `look`, `diff`, `changes`
+  (besides `status`). Bodies in `adapters/server/src/tools.ts`
+  (`phase1Handlers(ctx)`), merged into `mcpTools`. The rest stay
+  `NOT_IMPLEMENTED`. `ToolContext` gained `sceneAt(rev)`, `log(since)` and
+  `renderer()`: one `Sidecar` per server, started on first use, retried if the
+  start fails, and closed by `stop()` (`/api/shutdown`, and SIGINT/SIGTERM in
+  `main.ts`). `ServerOptions.renderer` injects a fake (`tools.test.ts`).
+- The server reaches `Sidecar` via a re-export from `@elkdraw/backend-excalidraw`
+  (the orchestrator chose that over a server→sidecar edge).
+- Two-pass apply: core `apply` is sync and conversion needs the browser. Pass 1
+  runs apply with a capturing `convert`. If it was called, the handler awaits
+  `sidecar.convert(...)` and runs pass 2 on the same scene snapshot. It retries
+  (3 attempts) when a human delta lands during the await. Pass 1 errors are
+  final only when conversion was never reached. `deps.lint` only captures the
+  next scene (dryRun included). `reply.lints = lint(readScene(next, measured))`
+  runs after the store write, and `reply.rev` is the store's rev.
+- All Phase 1 handlers run through one serial queue: the sidecar page holds one
+  scene (measure then snap), and the apply passes need a quiet store.
+- `sidecar.convert(skeletons, scene)` / headless `convert`:
+  `convertToExcalidrawElements` with ids kept and fonts loaded first. Arrow ends
+  naming a stored element outside the batch are fed in as anchors, and come back
+  as the stored element plus the new `boundElements` entry. Excalidraw's convert
+  binds arrows but never moves them: they stay at the skeleton's `x`/`y` (0,0),
+  and lint flags them `dangling-endpoint`. So `route()` draws each bound
+  two-point arrow straight between the outlines (rect, ellipse and diamond are
+  exact) with a gap of 4 px. Arrows with waypoints are left as given.
+- `look` measures once and snaps once through the sidecar. Two `render` calls
+  would measure twice, and `render` cannot take `maxPx`. `boxes` holds the
+  target ids' rendered boxes. `marks` holds crop-pixel centres; nothing is drawn
+  on the PNG. Targets are `<id>[,<id>]`, `frame:<id>` or `x,y,w,h`; `viewport`
+  is gone (skill). `out` defaults to `$TMPDIR/elkdraw/<session>-look-r<rev>-<ms>.png`.
+- `lint {ids}` keeps hits naming an id (or its `#label`). `scope` is
+  `frame:<id>` or `near:<id>,r=<px>`, which keeps hits whose bbox meets that
+  (padded) rendered box.
+- `changes`: cursor in memory (starts at 0; moved by each call). Stored,
+  unmeasured boxes: feed only reports moves and relabels. `diff`: from/to are
+  revs (ints). `from` defaults to the rev before the last agent delta. Both
+  scenes are measured. The reply is `{changes, lints, delta}`, and `changes`
+  have no author or time.
+- `validate`: strict schema, then placement, then references (arrow ends, frame
+  `children`, patch ids). References may name an element in the input or on the
+  canvas. The reply is `{ok: true, ids}`; failures are `INVALID_INPUT`. Input
+  errors from REST and the CLI are now `skeletonErrors` lines (`path: message`),
+  not `z.prettifyError`.
+- The apply input schema is repeated in `adapters/mcp/src/tools.ts` because
+  core's `ApplyInput` is engine-only. The handler parses it again with core's.
+- Tests: `tools.test.ts` (fake renderer, part of `check`): CLI apply == MCP apply,
+  and the full tool loop over REST. `tools.e2e.ts` (`bun run --cwd
+elkdraw/adapters/server test:e2e`, ~1 s warm) runs draft → apply → lint → look
+  → fix plus a no-op re-apply over MCP and REST with the real sidecar.
+- `smoke-p0.ts` stub check: now `export {format: mmd}`; `lint` is asserted
+  real. Gotcha: the smoke's teardown SIGTERMs `sh scripts/dev.sh`, and the
+  `bun …/main.ts` under portless survived it (orphaned, ppid 1) in this run. It
+  was stopped by hand. A direct SIGTERM to the server now exits cleanly,
+  Chromium included.
