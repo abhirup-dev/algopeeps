@@ -236,3 +236,29 @@ later tasks should not need `bun add`.
   dropped by name) and the projection validates. Keys Excalidraw ignores are
   dropped by name and counted: `fontSize` on non-text (yct 3, all 3
   disagreeing with the label's fontSize; batch 26, 9 disagreeing) and `elbowed` (yct 20, batch 21).
+### 1.13 BST defect manifest (2026-09-26)
+
+- `test/fixtures/dogfood/bst/`: `scene.excalidraw`, `final.png`,
+  `defects.json` for dogfood round 3 (tester A, yctimlin server). No round-3
+  export existed (`/tmp/xd_r3.excalidraw` predates both fix patches), but the
+  tester's server on :3010 was still up with its browser tab, so the scene is a
+  fresh `export` (read-only) whose geometry equals the tester's own final
+  `query` dump (`/tmp/xd_r3_all.json`, 0 mismatches). Filtered to the 65 BST
+  elements plus their 30 bound `-label` texts; the ride-hailing round-2 state
+  on the same canvas is dropped (its defects are in no manifest). `final.png`
+  is the tester's last screenshot `/tmp/xd_bst_v3.png` cropped to the tester's
+  own 1000x720 window at x=2900.
+- Final PNG is clean: both defects (t10, t12 `text-wrapped`) are
+  `fixedInFinal: true`, so BST scoring only measures false positives
+  (`flaggedFixed`, `cleanRegionHits`); `missed` is 0 by construction. The
+  textAlign-ignored index labels are in `unmapped` (no v0 rule). Round 3 has
+  no section in `dogfood-excalidraw-yctimlin.md`; `report` points at
+  `dogfood-synthesis.md`, and sources cite transcript d24dbb60 line 408
+  (1-based). `reported: true` here means "in the synthesis or in the
+  tester's round-3 chat answer", which is the only round-3 report.
+- Follow-up (orchestrator request): `test/fixtures/dogfood/bst-first/` from
+  the byte-for-byte first-add export `/tmp/xd_r3.excalidraw` (same 95-element
+  filter) and `/tmp/xd_bst_v1.png` (same crop). bst-01/bst-02 are open there,
+  so this is the fixture that tests lint; the `tree` clean region leaves out
+  t10, t12 and their labels. `test/fixtures/README.md` now lists both BST
+  fixtures, their sources and counts.
