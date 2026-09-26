@@ -4,7 +4,8 @@ Several agents build ELK draw in parallel, one beads task each. These rules
 keep them from colliding. For elkdraw tasks they override the repo-root
 `AGENTS.md` / `CLAUDE.md` session-completion steps (no push, no `bd sync`, no
 `bd close`). Read `README.md` (running) and `NOTES.md` (package graph,
-dependencies, log) next; `CONTRACTS.md` if you touch shared types.
+dependencies, log) next; `CONTRACTS.md` if you touch shared types. Read
+`CONTEXT.md` for terms; add a term when you introduce one.
 
 ## One task = one branch = one worktree = one URL
 
