@@ -1,0 +1,86 @@
+[
+  {
+    "code": "text-wrapped",
+    "ids": ["kafka#label"],
+    "bbox": {
+      "x": 1037,
+      "y": 903.5,
+      "width": 96,
+      "height": 34.5
+    },
+    "severity": "error",
+    "hint": "Widen kafka, or put the line break in the text yourself and raise kafka height"
+  },
+  {
+    "code": "text-wrapped",
+    "ids": ["analytics#label"],
+    "bbox": {
+      "x": 1285.5,
+      "y": 902,
+      "width": 79.5,
+      "height": 37
+    },
+    "severity": "error",
+    "hint": "Widen analytics, or put the line break in the text yourself and raise analytics height"
+  },
+  {
+    "code": "label-on-border",
+    "ids": ["a7#label", "zone-core"],
+    "bbox": {
+      "x": 800.5,
+      "y": 733,
+      "width": 98.5,
+      "height": 7
+    },
+    "severity": "error",
+    "hint": "Move a7 so its label is fully inside or outside zone-core, or grow zone-core"
+  },
+  {
+    "code": "label-on-own-arrowhead",
+    "ids": ["a5#label", "a5"],
+    "bbox": {
+      "x": 572.5,
+      "y": 503.5,
+      "width": 55.5,
+      "height": 11
+    },
+    "severity": "error",
+    "hint": "Give a5 200px+ (move its shapes apart), or drop the label"
+  },
+  {
+    "code": "crossing",
+    "ids": ["a3", "a9"],
+    "bbox": {
+      "x": 364.5,
+      "y": 376,
+      "width": 8,
+      "height": 8
+    },
+    "severity": "info",
+    "hint": "Reorder shapes if it's cheap; otherwise fine to leave"
+  },
+  {
+    "code": "crossing",
+    "ids": ["a7", "e-surge-k"],
+    "bbox": {
+      "x": 840.8,
+      "y": 816.4,
+      "width": 8,
+      "height": 8
+    },
+    "severity": "info",
+    "hint": "Reorder shapes if it's cheap; otherwise fine to leave"
+  },
+  {
+    "code": "crossing",
+    "ids": ["s-push", "a9"],
+    "bbox": {
+      "x": 1296,
+      "y": 431.5,
+      "width": 8,
+      "height": 8
+    },
+    "severity": "info",
+    "hint": "Reorder shapes if it's cheap; otherwise fine to leave"
+  }
+]

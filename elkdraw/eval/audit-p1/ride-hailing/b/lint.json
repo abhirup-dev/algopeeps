@@ -1,0 +1,14 @@
+[
+  {
+    "code": "crossing",
+    "ids": ["trip-pg", "surge-kafka"],
+    "bbox": {
+      "x": 901.1,
+      "y": 863.2,
+      "width": 8,
+      "height": 8
+    },
+    "severity": "info",
+    "hint": "Reorder shapes if it's cheap; otherwise fine to leave"
+  }
+]

@@ -1,0 +1,59 @@
+## Canvas Description
+Total elements: 52
+Types: text(9), rectangle(17), ellipse(5), arrow(21)
+Bounding box: (40, 10) to (1820, 1020) = 1780x1010
+
+### Elements (top-to-bottom, left-to-right):
+  [title] text | at (40, 10) | size 700x40 | text: "Ride-hailing backend: Request a ride"
+  [zone-edge] rectangle | at (40, 80) | size 1400x180 | bg: #e7f5ff | stroke: #1971c2
+  [zone-edge-label] text | at (60, 90) | size 200x25 | text: "Edge"
+  [rider] rectangle | at (80, 150) | size 180x60 | label: "Rider app" | bg: #ffffff
+  [a1] arrow | at (268, 180) | label: "1 request ride" | stroke: #1971c2
+  [gateway] rectangle | at (460, 150) | size 180x60 | label: "API gateway" | bg: #ffffff
+  [a2] arrow | at (648, 180) | label: "2 verify" | stroke: #1971c2
+  [auth] rectangle | at (840, 150) | size 180x60 | label: "Auth service" | bg: #ffffff
+  [driver] rectangle | at (1200, 150) | size 180x60 | label: "Driver app" | bg: #ffffff
+  [a3] arrow | at (838, 213) | label: "3 create trip" | stroke: #1971c2
+  [zone-core] rectangle | at (40, 340) | size 1400x400 | bg: #f3f0ff | stroke: #6741d9
+  [zone-core-label] text | at (60, 350) | size 200x25 | text: "Core services"
+  [s-apns-driver] arrow | at (1600, 395) | stroke: #1971c2
+  [s-pg] arrow | at (98, 440) | stroke: #1971c2
+  [trip] rectangle | at (100, 410) | size 200x60 | label: "Trip service" | bg: #ffffff
+  [a9] arrow | at (200, 408) | label: "9 charge on completion" | stroke: #1971c2
+  [matching] rectangle | at (500, 410) | size 200x60 | label: "Matching service" | bg: #ffffff
+  [a8] arrow | at (708, 440) | label: "8 notify driver" | stroke: #1971c2
+  [notify] rectangle | at (900, 410) | size 220x60 | label: "Notification service" | bg: #ffffff
+  [s-push] arrow | at (1128, 438) | stroke: #1971c2
+  [apns] rectangle | at (1560, 400) | size 180x60 | label: "APNs / FCM" | bg: #fff4e6 | stroke: #e8590c
+  [a4] arrow | at (293, 473) | label: "4 quote" | stroke: #1971c2
+  [a6] arrow | at (663, 474) | label: "6 nearby" | stroke: #1971c2
+  [e-notify-k] arrow | at (1016, 478) | stroke: #e8590c
+  [a5] arrow | at (600, 542) | label: "5 match" | stroke: #1971c2
+  [pricing] rectangle | at (500, 550) | size 200x60 | label: "Pricing service" | bg: #ffffff
+  [location] rectangle | at (760, 550) | size 200x60 | label: "Location service" | bg: #ffffff
+  [payment] rectangle | at (1200, 550) | size 200x60 | label: "Payment service" | bg: #ffffff
+  [s-stripe] arrow | at (1408, 583) | stroke: #1971c2
+  [stripe] rectangle | at (1560, 560) | size 180x60 | label: "Stripe" | bg: #fff4e6 | stroke: #e8590c
+  [s-surge] arrow | at (600, 618) | stroke: #1971c2
+  [a7] arrow | at (857, 618) | label: "7 GEO query" | stroke: #1971c2
+  [e-loc-k] arrow | at (883, 617) | stroke: #e8590c
+  [e-pay-k] arrow | at (1278, 617) | stroke: #e8590c
+  [ext-label] text | at (1560, 640) | size 180x25 | text: "External"
+  [surge] rectangle | at (500, 660) | size 200x60 | label: "Surge service" | bg: #ffffff
+  [e-surge-k] arrow | at (669, 724) | stroke: #e8590c
+  [zone-data] rectangle | at (40, 820) | size 1400x200 | bg: #ebfbee | stroke: #2f9e44
+  [zone-data-label] text | at (90, 830) | size 200x25 | text: "Data"
+  [legend-box] rectangle | at (1560, 820) | size 260x200 | bg: #ffffff
+  [legend-title] text | at (1580, 830) | size 100x25 | text: "Legend"
+  [postgres] ellipse | at (100, 880) | size 220x90 | label: "Postgres (trips)" | bg: #b2f2bb | stroke: #2f9e44
+  [redis] ellipse | at (700, 880) | size 260x90 | label: "Redis geo-index
+(driver locations)" | bg: #b2f2bb | stroke: #2f9e44
+  [kafka] ellipse | at (990, 880) | size 190x90 | label: "Kafka event bus" | bg: #b2f2bb | stroke: #2f9e44
+  [analytics] ellipse | at (1220, 880) | size 210x90 | label: "Analytics warehouse" | bg: #b2f2bb | stroke: #2f9e44
+  [legend-sync] arrow | at (1580, 885) | stroke: #1971c2
+  [legend-sync-t] text | at (1655, 873) | size 140x25 | text: "sync call"
+  [e-k-an] arrow | at (1188, 925) | stroke: #e8590c
+  [legend-async] arrow | at (1580, 930) | stroke: #e8590c
+  [legend-async-t] text | at (1655, 918) | size 140x25 | text: "async event"
+  [legend-store] ellipse | at (1580, 960) | size 60x40 | bg: #b2f2bb | stroke: #2f9e44
+  [legend-store-t] text | at (1655, 968) | size 140x25 | text: "data store"

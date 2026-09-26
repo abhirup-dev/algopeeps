@@ -1,0 +1,156 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final-own.png",
+  "report": "dogfood-excalidraw-skill.md",
+  "note": "Side A (yctimlin mcp-excalidraw-server 2.0.0). By-eye manifest of final-own.png (the tester's own frontend screenshot after the run) checked against sidecar.png (our render of the exported scene, painted: bound labels Excalifont 20, see ../../font-probe.png). Label ids use the dogfood fixtures' <owner>-label; score with score.js --dash. Session incidents the tester hit and fixed are listed with fixedInFinal true.",
+  "defects": [
+    {
+      "id": "a-rh-01",
+      "rule": "text-wrapped",
+      "ids": ["postgres-label"],
+      "description": "\"Postgres (trips)\" wraps to two lines in its 220 px ellipse.",
+      "source": "final-own.png",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-02",
+      "rule": "text-wrapped",
+      "ids": ["kafka-label"],
+      "description": "\"Kafka event bus\" wraps in its 190 px ellipse.",
+      "source": "final-own.png",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-03",
+      "rule": "text-wrapped",
+      "ids": ["analytics-label"],
+      "description": "\"Analytics warehouse\" wraps in its 210 px ellipse.",
+      "source": "final-own.png",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-04",
+      "rule": "label-on-border",
+      "ids": ["a7-label", "zone-core"],
+      "description": "\"7 GEO query\" sits on the Core zone's bottom border.",
+      "source": "final-own.png",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-05",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["a1-label", "a1"],
+      "description": "\"1 request ride\" runs into its own arrowhead (the report: \"sits tight against its boxes\").",
+      "source": "final-own.png; report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-06",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["a5-label", "a5"],
+      "description": "\"5 match\" covers most of its short Pricing->Matching arrow, up to the head.",
+      "source": "final-own.png",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-07",
+      "rule": "label-on-own-arrowhead",
+      "ids": ["a8-label", "a8"],
+      "description": "\"8 notify driver\" runs into its own arrowhead.",
+      "source": "final-own.png",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-08",
+      "rule": "crossing",
+      "ids": ["a3", "a9"],
+      "description": "Arrow 9's top rail crosses arrow 3 just above Trip.",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-09",
+      "rule": "crossing",
+      "ids": ["a9", "s-push"],
+      "description": "Arrow 9's descent to Payment crosses Notification -> APNs.",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-10",
+      "rule": "crossing",
+      "ids": ["a7", "e-surge-k"],
+      "description": "Surge -> Kafka crosses 7 GEO query.",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-15",
+      "rule": "arrowhead-overlap",
+      "ids": ["e-loc-k", "e-notify-k"],
+      "description": "Four async arrowheads converge on Kafka's top edge; Location's and Notification's land about 35 px apart and read as one pile (same standard as b-rh-02: heads within about 35 px on one edge of a shared target).",
+      "source": "final-own.png",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "a-rh-11",
+      "ruleGap": "tool: apply that deletes and re-creates the same id loses it",
+      "ids": ["a9", "s-pg"],
+      "description": "apply {delete:[a9,s-pg], create:[a9,s-pg,...]} replied created 5 / deleted 4 and echoed both arrows; get a9 then said not found. Cause (dist/cli/commands/elements.js apply): it runs create, then update, then delete, so the delete removed the just-created arrows. The tester blamed elbowed:true and never learnt the cause. The same order routes new arrows against pre-update positions (report §2.3).",
+      "source": "transcript L87-L106; report §2.2",
+      "reported": true,
+      "fixedInFinal": true
+    },
+    {
+      "id": "a-rh-12",
+      "ruleGap": "tool: points on a bound arrow are dropped at create",
+      "ids": ["a9"],
+      "description": "A 4-point route with startElementId/endElementId came back as a straight 2-point arrow, no warning. Worked around with a follow-up update of x, y and points.",
+      "source": "transcript L114-L124; report §2.1",
+      "reported": true,
+      "fixedInFinal": true
+    },
+    {
+      "id": "a-rh-13",
+      "ruleGap": "tool: points-only update re-anchors a bound arrow",
+      "ids": ["s-pg", "postgres"],
+      "description": "update of s-pg points without x/y moved its origin to Trip's bottom edge; the line ran through the Postgres ellipse.",
+      "source": "transcript L189; report §2.4",
+      "reported": true,
+      "fixedInFinal": true
+    },
+    {
+      "id": "a-rh-14",
+      "ruleGap": "duplicate arrow on top of another",
+      "ids": ["e-pay-k", "e-pay-k2"],
+      "description": "The tester created e-pay-k2 exactly over e-pay-k; invisible in the PNG, found only by reading query output.",
+      "source": "transcript L108-L114; report §4",
+      "reported": true,
+      "fixedInFinal": true
+    }
+  ],
+  "cleanRegions": [],
+  "unmapped": [
+    {
+      "description": "Rectangles paint with sharp corners in final-own.png but rounded in sidecar.png (the export records roundness).",
+      "source": "final-own.png vs sidecar.png",
+      "reason": "renderer difference, not a diagram defect"
+    },
+    {
+      "description": "APNs -> Driver app draws as two strokes (rough style).",
+      "source": "final-own.png",
+      "reason": "cosmetic, hand-drawn roughness"
+    }
+  ]
+}

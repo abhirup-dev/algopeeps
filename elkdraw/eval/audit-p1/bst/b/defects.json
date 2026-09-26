@@ -1,0 +1,39 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final-own.png",
+  "report": "result.json (chat answer)",
+  "note": "Side B (elkdraw, abhirup/canvas @ 2204821). By-eye manifest of final-own.png; sidecar.png draws the same. The final is clean: every node over its cell, path 8-12-10-11 highlighted in nodes and edges, lo/hi boxes under indices 8 and 11, caption present. Listed defects are session incidents (fixedInFinal true).",
+  "defects": [
+    {
+      "id": "b-bst-01",
+      "ruleGap": "label in a transparent-stroke container is invisible",
+      "ids": ["i0"],
+      "description": "Index labels as labels of transparent boxes: the label color copied the box's transparent stroke; all 15 indices were invisible in the first look while apply replied lints: [].",
+      "source": "transcript L52-L74; chat answer (3)",
+      "reported": true,
+      "fixedInFinal": true
+    },
+    {
+      "id": "b-bst-02",
+      "ruleGap": "tool: screenshot --out resolves against the server's cwd",
+      "ids": ["n8"],
+      "description": "screenshot --out tmp/bst-final.png replied path tmp/bst-final.png; the file landed in the server's cwd (this worktree's root), not the tester's. Absolute --out worked.",
+      "source": "transcript L116-L127; chat answer (3)",
+      "reported": true,
+      "fixedInFinal": true
+    }
+  ],
+  "cleanRegions": [],
+  "unmapped": [
+    {
+      "description": "Edges 8-4, 4-2 and 12-10 draw as two strokes (rough style), as p1bst-02 in 1.12.",
+      "source": "final-own.png",
+      "reason": "cosmetic, hand-drawn roughness"
+    },
+    {
+      "description": "look --max-px never upscales: a 340x190 crop came back at scale 1, so 14 px text could not be magnified.",
+      "source": "transcript L100-L115",
+      "reason": "perception limit, not a diagram defect"
+    }
+  ]
+}
