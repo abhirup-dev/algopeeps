@@ -1,0 +1,59 @@
+---
+title: Request a ride — ride-hailing backend
+---
+%% Dogfood task 1 (canvas/briefs/DOGFOOD-diagram.md), final state after both
+%% edits: (a) Pricing next to Matching, (b) Surge between Pricing and Kafka.
+%% Node ids match test/fixtures/dogfood/batch/scene.excalidraw.
+%% Sync calls are solid, async events dashed; stores are cylinders.
+%% The legend (sync / async / store) has no Mermaid equivalent.
+flowchart TB
+  subgraph edge[Edge]
+    rider[Rider app]
+    gateway[API gateway]
+    auth[Auth service]
+    driver[Driver app]
+  end
+  subgraph core[Core services]
+    trip[Trip service]
+    pricing[Pricing service]
+    surge[Surge service]
+    matching[Matching service]
+    location[Location service]
+    notification[Notification service]
+    payment[Payment service]
+  end
+  subgraph data[Data]
+    postgres[(Postgres trips)]
+    redis[(Redis geo-index)]
+    kafka[(Kafka event bus)]
+    warehouse[(Analytics warehouse)]
+  end
+  stripe[Stripe]
+  apns[APNs / FCM]
+
+  rider -->|1 request| gateway
+  gateway -->|2 verify token| auth
+  gateway -->|3 create trip| trip
+  trip -->|4 quote| pricing
+  trip -->|5 find driver| matching
+  matching -->|6 nearby| location
+  location -->|7 GEOSEARCH| redis
+  matching -->|8 offer ride| notification
+  trip -->|9 charge| payment
+  notification --> apns
+  apns --> driver
+  payment --> stripe
+  trip --> postgres
+  pricing --> surge
+  trip -.-> kafka
+  matching -.-> kafka
+  payment -.-> kafka
+  surge -.-> kafka
+  kafka -.-> warehouse
+
+  classDef service fill:#a5d8ff,stroke:#1971c2
+  classDef store fill:#b2f2bb,stroke:#2f9e44
+  classDef external fill:#e9ecef,stroke:#868e96
+  class rider,gateway,auth,driver,trip,pricing,surge,matching,location,notification,payment service
+  class postgres,redis,kafka,warehouse store
+  class stripe,apns external

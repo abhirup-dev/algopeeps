@@ -10,5 +10,10 @@
     "@elkdraw/core": "workspace:*",
     "@elkdraw/backend-excalidraw": "workspace:*",
     "@elkdraw/backend-fake": "workspace:*"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.14.5",
+    "mermaid": "11.17.2",
+    "zod": "^4.6.5"
   }
 }

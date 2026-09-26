@@ -1,0 +1,275 @@
+{
+  "scene": "scene.excalidraw",
+  "png": "final.png",
+  "report": "canvas/docs/dogfood-excalidraw-yctimlin.md",
+  "defects": [
+    {
+      "id": "yct-01",
+      "rule": "arrow-through-node",
+      "ids": ["a5", "trip"],
+      "description": "First add: arrow 5 (pricing->matching) runs straight through Trip.",
+      "source": "report §2.4, §6(a)",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed by edit (a), which swapped Trip and Pricing."
+    },
+    {
+      "id": "yct-02",
+      "rule": "label-on-node",
+      "ids": ["a4-label", "trip"],
+      "description": "First add: the \"4 quote\" label is printed on top of Trip.",
+      "source": "report §2.4",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed by edit (a)."
+    },
+    {
+      "id": "yct-03",
+      "rule": "label-on-node",
+      "ids": ["a5-label", "trip"],
+      "description": "First add: the \"5 match\" label is printed on top of Trip.",
+      "source": "report §2.4",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed by edit (a)."
+    },
+    {
+      "id": "yct-04",
+      "rule": "crossing",
+      "ids": ["a6", "a9"],
+      "description": "First add: arrows 6 (matching->location) and 9 (trip->payment) cross.",
+      "source": "report §2.4",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed in the first apply by moving Location, Redis and Analytics."
+    },
+    {
+      "id": "yct-05",
+      "rule": "label-on-label",
+      "ids": ["a6-label", "a9-label"],
+      "description": "First add: the \"6 nearby\" and \"9 charge\" labels merge into garbage (\"θ ㎝arge\").",
+      "source": "report §2.4",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed with yct-04."
+    },
+    {
+      "id": "yct-06",
+      "rule": "label-on-node",
+      "ids": ["a8-label", "matching", "notif"],
+      "description": "The \"8 notify\" label is squeezed into the 60 px gap between Matching and Notification and sits on both boxes.",
+      "source": "report §2.1 (a8 arced); transcript fix1-fix3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed by arcing a8; came back when snapshot restore flattened a8, then re-applied. The stored a8-label box still overlaps both nodes, but the rendered label sits on the arc (see yct-19)."
+    },
+    {
+      "id": "yct-07",
+      "rule": "arrow-through-node",
+      "ids": ["s-stripe", "location"],
+      "description": "Payment->Stripe runs straight through Location.",
+      "source": "report §2.1, §2.2, §6(b)",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Introduced by the first fix apply, fixed by an elbow under Location, lost on the Payment move and on snapshot restore, re-applied for the final scene."
+    },
+    {
+      "id": "yct-08",
+      "ruleGap": "arrow-through-label",
+      "ids": ["s-surge", "a9-label"],
+      "description": "Edit (b): the new Pricing->Surge arrow cuts through the \"9 charge\" label.",
+      "source": "report §2.5, §6(b)",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed by curving a9 so its label moved left. No v0 rule covers an arrow over another arrow's label."
+    },
+    {
+      "id": "yct-09",
+      "rule": "dangling-endpoint",
+      "ids": ["a9"],
+      "description": "The first curved a9 starts inside Trip and stops ~40 px short of Payment; custom points are not snapped to the bound shapes.",
+      "source": "report §2.3",
+      "reported": true,
+      "fixedInFinal": true,
+      "note": "Fixed by recomputing the edge coordinates by hand."
+    },
+    {
+      "id": "yct-10",
+      "rule": "crossing",
+      "ids": ["s-stripe", "a7"],
+      "description": "The elbowed Payment->Stripe arrow crosses arrow 7 (location->redis).",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-11",
+      "rule": "crossing",
+      "ids": ["s-stripe", "e-pay"],
+      "description": "Payment->Stripe crosses Payment->Kafka.",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false,
+      "note": "Both leave Payment's bottom edge at the same point and share the first 17 px vertically, so this is a collinear overlap, not a proper intersection."
+    },
+    {
+      "id": "yct-12",
+      "ruleGap": "arrow-through-label",
+      "ids": ["e-trip", "a9-label"],
+      "description": "Trip->Kafka (dashed) passes under the \"9 charge\" label.",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false,
+      "note": "The report calls it \"Trip->Kafka crosses arrow 9\". In final.png the dashed line clears a9's own line but grazes its label, so it is mapped to the label."
+    },
+    {
+      "id": "yct-13",
+      "rule": "arrow-through-node",
+      "ids": ["a9", "surge"],
+      "description": "Arrow 9 grazes Surge's top-right corner.",
+      "source": "report §1 checklist",
+      "reported": true,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-14",
+      "rule": "crossing",
+      "ids": ["a9", "s-surge"],
+      "description": "Pricing->Surge crosses arrow 9 just above Surge.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-15",
+      "rule": "text-wrapped",
+      "ids": ["postgres-label"],
+      "description": "\"Postgres (trips)\" wraps to two lines inside its ellipse.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-16",
+      "rule": "text-wrapped",
+      "ids": ["redis-label"],
+      "description": "\"Redis geo-index\" wraps mid-word (\"geo-\" / \"index\").",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-17",
+      "rule": "text-wrapped",
+      "ids": ["kafka-label"],
+      "description": "\"Kafka event bus\" wraps to two lines.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-18",
+      "rule": "text-wrapped",
+      "ids": ["analytics-label"],
+      "description": "\"Analytics warehouse\" wraps to two lines.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-19",
+      "rule": "label-on-border",
+      "ids": ["a8-label", "z-core"],
+      "description": "The \"8 notify\" label on the arced a8 sits on the Core zone's top border.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-20",
+      "ruleGap": "label-on-own-arrowhead",
+      "ids": ["a1-label", "a1"],
+      "description": "\"1 request\" runs into its own arrowhead.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false,
+      "note": "Same pattern the batch tester reported for its labels 1 and 2."
+    },
+    {
+      "id": "yct-21",
+      "ruleGap": "label-on-own-arrowhead",
+      "ids": ["a2-label", "a2"],
+      "description": "\"2 verify\" runs into its own arrowhead at Auth's edge.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-22",
+      "ruleGap": "label-on-own-arrowhead",
+      "ids": ["a4-label", "a4"],
+      "description": "\"4 quote\" runs into its own arrowhead.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    },
+    {
+      "id": "yct-23",
+      "ruleGap": "label-on-own-arrowhead",
+      "ids": ["a5-label", "a5"],
+      "description": "\"5 match\" runs into its own arrowhead.",
+      "source": "final.png, not in report",
+      "reported": false,
+      "fixedInFinal": false
+    }
+  ],
+  "cleanRegions": [
+    {
+      "name": "legend",
+      "ids": [
+        "legend",
+        "legend-t",
+        "lg-sync",
+        "lg-sync-t",
+        "lg-async",
+        "lg-async-t",
+        "lg-store",
+        "lg-store-t"
+      ],
+      "bbox": { "x": 1190, "y": 690, "width": 300, "height": 210 },
+      "note": "Legend arrows are unbound on purpose; dangling-endpoint must not fire."
+    },
+    {
+      "name": "edge-right",
+      "ids": ["driver", "driver-label", "apns", "apns-label", "s-push2"],
+      "bbox": { "x": 930, "y": 120, "width": 460, "height": 90 },
+      "note": "APNs sits outside every zone by design; outside-zone must not fire."
+    },
+    {
+      "name": "matching-location",
+      "ids": [
+        "matching",
+        "matching-label",
+        "location",
+        "location-label",
+        "a6",
+        "a6-label"
+      ],
+      "bbox": { "x": 670, "y": 350, "width": 440, "height": 250 },
+      "note": "Holds a6, which was a first-pass defect (yct-04, yct-05) and is clean now."
+    },
+    {
+      "name": "title-and-zones",
+      "ids": ["title", "z-edge", "z-edge-l", "z-data", "z-data-l"],
+      "bbox": { "x": 30, "y": 0, "width": 1120, "height": 900 },
+      "note": "Zone titles sit inside their zones' top-left corners; label-on-border must not fire."
+    }
+  ],
+  "unmapped": [
+    {
+      "description": "Hand-routed a8, a9 and s-stripe flattened to straight lines on the Payment move and on snapshot restore.",
+      "source": "report §2.1",
+      "reason": "A routing regression during the session, not a state of the final scene; its geometric effects are yct-06 and yct-07."
+    }
+  ]
+}
