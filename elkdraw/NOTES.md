@@ -841,3 +841,65 @@ label.text`. A 3-entry `KNOWN_KEY_FIXES` lookup, not a general typo-fixer.
   dev server: size, stroke, dash, font and label all survived.
 - Not in scope: `s4`/`s5` still lint `dangling-endpoint` after Pricing
   moves, because bound arrows do not re-route (1.16).
+
+### 1.18: screenshot bottom-crop fix, skill fixes from the 1.12 run
+
+- Root cause (bug, not the tool's own math): `screenshotTool`'s `bbox` is the
+  ink-measured union of every element (`targetBox` over `renderer.measure()`'s
+  boxes, already generous — each box comes from `app/src/headless.ts`
+  `inkBox`'s own `PAD`-widened, pixel-scanned ink search). But
+  `renderer.snap()` (the sidecar's `exportToCanvas`, in `app/src/headless.ts`,
+  not owned by this task) sizes and positions its own render from the
+  _stored_, geometric bounds of whatever it last measured — not ink. At the
+  scene's extreme edge, rough.js overshoot and stroke width past the stored
+  corner clip silently against that tighter canvas: the whole-canvas
+  screenshot cropping the scene's bottom.
+- Fix, confined to `screenshotTool` (owned path): before `snap`, re-measure
+  the scene's own elements plus two invisible 1x1 markers a few units outside
+  `bbox`'s corners (mirrors `inkBox`'s own corner trick). That pushes the
+  sidecar's own render bounds out to `bbox` exactly, so `snap` (no `ids`, so
+  it draws everything just measured) has nothing left to clip. `snap` itself
+  is unchanged — not owned by this task; `app/src/headless.ts` and
+  `backends/excalidraw/src/render/render.ts` (both outside `Owns:`) have the
+  same latent clip whenever their own crop touches the scene's extreme edge
+  (`look` too, when its target is the outermost element).
+- Repro'd and verified with the tester's actual final `apply` payload from
+  `eval/phase-1/ride-hailing/transcript.jsonl` (48 elements, legend-zone is
+  the scene's bottommost), saved as
+  `adapters/server/src/screenshot-ride-hailing.fixture.json`. Manually
+  confirmed on the pre-fix code: last ink row 3-4 rows short of the image's
+  bottom edge; post-fix: ink reaches the literal last row (a tight, correct
+  crop). New e2e test in `tools.e2e.ts` decodes the PNG (`node:zlib`
+  `inflateSync` + a ~40-line manual PNG unfilter, no new dependency) and
+  asserts the last row with ink is within 2 rows of the image's edge; it
+  fails on the pre-fix code (checked) and passes with the fix.
+- Skill fixes (`skill/**`), all "smallest fix" per AGENTS.md:
+  - (a) CLI-from-any-cwd: documented `$ELKDRAW` (absolute path to this
+    repo's `elkdraw/` dir, set once by whoever starts the session) as the
+    fallback when cwd isn't the repo root; every existing example keeps its
+    repo-root form unchanged (`SKILL.md` Step 0, `cheatsheet.md` CLI
+    Reference).
+  - (b) `/tmp/scene.json` → cwd-relative `scene.json` (the only two
+    occurrences, in the "Drawing a New Diagram" steps).
+  - (c) Removed the `clear` contradiction: it is implemented (`clear --yes`
+    row already said so); the old "clear is not implemented" line in
+    "Drawing a New Diagram" step 2 is gone.
+  - (d) Gap advice: verified with the real sidecar (`lint` on a two-box,
+    one-labeled-arrow scene at gaps 100-300, several label lengths) that
+    120px+ still fires `label-on-own-arrowhead` up to 140-190px depending on
+    label width; 200px+ is clean up to the skill's own 12-character label
+    cap (an all-caps 12-char label is a documented exception — needs
+    ~260px; noted as "check with lint" rather than chasing that further).
+    `core/lint/lint.ts`'s own hint string still says 120px+ (not owned by
+    this task — flagged in the report).
+  - Also applied, per the orchestrator's message mid-task (1.15 merged in
+    first): reworded the "re-sending an id" line in both `SKILL.md:47` and
+    `cheatsheet.md` to describe patch semantics (fields you omit keep their
+    stored value; x/y still required; a place op on an existing id moves it;
+    delete `<id>#label` to drop a label). Left the arrows-follow sentence
+    alone (1.16's territory).
+- Needs from others: `core/lint/lint.ts`'s `label-on-own-arrowhead` hint
+  string (line ~465) still says "120px+"; whoever next touches `core/lint`
+  should update it to 200px+ to match the skill. `app/src/headless.ts`
+  `snap()` has the same stored-vs-ink bounds gap this bug was really in;
+  worth its own bead if `look` crops near a scene's extreme edge in the wild.

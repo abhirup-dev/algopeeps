@@ -407,6 +407,43 @@ export function phase1Handlers(ctx: ToolContext): Partial<Handlers> {
     return { rev, elements, truncated };
   }
 
+  /** Two invisible 1x1 markers just outside `box`'s corners (mirrors
+   * `app/src/headless.ts` `inkBox`'s own corner trick). The sidecar's
+   * `exportToCanvas` sizes and positions its render from the *stored*
+   * geometry of whatever it last measured, not from ink: at the scene's
+   * extreme edge, rough.js overshoot and stroke width past the stored
+   * corner then clip against a canvas sized to the tighter, geometric
+   * bounds -- the whole-canvas screenshot cropping the scene's bottom
+   * (1.18). Re-measuring with these markers pushes the sidecar's own
+   * bounds out to `box` exactly, so the later `snap` has nothing to clip. */
+  function corners(box: Box): Element[] {
+    const at = (x: number, y: number, id: string): Element => ({
+      id,
+      type: "rectangle",
+      version: 0,
+      x,
+      y,
+      width: 1,
+      height: 1,
+      opacity: 0,
+    });
+    // A few scene units clear of the union box: bigger than any stroke
+    // width or rough.js overshoot this app draws.
+    const margin = 4;
+    return [
+      at(
+        Math.floor(box.x) - margin,
+        Math.floor(box.y) - margin,
+        "elkdraw-screenshot-corner-0",
+      ),
+      at(
+        Math.ceil(box.x + box.width) + margin,
+        Math.ceil(box.y + box.height) + margin,
+        "elkdraw-screenshot-corner-1",
+      ),
+    ];
+  }
+
   async function screenshotTool(input: ToolInput<"screenshot">) {
     if (input.format === "svg")
       throw invalid("screenshot", [
@@ -419,6 +456,10 @@ export function phase1Handlers(ctx: ToolContext): Partial<Handlers> {
     if (ids.length === 0) throw invalid("screenshot", ["the canvas is empty"]);
     const bbox = targetBox(boxes, ids);
     const scale = clampScale(bbox, input.maxPx);
+    // Re-measure with the scene's own elements plus two out-of-frame corner
+    // markers, so what the sidecar draws (see `corners` above) spans all of
+    // `bbox`; `snap` below has no `ids`, so it draws everything just loaded.
+    await renderer.measure([...elements, ...corners(bbox)]);
     const png = await renderer.snap(bbox, scale);
     const path =
       input.out ??

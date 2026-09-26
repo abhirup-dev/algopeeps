@@ -10,11 +10,11 @@ description: ELK draw canvas toolkit for creating, editing, and refining diagram
 Three interfaces drive the same live canvas. Pick the first one that applies:
 
 1. **MCP tools** — if `elkdraw` tools (e.g. `mcp__elkdraw__apply`) are in your tool list, prefer them: results land directly in your context.
-2. **CLI** (default when no MCP tools are present), run from the repository root:
+2. **CLI** (default when no MCP tools are present):
    ```bash
    bun elkdraw/adapters/cli/src/main.ts <command>
    ```
-   The server does **not** auto-start. Start it once with `bun elkdraw/adapters/cli/src/main.ts start --no-open` (prints the status JSON; a no-op when it is already running). Check it with `status`, stop it with `stop`.
+   This form needs your cwd to be the repo root (so the relative `elkdraw/` resolves). If it isn't — e.g. a sandboxed working directory — use the absolute path instead: set `$ELKDRAW` once to this repo's `elkdraw/` directory (`export ELKDRAW=/abs/path/to/elkdraw`; whoever starts your session usually sets this) and run `bun "$ELKDRAW/adapters/cli/src/main.ts" <command>`. Every command below shows the repo-root form; substitute `"$ELKDRAW"` for the leading `elkdraw` when your cwd differs. The server does **not** auto-start. Start it once with `start --no-open` (prints the status JSON; a no-op when it is already running). Check it with `status`, stop it with `stop`.
 3. **REST API** (last resort, e.g. from application code): `POST /api/tools/<name>` with the tool's input as the JSON body — see `references/cheatsheet.md`. The server must already be running.
 
 The canvas URL comes from `--url`, else `ELKDRAW_URL`, else `http://127.0.0.1:$PORT` (default `http://127.0.0.1:3940`). `status` returns `url` and `branch`: give the user `url` so they can watch the canvas, and check `branch` is the worktree you mean. For a portless `https://….elkdraw.localhost:1355` URL, prefix every CLI call with `NODE_EXTRA_CA_CERTS=~/.portless/ca.pem`. Rendering is headless: `look` and `lint` never need an open browser tab.
@@ -44,7 +44,7 @@ Results are JSON on stdout, always. Diagnostics on stderr. Exit codes: 0 ok, 1 e
 
 Elements are Excalidraw's own element skeletons (`ExcalidrawElementSkeleton`), checked strictly before anything is written:
 
-- **Ids**: every element needs a semantic `"id"` (`"trip"`, `"rider-to-gateway"`), arrows included. Ids are stable: re-sending an id updates that element.
+- **Ids**: every element needs a semantic `"id"` (`"trip"`, `"rider-to-gateway"`), arrows included. Ids are stable: re-sending an id patches it, fields you leave out keep their stored value (size, style, label, customData); x/y are still required. A place op on an id already on the canvas moves it and keeps everything else. To drop a label, delete `<id>#label`.
 - **Labels**: put `"label": {"text": "My Label"}` on a shape or arrow. The label's own id is `<id>#label` in lint hits.
 - **Arrow binding**: `"start": {"id": "a"}` / `"end": {"id": "b"}` — arrows bind to element edges and follow them when they move. `x`/`y` are required but recomputed for bound arrows; pass `0`.
 - **Zones**: a `"type": "frame"` with `"name": "Core services"` and `"children": ["trip", "pricing", ...]`. The name is drawn above the frame, never on top of its children.
@@ -61,7 +61,7 @@ The canvas uses a 2D coordinate grid: **(0, 0) is the origin**, **x increases ri
 **General spacing guidelines:**
 
 - Vertical spacing between tiers: 80–120px (enough that arrows don't crowd labels)
-- Horizontal spacing between siblings: 40–60px minimum; give labeled arrows 120px+
+- Horizontal spacing between siblings: 40–60px minimum; give labeled arrows 200px+ (verified clean up to the 12-character label cap below; an unusually wide label — e.g. all caps — can still need more, so check with `lint`)
 - Shape width: `max(160, labelCharCount * 12)` to keep the label on one line
 - Shape height: 60px single-line, 80px two-line labels
 - Background/zone padding: 50px on all sides around contained elements
@@ -170,20 +170,20 @@ Done means: zero `error` hits, then one `look` over the diagram's full coordinat
 
 Lint checks these for you after each `apply`. Each code, what it means, and the usual fix:
 
-| Code                     | Severity | Means                                                                                                                                    | Fix                                                                            |
-| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `text-overflow`          | error    | Label is wider or taller than its shape (text truncated)                                                                                 | Increase `width`/`height`, or shorten the label                                |
-| `text-wrapped`           | error    | Label wrapped onto more lines than it was written with                                                                                   | Widen the shape, or put the line break in the text yourself and raise `height` |
-| `node-overlap`           | error    | Two leaf shapes partially overlap (full containment is a zone, not this)                                                                 | Move one; keep ≥ 40px between shapes                                           |
-| `outside-zone`           | error    | A frame child drawn outside its frame, a shape inside a frame that doesn't list it, or a leaf across a plain containing rectangle's edge | Grow or move the frame/zone (50px padding), or fix `children`                  |
-| `arrow-through-node`     | error    | An arrow passes through an unrelated shape                                                                                               | Move that shape off the line, or move an endpoint so the line is clear         |
-| `arrow-through-label`    | error    | An arrow crosses an arrow label or free-standing text (not a shape's own label)                                                          | Move the label's owner or the arrow's endpoints                                |
-| `label-on-node`          | error    | A label (usually an arrow's) sits on a shape                                                                                             | Lengthen the arrow (move the shapes apart), shorten or drop the label          |
-| `label-on-label`         | error    | Two labels overlap                                                                                                                       | Spread the arrows apart, or drop one label                                     |
-| `label-on-border`        | error    | A label crosses a shape or frame border                                                                                                  | Move it fully inside or outside; grow the container                            |
-| `label-on-own-arrowhead` | error    | An arrow's label covers its own arrowhead: the arrow is too short                                                                        | Give labeled arrows 120px+, or drop the label                                  |
-| `dangling-endpoint`      | error    | A bound arrow end names a missing id, or sits >15px off its shape (unbound ends never fire this)                                         | Set `start`/`end` to an existing id, or resend it so the end re-snaps          |
-| `crossing`               | info     | Two arrows cross                                                                                                                         | Reorder shapes if it's cheap; otherwise fine to leave                          |
+| Code                     | Severity | Means                                                                                                                                    | Fix                                                                                                     |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `text-overflow`          | error    | Label is wider or taller than its shape (text truncated)                                                                                 | Increase `width`/`height`, or shorten the label                                                         |
+| `text-wrapped`           | error    | Label wrapped onto more lines than it was written with                                                                                   | Widen the shape, or put the line break in the text yourself and raise `height`                          |
+| `node-overlap`           | error    | Two leaf shapes partially overlap (full containment is a zone, not this)                                                                 | Move one; keep ≥ 40px between shapes                                                                    |
+| `outside-zone`           | error    | A frame child drawn outside its frame, a shape inside a frame that doesn't list it, or a leaf across a plain containing rectangle's edge | Grow or move the frame/zone (50px padding), or fix `children`                                           |
+| `arrow-through-node`     | error    | An arrow passes through an unrelated shape                                                                                               | Move that shape off the line, or move an endpoint so the line is clear                                  |
+| `arrow-through-label`    | error    | An arrow crosses an arrow label or free-standing text (not a shape's own label)                                                          | Move the label's owner or the arrow's endpoints                                                         |
+| `label-on-node`          | error    | A label (usually an arrow's) sits on a shape                                                                                             | Lengthen the arrow (move the shapes apart), shorten or drop the label                                   |
+| `label-on-label`         | error    | Two labels overlap                                                                                                                       | Spread the arrows apart, or drop one label                                                              |
+| `label-on-border`        | error    | A label crosses a shape or frame border                                                                                                  | Move it fully inside or outside; grow the container                                                     |
+| `label-on-own-arrowhead` | error    | An arrow's label covers its own arrowhead: the arrow is too short                                                                        | Give labeled arrows 200px+ (lint's own hint still says 120px+ -- verified too short), or drop the label |
+| `dangling-endpoint`      | error    | A bound arrow end names a missing id, or sits >15px off its shape (unbound ends never fire this)                                         | Set `start`/`end` to an existing id, or resend it so the end re-snaps                                   |
+| `crossing`               | info     | Two arrows cross                                                                                                                         | Reorder shapes if it's cheap; otherwise fine to leave                                                   |
 
 Lint cannot judge intent. Also check by eye, once, at the end:
 
@@ -203,10 +203,10 @@ Create elements directly: `apply` does not take Mermaid text. If the user gives 
 ### Steps (CLI shown; MCP tools are 1:1 — see cheatsheet)
 
 1. Plan your coordinate grid — map out tiers and x-positions before writing JSON. (The colors/sizing guide lives in `references/cheatsheet.md`.)
-2. Start the server and note the canvas URL: `bun elkdraw/adapters/cli/src/main.ts start --no-open`. `clear` is not implemented on this server; if you need a blank canvas and know the ids from a prior turn, delete them with `apply --patches` (one `delete` per id).
+2. Start the server and note the canvas URL: `bun elkdraw/adapters/cli/src/main.ts start --no-open`. For a blank canvas, `clear --yes` deletes everything in one write (`snapshot --action save` first if you might want it back); to remove only specific ids, use `apply --patches` (one `delete` per id) instead.
 3. Write the whole diagram — shapes, arrows, zones and placement — into one file. Semantic `id` fields (e.g. `"id": "auth-svc"`) make later updates easy:
    ```bash
-   cat > /tmp/scene.json <<'EOF'
+   cat > scene.json <<'EOF'
    {
      "elements": [
        {"id": "lb", "type": "rectangle", "x": 300, "y": 50, "width": 180, "height": 60, "label": {"text": "Load Balancer"}},
@@ -224,7 +224,7 @@ Create elements directly: `apply` does not take Mermaid text. If the user gives 
      ]
    }
    EOF
-   bun elkdraw/adapters/cli/src/main.ts apply --input - < /tmp/scene.json
+   bun elkdraw/adapters/cli/src/main.ts apply --input - < scene.json
    ```
 4. Set shape widths using `max(160, labelLength * 12)`; `text-overflow` tells you when that was not enough.
 5. Read `lints` in the reply → `look` at the hit ids → fix the file → apply again (The Loop above).

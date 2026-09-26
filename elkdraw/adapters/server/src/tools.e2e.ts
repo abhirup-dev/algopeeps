@@ -5,6 +5,7 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { inflateSync } from "node:zlib";
 import type { LintHit } from "@elkdraw/core";
 import { ApplyReply, parseJson } from "@elkdraw/core";
 import {
@@ -168,4 +169,136 @@ test("draft -> apply -> lint -> look -> fix", async () => {
   expect(ihdrHeight).toBe(shot.height);
   expect(ihdrWidth).toBeLessThanOrEqual(300);
   expect(ihdrHeight).toBeLessThanOrEqual(300);
+}, 30_000);
+
+/** The PNG spec's per-scanline unfilter predictors (§9): `a` is the pixel to
+ * the left, `b` above, `c` above-left, all already unfiltered. Filter 0 (or
+ * anything else the format doesn't define) predicts 0, i.e. passes the byte
+ * through unchanged. */
+function predictor(filter: number, a: number, b: number, c: number): number {
+  switch (filter) {
+    case 1:
+      return a;
+    case 2:
+      return b;
+    case 3:
+      return Math.floor((a + b) / 2);
+    case 4: {
+      const p = a + b - c;
+      const pa = Math.abs(p - a);
+      const pb = Math.abs(p - b);
+      const pc = Math.abs(p - c);
+      return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+    }
+    default:
+      return 0;
+  }
+}
+
+/** Decodes an 8-bit RGBA, non-interlaced PNG (what the sidecar's
+ * `canvas.toDataURL` always emits) into raw pixel bytes. Avoids a
+ * PNG-decoding dependency: chunk walk + `node:zlib` inflate + the PNG
+ * spec's per-scanline unfilter (§9, four predictors: sub, up, average,
+ * paeth). Only IDAT and IHDR are read; other chunks are skipped. */
+function decodePng(png: Uint8Array): {
+  width: number;
+  height: number;
+  data: Uint8Array;
+} {
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+  const width = view.getUint32(16);
+  const height = view.getUint32(20);
+  const bitDepth = png[24];
+  const colorType = png[25];
+  if (bitDepth !== 8 || colorType !== 6)
+    throw new Error(
+      `decodePng: only 8-bit RGBA is handled (got bitDepth=${String(bitDepth)} colorType=${String(colorType)})`,
+    );
+  const idat: Buffer[] = [];
+  let offset = 8;
+  while (offset < png.length) {
+    const len = view.getUint32(offset);
+    const type = String.fromCharCode(...png.slice(offset + 4, offset + 8));
+    if (type === "IDAT")
+      idat.push(Buffer.from(png.slice(offset + 8, offset + 8 + len)));
+    offset += 12 + len;
+  }
+  const raw = inflateSync(Buffer.concat(idat));
+  const bpp = 4;
+  const stride = width * bpp;
+  const data = new Uint8Array(width * height * bpp);
+  let prevRow = new Uint8Array(stride);
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)] ?? 0;
+    const rowStart = y * (stride + 1) + 1;
+    const row = new Uint8Array(stride);
+    for (let x = 0; x < stride; x++) {
+      const filtered = raw[rowStart + x] ?? 0;
+      const a = x >= bpp ? (row[x - bpp] ?? 0) : 0;
+      const b = prevRow[x] ?? 0;
+      const c = x >= bpp ? (prevRow[x - bpp] ?? 0) : 0;
+      const pred = predictor(filter, a, b, c);
+      row[x] = (filtered + pred) & 0xff;
+    }
+    data.set(row, y * stride);
+    prevRow = row;
+  }
+  return { width, height, data };
+}
+
+/** A row's pixels are all background (`snap`'s white fill) if the PNG has
+ * no ink there. */
+function rowIsBlank(decoded: ReturnType<typeof decodePng>, y: number): boolean {
+  const start = y * decoded.width * 4;
+  for (let x = 0; x < decoded.width; x++) {
+    const i = start + x * 4;
+    if (
+      decoded.data[i] !== 255 ||
+      decoded.data[i + 1] !== 255 ||
+      decoded.data[i + 2] !== 255
+    )
+      return false;
+  }
+  return true;
+}
+
+// 1.18: the whole-canvas screenshot cropped the scene's bottom. The eval's
+// ride-hailing final scene (`eval/phase-1/phase-1.md`) reproduces it: the
+// "legend-zone" rectangle is the scene's bottommost element, and its rough,
+// hand-drawn bottom edge overshoots its stored geometric box by a few units
+// -- exactly the ink `screenshotTool`'s corner markers (`tools.ts`,
+// `corners`) now carry the sidecar's own render bounds out to, so the
+// `snap` after them has nothing left to clip.
+test("screenshot does not crop the ride-hailing scene's bottom edge", async () => {
+  const rideHailing: unknown = await Bun.file(
+    join(import.meta.dir, "screenshot-ride-hailing.fixture.json"),
+  ).json();
+  const applied = ApplyReply.parse(
+    await rest("apply", rideHailing, z.unknown()),
+  );
+  expect(applied.created.length).toBeGreaterThan(40);
+
+  const out = join(dir, "ride-hailing-screenshot.png");
+  const shot = await rest(
+    "screenshot",
+    { out, maxPx: 2400 },
+    defs.screenshot.output,
+  );
+  const png = new Uint8Array(await Bun.file(out).arrayBuffer());
+  const decoded = decodePng(png);
+  expect(decoded.width).toBe(shot.width);
+  expect(decoded.height).toBe(shot.height);
+
+  // A cropped bottom means the last rows of the image are blank even though
+  // the scene has ink there (the legend's rough bottom edge). Scan up from
+  // the last row for the first row with ink, and require it be within a
+  // couple of rows of the image's edge -- rounding slack, not a crop.
+  let lastInkRow = -1;
+  for (let y = decoded.height - 1; y >= 0; y--) {
+    if (!rowIsBlank(decoded, y)) {
+      lastInkRow = y;
+      break;
+    }
+  }
+  expect(lastInkRow).toBeGreaterThanOrEqual(decoded.height - 3);
 }, 30_000);
